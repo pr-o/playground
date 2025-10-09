@@ -37,12 +37,12 @@ export function MarketSelector({
       <div className="flex items-center justify-between gap-2">
         <div>
           <p className="text-sm font-semibold text-muted-foreground">Market</p>
-          <h2 className="text-xl font-bold text-foreground">{value || 'Select Market'}</h2>
+          <h2 className="text-xl font-bold text-foreground">
+            {value || 'Select Market'}
+          </h2>
         </div>
         {error ? (
-          <span className="text-xs font-semibold text-destructive">
-            {error.message}
-          </span>
+          <span className="text-xs font-semibold text-destructive">{error.message}</span>
         ) : loading ? (
           <span className="text-xs text-muted-foreground">Loading...</span>
         ) : (
@@ -51,10 +51,10 @@ export function MarketSelector({
       </div>
 
       <input
-      suppressHydrationWarning
+        suppressHydrationWarning
         className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/40"
         placeholder="Search market (e.g. KRW-BTC)"
-        value={query}
+        defaultValue=""
         onChange={(event) => setQuery(event.target.value)}
         aria-label="Search market"
       />
@@ -67,7 +67,9 @@ export function MarketSelector({
                 type="button"
                 className={cn(
                   'flex w-full items-center justify-between px-3 py-2 text-left text-sm transition-colors hover:bg-accent',
-                  value === market.market ? 'bg-accent/60 font-semibold' : 'bg-transparent',
+                  value === market.market
+                    ? 'bg-accent/60 font-semibold'
+                    : 'bg-transparent',
                 )}
                 onClick={() => onChange(market.market)}
               >
