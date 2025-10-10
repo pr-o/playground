@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
 import type { UpbitTrade } from '@/lib/upbit/types';
 import { formatNumber, formatPrice, formatTradeTime } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -10,7 +11,66 @@ interface TradesPanelProps {
   error: Error | null;
 }
 
+type TradeHighlight = {
+  side: 'ASK' | 'BID';
+  variant: 0 | 1;
+};
+
 export function TradesPanel({ trades, loading, error }: TradesPanelProps) {
+  const [flashMap, setFlashMap] = useState<Record<number, TradeHighlight>>({});
+  const timersRef = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
+  const previousIdsRef = useRef<Set<number>>(new Set());
+
+  useEffect(() => {
+    const scheduleHighlight = (id: number, side: 'ASK' | 'BID') => {
+      setFlashMap((current) => {
+        const previous = current[id];
+        const nextVariant = previous ? (previous.variant === 0 ? 1 : 0) : 0;
+        return {
+          ...current,
+          [id]: { side, variant: nextVariant },
+        };
+      });
+
+      const existingTimer = timersRef.current.get(id);
+      if (existingTimer) {
+        clearTimeout(existingTimer);
+      }
+
+      const timeout = setTimeout(() => {
+        setFlashMap((current) => {
+          if (!(id in current)) return current;
+          const next = { ...current };
+          delete next[id];
+          return next;
+        });
+        timersRef.current.delete(id);
+      }, 900);
+
+      timersRef.current.set(id, timeout);
+    };
+
+    const prevIds = previousIdsRef.current;
+    const nextIds = new Set<number>();
+
+    trades.forEach((trade) => {
+      nextIds.add(trade.sequential_id);
+      if (!prevIds.has(trade.sequential_id)) {
+        scheduleHighlight(trade.sequential_id, trade.ask_bid);
+      }
+    });
+
+    previousIdsRef.current = nextIds;
+  }, [trades]);
+
+  useEffect(
+    () => () => {
+      timersRef.current.forEach((timer) => clearTimeout(timer));
+      timersRef.current.clear();
+    },
+    [],
+  );
+
   return (
     <section className="flex h-full flex-col rounded-md border border-border bg-card shadow-sm">
       <header className="flex items-center justify-between border-b border-border px-4 py-3">
@@ -38,10 +98,35 @@ export function TradesPanel({ trades, loading, error }: TradesPanelProps) {
           </thead>
           <tbody>
             {trades.map((trade) => {
-              const tone = trade.ask_bid === 'ASK' ? 'text-destructive' : 'text-emerald-500';
+              const tone =
+                trade.ask_bid === 'ASK' ? 'text-destructive' : 'text-emerald-500';
+              const highlight = flashMap[trade.sequential_id];
+              const highlightClasses = highlight
+                ? cn(
+                    'flash-border',
+                    highlight.side === 'ASK' ? 'flash-border-ask' : 'flash-border-bid',
+                  )
+                : undefined;
+
               return (
-                <tr key={trade.sequential_id} className="border-b border-border/60 last:border-none">
-                  <td className="px-4 py-2 text-muted-foreground">{formatTradeTime(trade.timestamp)}</td>
+                <tr
+                  key={trade.sequential_id}
+                  className={cn(
+                    'border-b border-border/60 last:border-none transition-[box-shadow] duration-500',
+                    highlightClasses,
+                  )}
+                  style={
+                    highlight
+                      ? {
+                          animationName:
+                            highlight.variant === 0 ? 'flash-border' : 'flash-border-alt',
+                        }
+                      : undefined
+                  }
+                >
+                  <td className="px-4 py-2 text-muted-foreground">
+                    {formatTradeTime(trade.timestamp)}
+                  </td>
                   <td className={cn('px-4 py-2 font-mono font-semibold', tone)}>
                     {formatPrice(trade.trade_price)}
                   </td>

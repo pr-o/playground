@@ -40,7 +40,7 @@ function LevelRow({ level, maxShare }: { level: OrderbookLevel; maxShare: number
   return (
     <div
       className={cn(
-        'relative flex items-center gap-3 px-2 py-1 text-xs font-mono',
+        'relative flex items-center gap-3 px-2 py-1 text-xs font-mono transition-[box-shadow] duration-500',
         bgClass,
       )}
     >
@@ -86,9 +86,7 @@ export function OrderBookPanel({
       <header className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-lg font-semibold text-foreground">Order Book</h2>
-          <p className="text-xs text-muted-foreground">
-            Every {loading ? '—' : '1.5s'} refresh
-          </p>
+          <p className="text-xs text-muted-foreground">Streaming live updates</p>
         </div>
         <div className="text-right text-xs text-muted-foreground">
           <p>
@@ -128,7 +126,7 @@ export function OrderBookPanel({
           <div className="flex flex-col">
             {[...asks].reverse().map((level) => (
               <LevelRow
-                key={`ask-${level.ask_price}-${level.cumulativeSize}`}
+                key={`ask-${level.ask_price}`}
                 level={level}
                 maxShare={maxShare}
               />
@@ -148,7 +146,7 @@ export function OrderBookPanel({
           <div className="flex flex-col">
             {bids.map((level) => (
               <LevelRow
-                key={`bid-${level.bid_price}-${level.cumulativeSize}`}
+                key={`bid-${level.bid_price}`}
                 level={level}
                 maxShare={maxShare}
               />
