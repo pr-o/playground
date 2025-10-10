@@ -72,7 +72,7 @@ export function TradesPanel({ trades, loading, error }: TradesPanelProps) {
   );
 
   return (
-    <section className="flex h-full flex-col rounded-md border border-border bg-card shadow-sm">
+    <section className="flex max-h-[1200px] flex-col rounded-md border border-border bg-card shadow-sm">
       <header className="flex items-center justify-between border-b border-border px-4 py-3">
         <div>
           <h2 className="text-lg font-semibold text-foreground">Market Trades</h2>
@@ -87,7 +87,7 @@ export function TradesPanel({ trades, loading, error }: TradesPanelProps) {
         </div>
       ) : null}
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden">
         <table className="min-w-full text-left text-xs">
           <thead className="sticky top-0 bg-card">
             <tr className="border-b border-border text-[10px] uppercase tracking-wide text-muted-foreground">
