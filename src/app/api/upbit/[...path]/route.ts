@@ -20,8 +20,13 @@ function isAllowedPath(segments: string[]): boolean {
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: NextRequest, { params }: { params: { path?: string[] } }) {
-  const segments = params.path ?? [];
+interface RouteContext {
+  params: Promise<{ path: string[] }>;
+}
+
+export async function GET(request: NextRequest, context: RouteContext) {
+  const params = await context.params;
+  const segments = params?.path ?? [];
   if (!isAllowedPath(segments)) {
     return NextResponse.json({ error: 'Unsupported Upbit endpoint' }, { status: 400 });
   }
