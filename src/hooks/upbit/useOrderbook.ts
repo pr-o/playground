@@ -1,17 +1,16 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { fetchJson } from "@/lib/upbit/client";
+import { useEffect, useMemo, useState } from 'react';
+import { fetchJson, openUpbitWebSocket } from '@/lib/upbit/client';
 import type {
   OrderbookLevel,
   UpbitOrderbook,
   UpbitOrderbookUnit,
-} from "@/lib/upbit/types";
-import { ORDERBOOK_DEPTH } from "@/lib/upbit/constants";
+} from '@/lib/upbit/types';
+import { ORDERBOOK_DEPTH } from '@/lib/upbit/constants';
 
 interface UseOrderbookOptions {
   depth?: number;
-  intervalMs?: number;
   enabled?: boolean;
 }
 
@@ -23,21 +22,36 @@ export interface UseOrderbookResult {
   error: Error | null;
 }
 
-const DEFAULT_INTERVAL = 1500;
+interface UpbitOrderbookStreamMessageUnit {
+  ask_price: number;
+  bid_price: number;
+  ask_size: number;
+  bid_size: number;
+}
+
+interface UpbitOrderbookStreamMessage {
+  type: 'orderbook';
+  code: string;
+  timestamp: number;
+  total_ask_size: number;
+  total_bid_size: number;
+  orderbook_units: UpbitOrderbookStreamMessageUnit[];
+  [key: string]: unknown;
+}
 
 function buildLevels(
   units: UpbitOrderbookUnit[],
-  side: "ask" | "bid",
+  side: 'ask' | 'bid',
   totalSize: number,
 ): OrderbookLevel[] {
   const sorted = [...units].sort((a, b) =>
-    side === "ask" ? a.ask_price - b.ask_price : b.bid_price - a.bid_price,
+    side === 'ask' ? a.ask_price - b.ask_price : b.bid_price - a.bid_price,
   );
 
   let cumulative = 0;
 
   return sorted.map((unit) => {
-    const size = side === "ask" ? unit.ask_size : unit.bid_size;
+    const size = side === 'ask' ? unit.ask_size : unit.bid_size;
     cumulative += size;
 
     return {
@@ -50,29 +64,45 @@ function buildLevels(
   });
 }
 
+function normalizeStreamOrderbook(
+  message: UpbitOrderbookStreamMessage,
+  depth: number,
+): UpbitOrderbook {
+  return {
+    market: message.code,
+    timestamp: message.timestamp,
+    total_ask_size: message.total_ask_size,
+    total_bid_size: message.total_bid_size,
+    orderbook_units: message.orderbook_units.slice(0, depth).map((unit) => ({
+      ask_price: unit.ask_price,
+      bid_price: unit.bid_price,
+      ask_size: unit.ask_size,
+      bid_size: unit.bid_size,
+    })),
+  };
+}
+
 export function useOrderbook(
   market: string,
-  {
-    depth = ORDERBOOK_DEPTH,
-    intervalMs = DEFAULT_INTERVAL,
-    enabled = true,
-  }: UseOrderbookOptions = {},
+  { depth = ORDERBOOK_DEPTH, enabled = true }: UseOrderbookOptions = {},
 ): UseOrderbookResult {
   const [orderbook, setOrderbook] = useState<UpbitOrderbook | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
+    setOrderbook(null);
+    setError(null);
+    setLoading(Boolean(enabled && market));
+
     if (!enabled || !market) {
-      setOrderbook(null);
-      setLoading(false);
       return undefined;
     }
 
+    let isActive = true;
     const abortController = new AbortController();
 
-    async function loadOrderbook() {
+    async function loadInitialOrderbook() {
       try {
         const payload = await fetchJson<UpbitOrderbook[]>(
           '/orderbook',
@@ -80,43 +110,68 @@ export function useOrderbook(
           { markets: market },
           abortController.signal,
         );
-        if (payload?.length) {
-          const nextUnits = payload[0].orderbook_units.slice(0, depth);
-          setOrderbook({
-            ...payload[0],
-            orderbook_units: nextUnits,
-          });
-        }
+
+        if (!isActive || !payload?.length) return;
+
+        const nextUnits = payload[0].orderbook_units.slice(0, depth);
+        setOrderbook({
+          ...payload[0],
+          orderbook_units: nextUnits,
+        });
         setError(null);
       } catch (err) {
-        if ((err as Error).name === 'AbortError') return;
+        if (!isActive || (err as Error).name === 'AbortError') return;
         console.error(err);
         setError(err as Error);
       } finally {
-        setLoading(false);
+        if (isActive) {
+          setLoading(false);
+        }
       }
     }
 
-    loadOrderbook();
-    intervalRef.current = setInterval(loadOrderbook, intervalMs);
+    loadInitialOrderbook();
+
+    const unsubscribe = openUpbitWebSocket<UpbitOrderbookStreamMessage>({
+      payload: [
+        { ticket: `orderbook-${market}` },
+        { type: 'orderbook', codes: [market], isOnlyRealtime: true },
+      ],
+      onMessage: (message) => {
+        if (!isActive || message?.type !== 'orderbook') return;
+
+        const normalized = normalizeStreamOrderbook(message, depth);
+        setOrderbook(normalized);
+        setError(null);
+        setLoading(false);
+      },
+      onError: (event) => {
+        if (!isActive) return;
+        console.error('Upbit orderbook websocket error', event);
+        setError(new Error('Failed to stream order book from Upbit.'));
+      },
+      onClose: (event) => {
+        if (!isActive || event.wasClean) return;
+        console.warn('Upbit orderbook websocket closed unexpectedly', event);
+        setError(new Error('Order book stream disconnected unexpectedly.'));
+      },
+    });
 
     return () => {
+      isActive = false;
       abortController.abort();
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
+      unsubscribe();
     };
-  }, [market, depth, intervalMs, enabled]);
+  }, [market, depth, enabled]);
 
   const asks = useMemo(() => {
     if (!orderbook) return [];
-    return buildLevels(orderbook.orderbook_units, "ask", orderbook.total_ask_size);
+    return buildLevels(orderbook.orderbook_units, 'ask', orderbook.total_ask_size);
   }, [orderbook]);
 
   const bids = useMemo(() => {
     if (!orderbook) return [];
-    return buildLevels(orderbook.orderbook_units, "bid", orderbook.total_bid_size);
+    return buildLevels(orderbook.orderbook_units, 'bid', orderbook.total_bid_size);
   }, [orderbook]);
 
   return { orderbook, asks, bids, loading, error };

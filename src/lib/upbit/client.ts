@@ -58,6 +58,157 @@ interface WebSocketOptions<T> {
   onClose?: (event: CloseEvent) => void;
 }
 
+interface WebSocketSubscriber<T = unknown> {
+  onMessage: WebSocketMessageHandler<T>;
+  onError?: (event: Event) => void;
+  onClose?: (event: CloseEvent) => void;
+}
+
+interface WebSocketEntry {
+  socket: WebSocket;
+  subscribers: Set<WebSocketSubscriber<unknown>>;
+  cleanup: () => void;
+  closeTimer: ReturnType<typeof setTimeout> | null;
+}
+
+const socketRegistry = new Map<string, WebSocketEntry>();
+
+function ensureSocket<T>(payload: unknown): {
+  entry: WebSocketEntry;
+  subscriber: WebSocketSubscriber<T>;
+  key: string;
+} {
+  const key = JSON.stringify(payload);
+  const subscriber: WebSocketSubscriber<T> = {
+    onMessage: () => undefined,
+  };
+
+  const existing = socketRegistry.get(key);
+  if (existing) {
+    return { entry: existing, subscriber, key };
+  }
+
+  const socket = new WebSocket(UPBIT_WEBSOCKET_ENDPOINT);
+  socket.binaryType = 'arraybuffer';
+  const textDecoder = new TextDecoder('utf-8');
+
+  const entry: WebSocketEntry = {
+    socket,
+    subscribers: new Set(),
+    cleanup: () => {
+      socket.removeEventListener('message', handleMessage);
+      socket.removeEventListener('error', handleError);
+      socket.removeEventListener('close', handleClose);
+    },
+    closeTimer: null,
+  };
+
+  const notifyMessage = (raw: string) => {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(raw);
+    } catch (error) {
+      console.error('Failed to parse Upbit websocket message', error);
+      return;
+    }
+
+    const payloads = Array.isArray(parsed) ? parsed : [parsed];
+
+    for (const payload of payloads) {
+      for (const subscriberEntry of entry.subscribers) {
+        subscriberEntry.onMessage(payload);
+      }
+    }
+  };
+
+  const handleMessage = (event: MessageEvent<ArrayBuffer | string | Blob>) => {
+    if (typeof event.data === 'string') {
+      notifyMessage(event.data);
+      return;
+    }
+
+    if (event.data instanceof ArrayBuffer) {
+      notifyMessage(textDecoder.decode(event.data));
+      return;
+    }
+
+    if (event.data instanceof Blob) {
+      void event.data
+        .arrayBuffer()
+        .then((buffer) => notifyMessage(textDecoder.decode(buffer)))
+        .catch((error) => console.error('Failed to read Upbit websocket blob', error));
+      return;
+    }
+
+    console.warn(
+      'Received unsupported websocket payload type from Upbit',
+      typeof event.data,
+    );
+  };
+
+  const handleError = (event: Event) => {
+    for (const subscriberEntry of entry.subscribers) {
+      subscriberEntry.onError?.(event);
+    }
+  };
+
+  const handleClose = (event: CloseEvent) => {
+    for (const subscriberEntry of entry.subscribers) {
+      subscriberEntry.onClose?.(event);
+    }
+    entry.subscribers.clear();
+    entry.cleanup();
+    socketRegistry.delete(key);
+  };
+
+  socket.addEventListener('open', () => {
+    const payloadBuffer = JSON.stringify(payload);
+    socket.send(payloadBuffer);
+  });
+
+  socket.addEventListener('message', handleMessage);
+  socket.addEventListener('error', handleError);
+  socket.addEventListener('close', handleClose);
+
+  entry.cleanup = () => {
+    socket.removeEventListener('message', handleMessage);
+    socket.removeEventListener('error', handleError);
+    socket.removeEventListener('close', handleClose);
+  };
+
+  socketRegistry.set(key, entry);
+
+  return { entry, subscriber, key };
+}
+
+function scheduleSocketClose(entry: WebSocketEntry, key: string, delayMs = 500) {
+  if (entry.closeTimer) {
+    clearTimeout(entry.closeTimer);
+  }
+
+  entry.closeTimer = setTimeout(() => {
+    socketRegistry.delete(key);
+    entry.cleanup();
+
+    const { socket } = entry;
+    if (socket.readyState === WebSocket.CONNECTING) {
+      const handleOpen = () => {
+        socket.removeEventListener('open', handleOpen);
+        socket.close();
+      };
+      socket.addEventListener('open', handleOpen);
+      entry.closeTimer = null;
+      return;
+    }
+
+    if (socket.readyState === WebSocket.OPEN) {
+      socket.close();
+    }
+
+    entry.closeTimer = null;
+  }, delayMs);
+}
+
 export function openUpbitWebSocket<T>({
   payload,
   onMessage,
@@ -68,34 +219,26 @@ export function openUpbitWebSocket<T>({
     return () => undefined;
   }
 
-  const socket = new WebSocket(UPBIT_WEBSOCKET_ENDPOINT);
+  const { entry, subscriber, key } = ensureSocket<T>(payload);
 
-  const handleMessage = (event: MessageEvent<ArrayBuffer>) => {
-    try {
-      const textDecoder = new TextDecoder('utf-8');
-      const json = textDecoder.decode(event.data);
-      const parsed = JSON.parse(json) as T;
-      onMessage(parsed);
-    } catch (error) {
-      console.error('Failed to parse Upbit websocket message', error);
-    }
-  };
+  subscriber.onMessage = onMessage;
+  subscriber.onError = onError;
+  subscriber.onClose = onClose;
 
-  socket.addEventListener('open', () => {
-    const payloadBuffer = JSON.stringify(payload);
-    socket.send(payloadBuffer);
-  });
-
-  socket.addEventListener('message', handleMessage);
-  if (onError) socket.addEventListener('error', onError);
-  if (onClose) socket.addEventListener('close', onClose);
+  entry.subscribers.add(subscriber as WebSocketSubscriber<unknown>);
+  if (entry.closeTimer) {
+    clearTimeout(entry.closeTimer);
+    entry.closeTimer = null;
+  }
 
   return () => {
-    socket.removeEventListener('message', handleMessage);
-    if (onError) socket.removeEventListener('error', onError);
-    if (onClose) socket.removeEventListener('close', onClose);
-    if (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING) {
-      socket.close();
+    const activeEntry = socketRegistry.get(key);
+    if (!activeEntry) return;
+
+    activeEntry.subscribers.delete(subscriber as WebSocketSubscriber<unknown>);
+
+    if (activeEntry.subscribers.size === 0) {
+      scheduleSocketClose(activeEntry, key);
     }
   };
 }

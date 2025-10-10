@@ -24,7 +24,7 @@ export function Dashboard() {
       <div className="mx-auto flex max-w-[1400px] flex-col gap-6">
         <header className="flex flex-col gap-2">
           <h1 className="text-2xl font-semibold text-foreground sm:text-3xl">
-            Upbit Market Overview
+            UpBit Market Overview
           </h1>
           <p className="text-sm text-muted-foreground">
             Monitor live order book, trades, and price movement using the Upbit Open API.
