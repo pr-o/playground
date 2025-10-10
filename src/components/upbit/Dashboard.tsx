@@ -37,7 +37,7 @@ export function Dashboard() {
           </div>
         ) : null}
 
-        <div className="grid gap-4 lg:grid-cols-[320px_minmax(0,1.2fr)] xl:grid-cols-[320px_minmax(0,1.6fr)_260px]">
+        <div className="grid gap-4 lg:grid-cols-[320px_minmax(0,1.2fr)] xl:grid-cols-[320px_minmax(0,1.6fr)_280px]">
           <aside className="flex flex-col gap-4">
             <MarketSelector
               markets={markets}
