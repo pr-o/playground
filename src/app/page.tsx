@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { cloneEntries } from '@/lib/clones';
 
 export default function Home() {
   return (
@@ -11,28 +12,22 @@ export default function Home() {
       </header>
       <nav>
         <ul className="space-y-3">
-          <li>
-            <Link
-              href="/clones/upbit"
-              className="group flex items-center justify-between rounded-md border border-border bg-card px-4 py-3 transition-colors hover:bg-card/80"
-            >
-              <span className="font-medium">Upbit Dashboard</span>
-              <span className="text-xs uppercase tracking-wide text-muted-foreground group-hover:text-foreground">
-                /clones/upbit
-              </span>
-            </Link>
-          </li>
-          <li>
-            <Link
-              href="/clones/notion"
-              className="group flex items-center justify-between rounded-md border border-border bg-card px-4 py-3 transition-colors hover:bg-card/80"
-            >
-              <span className="font-medium">Notion Clone</span>
-              <span className="text-xs uppercase tracking-wide text-muted-foreground group-hover:text-foreground">
-                /clones/notion
-              </span>
-            </Link>
-          </li>
+          {cloneEntries.map((clone) => (
+            <li key={clone.href}>
+              <Link
+                href={clone.href}
+                className="group block rounded-md border border-border bg-card px-4 py-3 transition-colors hover:bg-card/80"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">{clone.title}</span>
+                  <span className="text-xs uppercase tracking-wide text-muted-foreground group-hover:text-foreground">
+                    {clone.href}
+                  </span>
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">{clone.description}</p>
+              </Link>
+            </li>
+          ))}
         </ul>
       </nav>
     </main>
