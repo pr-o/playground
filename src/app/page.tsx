@@ -22,6 +22,17 @@ export default function Home() {
               </span>
             </Link>
           </li>
+          <li>
+            <Link
+              href="/clones/notion"
+              className="group flex items-center justify-between rounded-md border border-border bg-card px-4 py-3 transition-colors hover:bg-card/80"
+            >
+              <span className="font-medium">Notion Clone</span>
+              <span className="text-xs uppercase tracking-wide text-muted-foreground group-hover:text-foreground">
+                /clones/notion
+              </span>
+            </Link>
+          </li>
         </ul>
       </nav>
     </main>
