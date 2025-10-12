@@ -1,4 +1,4 @@
-import axios, { AxiosInstance } from 'axios';
+import axios, { AxiosHeaders, AxiosInstance } from 'axios';
 import { NETFLIX_COLLECTIONS } from './collections';
 import {
   buildDetailConfig,
@@ -9,6 +9,7 @@ import {
 } from './normalize';
 import type {
   CollectionResponsePayload,
+  Episode,
   MediaDetail,
   TMDBMediaRaw,
   TMDBMediaType,
@@ -31,14 +32,15 @@ function getTmdbClient(): AxiosInstance {
   });
 
   tmdbClient.interceptors.request.use((config) => {
-    if (!config.headers) config.headers = {};
+    const headers = AxiosHeaders.from(config.headers ?? {});
     if (apiKey.startsWith('eyJ')) {
-      config.headers.Authorization = `Bearer ${apiKey}`;
+      headers.set('Authorization', `Bearer ${apiKey}`);
     } else {
       config.params = { ...(config.params ?? {}), api_key: apiKey };
     }
 
-    config.headers.Accept = 'application/json';
+    headers.set('Accept', 'application/json');
+    config.headers = headers;
     return config;
   });
 
@@ -133,7 +135,7 @@ async function buildTvDetail(id: number, data: TMDBTvDetail): Promise<MediaDetai
   const client = getTmdbClient();
 
   const primarySeason = pickPrimarySeason(data.seasons);
-  let episodes = [];
+  let episodes: Episode[] = [];
   if (primarySeason) {
     try {
       const seasonResponse = await client.get<TMDBSeasonDetail>(
