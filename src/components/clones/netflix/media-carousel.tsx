@@ -23,15 +23,12 @@ export function MediaCarousel({ title, items, isLoading, error }: MediaCarouselP
   };
 
   const showEmpty = !isLoading && !error && items.length === 0;
+  const showControls = !isLoading && !error && items.length > 0;
 
   return (
     <section className="relative">
-      <header className="mb-3 flex items-center justify-between px-1">
+      <header className="mb-3 px-1">
         <h3 className="text-lg font-semibold text-white md:text-xl">{title}</h3>
-        <div className="hidden gap-2 md:flex">
-          <CarouselButton direction="left" onClick={() => scroll('left')} />
-          <CarouselButton direction="right" onClick={() => scroll('right')} />
-        </div>
       </header>
       <div className="relative">
         {isLoading ? (
@@ -52,13 +49,23 @@ export function MediaCarousel({ title, items, isLoading, error }: MediaCarouselP
             Nothing to show right now. Check back soon for updates.
           </div>
         ) : (
-          <div
-            ref={scrollContainerRef}
-            className="flex gap-3 overflow-x-auto scroll-smooth pb-2"
-          >
-            {items.map((item) => (
-              <MediaCard key={`${item.mediaType}-${item.id}`} item={item} />
-            ))}
+          <div className="flex items-center gap-3">
+            {showControls && (
+              <CarouselButton direction="left" onClick={() => scroll('left')} />
+            )}
+            <div className="relative flex-1 overflow-hidden">
+              <div
+                ref={scrollContainerRef}
+                className="flex gap-3 overflow-x-auto scroll-smooth pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [\&::-webkit-scrollbar]:hidden"
+              >
+                {items.map((item) => (
+                  <MediaCard key={`${item.mediaType}-${item.id}`} item={item} />
+                ))}
+              </div>
+            </div>
+            {showControls && (
+              <CarouselButton direction="right" onClick={() => scroll('right')} />
+            )}
           </div>
         )}
       </div>
