@@ -101,7 +101,6 @@ export function NetflixShell({ children }: NetflixShellProps) {
             })}
           </nav>
         </div>
-
         <div />
         <div className="flex items-center gap-4 text-sm font-medium text-white/70 md:text-base">
           <Image

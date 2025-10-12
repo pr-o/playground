@@ -1,6 +1,6 @@
 'use client';
 
-import type { ButtonHTMLAttributes } from 'react';
+import type { ButtonHTMLAttributes, MouseEvent } from 'react';
 import { Check, Plus } from 'lucide-react';
 import type { MediaItem } from '@/lib/netflix/types';
 import { cn } from '@/lib/utils';
@@ -15,10 +15,16 @@ export function MyListButton({
   media,
   variant = 'default',
   className,
+  onClick,
   ...rest
 }: MyListButtonProps) {
   const { toggleItem, contains } = useMyList();
   const isSaved = contains(media.id, media.mediaType);
+  const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
+    onClick?.(event);
+    if (event.defaultPrevented) return;
+    toggleItem(media);
+  };
 
   const baseClasses =
     variant === 'icon'
@@ -28,7 +34,7 @@ export function MyListButton({
   return (
     <button
       type="button"
-      onClick={() => toggleItem(media)}
+      onClick={handleClick}
       aria-pressed={isSaved}
       className={cn(baseClasses, className)}
       {...rest}

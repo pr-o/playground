@@ -85,6 +85,12 @@ export function MediaCard({ item, className, size = 'compact' }: MediaCardProps)
     event.stopPropagation();
   };
 
+  const handleDialogPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.currentTarget === event.target) {
+      setIsOpen(false);
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
@@ -93,7 +99,7 @@ export function MediaCard({ item, className, size = 'compact' }: MediaCardProps)
           tabIndex={0}
           onKeyDown={handleCardKeyDown}
           className={cn(
-            'group relative overflow-hidden rounded-md bg-zinc-900 text-white shadow-md transition hover:scale-105 hover:z-10 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500',
+            'group relative cursor-pointer overflow-hidden rounded-md bg-zinc-900 text-white shadow-md transition hover:scale-105 hover:z-10 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500',
             sizeClasses,
             className,
           )}
@@ -139,7 +145,7 @@ export function MediaCard({ item, className, size = 'compact' }: MediaCardProps)
           </div>
         </article>
       </DialogTrigger>
-      <DialogContent className="p-4">
+      <DialogContent className="p-4" onPointerDown={handleDialogPointerDown}>
         <div className="relative w-full max-w-4xl overflow-hidden rounded-2xl bg-zinc-950 text-white shadow-2xl">
           <DialogTitle className="sr-only">{modalMedia.title}</DialogTitle>
           <DialogCloseButton />
