@@ -1,6 +1,13 @@
 import { TMDB_BACKDROP_SIZE, TMDB_IMAGE_BASE, TMDB_POSTER_SIZE } from './constants';
 import type { CollectionConfig } from './collections';
-import type { MediaItem, TMDBMediaRaw, TMDBMediaType } from './types';
+import type {
+  Episode,
+  MediaDetail,
+  MediaItem,
+  TMDBMediaRaw,
+  TMDBMediaType,
+  TMDBGenre,
+} from './types';
 
 function coerceMediaType(raw: TMDBMediaRaw, fallback?: TMDBMediaType): TMDBMediaType {
   if (raw.media_type === 'tv' || raw.media_type === 'movie') {
@@ -51,4 +58,57 @@ export function pickHeroCandidate(items: MediaItem[]): MediaItem | null {
   if (!items.length) return null;
   const sorted = sortByPopularity(items);
   return sorted[0] ?? null;
+}
+
+type TMDBEpisodeRaw = {
+  id: number;
+  name: string;
+  overview: string;
+  episode_number: number;
+  season_number: number;
+  still_path: string | null;
+  air_date: string | null;
+  runtime?: number | null;
+};
+
+export function normalizeEpisode(raw: TMDBEpisodeRaw): Episode {
+  return {
+    id: raw.id,
+    name: raw.name,
+    overview: raw.overview ?? '',
+    episodeNumber: raw.episode_number,
+    seasonNumber: raw.season_number,
+    stillPath: makeImageUrl(raw.still_path, TMDB_POSTER_SIZE),
+    airDate: raw.air_date ?? null,
+    runtime: raw.runtime ?? null,
+  };
+}
+
+type DetailExtras = Partial<Omit<MediaDetail, keyof MediaItem>>;
+
+export function buildMediaDetail(base: MediaItem, extras: DetailExtras): MediaDetail {
+  return {
+    ...base,
+    tagline: extras.tagline ?? null,
+    genres: extras.genres ?? [],
+    homepage: extras.homepage ?? null,
+    runtime: extras.runtime ?? null,
+    numberOfSeasons: extras.numberOfSeasons ?? null,
+    numberOfEpisodes: extras.numberOfEpisodes ?? null,
+    status: extras.status ?? null,
+    episodes: extras.episodes ?? [],
+  };
+}
+
+export function buildDetailConfig(mediaType: TMDBMediaType): CollectionConfig {
+  return {
+    label: 'detail',
+    path: 'detail',
+    mediaType,
+  };
+}
+
+export function formatGenres(genres: TMDBGenre[] | undefined): TMDBGenre[] {
+  if (!genres) return [];
+  return genres.filter((genre): genre is TMDBGenre => Boolean(genre?.id && genre?.name));
 }

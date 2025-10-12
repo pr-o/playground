@@ -20,6 +20,11 @@ export interface TMDBMediaRaw {
   genre_ids?: number[];
 }
 
+export interface TMDBGenre {
+  id: number;
+  name: string;
+}
+
 export interface MediaItem {
   id: number;
   mediaType: TMDBMediaType;
@@ -34,6 +39,28 @@ export interface MediaItem {
   genreIds: number[];
 }
 
+export interface Episode {
+  id: number;
+  name: string;
+  overview: string;
+  episodeNumber: number;
+  seasonNumber: number;
+  stillPath: string | null;
+  airDate: string | null;
+  runtime: number | null;
+}
+
+export interface MediaDetail extends MediaItem {
+  tagline: string | null;
+  genres: TMDBGenre[];
+  homepage: string | null;
+  runtime: number | null;
+  numberOfSeasons: number | null;
+  numberOfEpisodes: number | null;
+  status: string | null;
+  episodes: Episode[];
+}
+
 export interface MediaCollection {
   slug: string;
   label: string;
@@ -44,6 +71,11 @@ export interface CollectionResponsePayload {
   slug: string;
   label: string;
   items: MediaItem[];
+  fetchedAt: string;
+}
+
+export interface TitleDetailResponsePayload {
+  media: MediaDetail;
   fetchedAt: string;
 }
 

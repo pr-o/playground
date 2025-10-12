@@ -8,4 +8,10 @@ export const netflixQueryKeys = {
   collection(slug: CollectionSlug) {
     return [...this.collections(), slug] as const;
   },
+  titles() {
+    return [...this.all, 'titles'] as const;
+  },
+  title(mediaType: string, id: number) {
+    return [...this.titles(), mediaType, id] as const;
+  },
 };
