@@ -6,6 +6,12 @@ export type CloneEntry = {
 
 export const cloneEntries: CloneEntry[] = [
   {
+    title: 'Netflix Clone',
+    href: '/clones/netflix',
+    description:
+      'Browse trending films and series powered by the TMDB API, complete with hero banners, carousels, and a personal watch list.',
+  },
+  {
     title: 'Upbit Dashboard',
     href: '/clones/upbit',
     description:

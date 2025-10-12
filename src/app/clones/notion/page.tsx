@@ -1,4 +1,4 @@
-import { NotionWorkspace } from '@/components/notion/NotionWorkspace';
+import { NotionWorkspace } from '@/components/clones/notion/NotionWorkspace';
 
 export default function NotionClonePage() {
   return (

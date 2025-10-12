@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -16,6 +17,15 @@ const navItems = [
 
 export function SiteHeader() {
   const pathname = usePathname() ?? '/';
+  const [isHidden, setIsHidden] = useState(false);
+
+  useEffect(() => {
+    setIsHidden(pathname.startsWith('/clones/netflix'));
+  }, [pathname]);
+
+  if (isHidden) {
+    return null;
+  }
 
   return (
     <header className="sticky top-0 z-40 border-b bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/70">
