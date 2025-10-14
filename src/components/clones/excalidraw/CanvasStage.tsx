@@ -22,6 +22,10 @@ import {
   createImagePlaceholder,
   createTextElement,
 } from '@/lib/excalidraw/geometry';
+import {
+  EXCALIDRAW_CLIPBOARD_MIME,
+  parseClipboardPayload,
+} from '@/lib/excalidraw/clipboard';
 import { useElementsStore } from '@/store/excalidraw/elements-store';
 import type {
   ElementStyle,
@@ -58,6 +62,27 @@ const getElementBounds = (element: ExcalidrawElement) => {
     minY: element.position.y,
     maxY: element.position.y + element.size.height,
   };
+};
+
+const getElementsBoundingBox = (elements: ExcalidrawElement[]) => {
+  if (!elements.length) {
+    return null;
+  }
+  let minX = Number.POSITIVE_INFINITY;
+  let minY = Number.POSITIVE_INFINITY;
+  let maxX = Number.NEGATIVE_INFINITY;
+  let maxY = Number.NEGATIVE_INFINITY;
+  elements.forEach((element) => {
+    const bounds = getElementBounds(element);
+    minX = Math.min(minX, bounds.minX);
+    minY = Math.min(minY, bounds.minY);
+    maxX = Math.max(maxX, bounds.maxX);
+    maxY = Math.max(maxY, bounds.maxY);
+  });
+  if (!Number.isFinite(minX) || !Number.isFinite(minY)) {
+    return null;
+  }
+  return { minX, minY, maxX, maxY };
 };
 
 const buildFreeDrawPath = (points: Point[]) => {
@@ -274,12 +299,15 @@ export function CanvasStage() {
     selectedIds,
     style,
     setCamera,
+    setViewport,
     setTool,
     addElement,
     updateElement,
     selectElements,
     clearSelection,
     toggleSelection,
+    clipboard,
+    insertElements,
   } = useElementsStore(
     (state) => ({
       elements: state.elements,
@@ -289,13 +317,16 @@ export function CanvasStage() {
       camera: state.camera,
       selectedIds: state.selectedElementIds,
       style: state.style,
+      clipboard: state.clipboard,
       setCamera: state.actions.setCamera,
+      setViewport: state.actions.setViewport,
       setTool: state.actions.setTool,
       addElement: state.actions.addElement,
       updateElement: state.actions.updateElement,
       selectElements: state.actions.selectElements,
       clearSelection: state.actions.clearSelection,
       toggleSelection: state.actions.toggleSelection,
+      insertElements: state.actions.insertElements,
     }),
     shallow,
   );
@@ -315,10 +346,12 @@ export function CanvasStage() {
     }
 
     const updateSize = () => {
-      setSize({
+      const nextSize = {
         width: container.clientWidth,
         height: container.clientHeight,
-      });
+      };
+      setSize(nextSize);
+      setViewport(nextSize);
     };
 
     updateSize();
@@ -327,7 +360,7 @@ export function CanvasStage() {
     observer.observe(container);
 
     return () => observer.disconnect();
-  }, []);
+  }, [setViewport]);
 
   useEffect(() => {
     if (!textEditor) {
@@ -860,7 +893,59 @@ export function CanvasStage() {
       if (isCanvasLocked) {
         return;
       }
-      const items = event.clipboardData?.items;
+
+      const clipboardData = event.clipboardData;
+      let importedElements: ExcalidrawElement[] | null = null;
+
+      if (clipboardData) {
+        const types = Array.from(clipboardData.types ?? []);
+        let serialized: string | null = null;
+        if (types.includes(EXCALIDRAW_CLIPBOARD_MIME)) {
+          serialized = clipboardData.getData(EXCALIDRAW_CLIPBOARD_MIME);
+        } else {
+          const plain = clipboardData.getData('text/plain');
+          if (plain && plain.includes('"type":"excalidraw/elements"')) {
+            serialized = plain;
+          }
+        }
+        if (serialized) {
+          const payload = parseClipboardPayload(serialized);
+          if (payload) {
+            importedElements = payload.elements;
+          }
+        }
+      } else if (clipboard?.elements?.length) {
+        importedElements = clipboard.elements;
+      }
+
+      if (importedElements?.length) {
+        const bounds = getElementsBoundingBox(importedElements);
+        if (!bounds) {
+          return;
+        }
+        const center = getCanvasCenter();
+        const payloadCenter = {
+          x: (bounds.minX + bounds.maxX) / 2,
+          y: (bounds.minY + bounds.maxY) / 2,
+        };
+        const offset = {
+          x: center.x - payloadCenter.x,
+          y: center.y - payloadCenter.y,
+        };
+        event.preventDefault();
+        event.stopPropagation();
+        insertElements(importedElements, { offset, select: true });
+        if (!isToolLocked) {
+          setTool('selection');
+        }
+        return;
+      }
+
+      if (!clipboardData) {
+        return;
+      }
+
+      const items = clipboardData.items;
       if (!items?.length) {
         return;
       }
@@ -920,7 +1005,9 @@ export function CanvasStage() {
     return () => container.removeEventListener('paste', handlePaste);
   }, [
     addElement,
+    clipboard,
     getCanvasCenter,
+    insertElements,
     isCanvasLocked,
     isToolLocked,
     setTool,

@@ -1,11 +1,16 @@
 'use client';
 
+import { useEffect } from 'react';
 import { shallow } from 'zustand/shallow';
 
 import { CanvasStage } from '@/components/clones/excalidraw/CanvasStage';
 import { StylePanel } from '@/components/clones/excalidraw/StylePanel';
 import { ToolBar } from '@/components/clones/excalidraw/ToolBar';
-import { useElementsStore } from '@/store/excalidraw/elements-store';
+import {
+  createClipboardPayload,
+  EXCALIDRAW_CLIPBOARD_MIME,
+} from '@/lib/excalidraw/clipboard';
+import { getElementsStore, useElementsStore } from '@/store/excalidraw/elements-store';
 import { ToolMode } from '@/types/excalidraw/elements';
 
 const sidebarItems = [
@@ -35,6 +40,24 @@ const toolLabels: Record<ToolMode, string> = {
 
 const clamp = (value: number, min: number, max: number) =>
   Math.min(Math.max(value, min), max);
+
+const isEditableTarget = (target: EventTarget | null) => {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+  if (!target || !(target instanceof HTMLElement)) {
+    return false;
+  }
+  if (target.isContentEditable) {
+    return true;
+  }
+  const tagName = target.tagName;
+  if (tagName === 'INPUT' || tagName === 'TEXTAREA') {
+    const element = target as HTMLInputElement | HTMLTextAreaElement;
+    return !element.readOnly && !element.disabled;
+  }
+  return Boolean(target.closest('input, textarea, [contenteditable="true"]'));
+};
 
 export function ExcalidrawApp() {
   const {
@@ -75,6 +98,152 @@ export function ExcalidrawApp() {
   const handleResetView = () => {
     setCamera({ zoom: 1, offset: { x: 0, y: 0 } });
   };
+
+  useEffect(() => {
+    const store = getElementsStore();
+
+    const copySelection = (
+      event: ClipboardEvent,
+      options?: { deleteAfter?: boolean },
+    ) => {
+      if (isEditableTarget(event.target)) {
+        return;
+      }
+      const selection = typeof window !== 'undefined' ? window.getSelection?.() : null;
+      if (selection && selection.toString()) {
+        return;
+      }
+      const state = store.getState();
+      const { selectedElementIds, elements, actions, isCanvasLocked } = state;
+      if (!selectedElementIds.length) {
+        return;
+      }
+      if (options?.deleteAfter && isCanvasLocked) {
+        return;
+      }
+      const selectedSet = new Set(selectedElementIds);
+      const selectedElements = elements.filter((element) => selectedSet.has(element.id));
+      if (!selectedElements.length) {
+        return;
+      }
+      actions.setClipboard(selectedElements);
+      const payload = createClipboardPayload(selectedElements);
+      const serialized = JSON.stringify(payload);
+      const clipboardData = event.clipboardData;
+      let handled = false;
+      if (clipboardData) {
+        try {
+          clipboardData.setData(EXCALIDRAW_CLIPBOARD_MIME, serialized);
+          clipboardData.setData('text/plain', serialized);
+          handled = true;
+        } catch {
+          // Ignore clipboard write errors.
+        }
+      } else if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+        navigator.clipboard.writeText(serialized).catch(() => {});
+        handled = true;
+      }
+      if (handled) {
+        event.preventDefault();
+      }
+      if (options?.deleteAfter) {
+        actions.removeElements(selectedElementIds);
+      }
+    };
+
+    const handleCopy = (event: ClipboardEvent) => {
+      copySelection(event);
+    };
+
+    const handleCut = (event: ClipboardEvent) => {
+      copySelection(event, { deleteAfter: true });
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (isEditableTarget(event.target)) {
+        return;
+      }
+      const state = store.getState();
+      const { actions, selectedElementIds, isCanvasLocked } = state;
+      const key = event.key;
+      const lowerKey = key.toLowerCase();
+      const metaKey = event.metaKey || event.ctrlKey;
+
+      if (metaKey && lowerKey === 'z') {
+        event.preventDefault();
+        if (event.shiftKey) {
+          actions.redo();
+        } else {
+          actions.undo();
+        }
+        return;
+      }
+
+      if (metaKey && lowerKey === 'y') {
+        event.preventDefault();
+        actions.redo();
+        return;
+      }
+
+      if (
+        (key === 'Delete' || key === 'Backspace') &&
+        !event.metaKey &&
+        !event.ctrlKey &&
+        !event.altKey
+      ) {
+        if (!selectedElementIds.length || isCanvasLocked) {
+          return;
+        }
+        event.preventDefault();
+        actions.removeElements(selectedElementIds);
+        return;
+      }
+
+      const arrowKeys = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
+
+      if (arrowKeys.has(key)) {
+        if (metaKey) {
+          return;
+        }
+        if (!selectedElementIds.length || isCanvasLocked) {
+          return;
+        }
+        event.preventDefault();
+        const step = event.shiftKey ? 10 : 1;
+        let deltaX = 0;
+        let deltaY = 0;
+        switch (key) {
+          case 'ArrowUp':
+            deltaY = -step;
+            break;
+          case 'ArrowDown':
+            deltaY = step;
+            break;
+          case 'ArrowLeft':
+            deltaX = -step;
+            break;
+          case 'ArrowRight':
+            deltaX = step;
+            break;
+          default:
+            break;
+        }
+        if (deltaX || deltaY) {
+          actions.translateElements(selectedElementIds, { x: deltaX, y: deltaY });
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('copy', handleCopy);
+    window.addEventListener('cut', handleCut);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('copy', handleCopy);
+      window.removeEventListener('cut', handleCut);
+    };
+  }, []);
 
   return (
     <div className="relative flex h-[calc(100vh-6rem)] min-h-[680px] w-full overflow-hidden rounded-3xl border border-border bg-[#FDFCF8] shadow-2xl">

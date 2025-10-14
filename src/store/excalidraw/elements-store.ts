@@ -2,6 +2,7 @@
 
 import { useCallback, useRef } from 'react';
 import { Draft, produce } from 'immer';
+import { v4 as uuid } from 'uuid';
 import { useStore } from 'zustand';
 import { createStore } from 'zustand/vanilla';
 
@@ -10,8 +11,19 @@ import {
   ElementStyle,
   ExcalidrawElement,
   HistorySnapshot,
+  Point,
   ToolMode,
 } from '@/types/excalidraw/elements';
+
+type ClipboardState = {
+  elements: ExcalidrawElement[];
+  createdAt: number;
+};
+
+type ViewportSize = {
+  width: number;
+  height: number;
+};
 
 type ElementsStoreState = {
   elements: ExcalidrawElement[];
@@ -20,7 +32,9 @@ type ElementsStoreState = {
   isToolLocked: boolean;
   isCanvasLocked: boolean;
   camera: CameraState;
+  viewport: ViewportSize;
   style: ElementStyle;
+  clipboard: ClipboardState | null;
   history: {
     past: HistorySnapshot[];
     future: HistorySnapshot[];
@@ -31,6 +45,7 @@ type ElementsStoreState = {
     setToolLock: (value: boolean) => void;
     setCanvasLocked: (value: boolean) => void;
     setCamera: (partial: Partial<CameraState>) => void;
+    setViewport: (size: ViewportSize) => void;
     setElements: (elements: ExcalidrawElement[]) => void;
     addElement: (element: ExcalidrawElement) => void;
     updateElement: (
@@ -38,11 +53,18 @@ type ElementsStoreState = {
       updater: (element: ExcalidrawElement) => ExcalidrawElement,
     ) => void;
     removeElement: (id: string) => void;
+    removeElements: (ids: string[]) => void;
     selectElements: (ids: string[]) => void;
     clearSelection: () => void;
     toggleSelection: (id: string) => void;
     bringToFront: (ids: string[]) => void;
     sendToBack: (ids: string[]) => void;
+    translateElements: (ids: string[], delta: Point) => void;
+    insertElements: (
+      elements: ExcalidrawElement[],
+      options?: { offset?: Point; select?: boolean },
+    ) => ExcalidrawElement[];
+    setClipboard: (elements: ExcalidrawElement[] | null) => void;
     undo: () => boolean;
     redo: () => boolean;
     resetHistory: () => void;
@@ -71,6 +93,24 @@ const deepClone = <T>(value: T): T => {
     return structuredCloneFn(value);
   }
   return JSON.parse(JSON.stringify(value)) as T;
+};
+
+const randomSeed = () => Math.floor(Math.random() * 10_000);
+
+const cloneElements = (elements: ExcalidrawElement[], offset: Point = { x: 0, y: 0 }) => {
+  const timestamp = Date.now();
+  return elements.map((element) => {
+    const clone = deepClone(element);
+    clone.id = uuid();
+    clone.seed = randomSeed();
+    clone.createdAt = timestamp;
+    clone.updatedAt = timestamp;
+    clone.position = {
+      x: clone.position.x + offset.x,
+      y: clone.position.y + offset.y,
+    };
+    return clone;
+  });
 };
 
 const createSnapshot = (state: ElementsStoreState): HistorySnapshot => ({
@@ -111,11 +151,16 @@ const createElementsStore = () =>
       ...initialCamera,
       offset: { ...initialCamera.offset },
     },
+    viewport: {
+      width: 0,
+      height: 0,
+    },
     style: {
       strokeColor: '#1F2937',
       fillColor: null,
       strokeWidth: 2,
     },
+    clipboard: null,
     history: {
       past: [],
       future: [],
@@ -129,6 +174,18 @@ const createElementsStore = () =>
         set(
           produce<ElementsStoreState>((draft) => {
             draft.camera = { ...draft.camera, ...partial };
+          }),
+        ),
+      setViewport: (size) =>
+        set(
+          produce<ElementsStoreState>((draft) => {
+            if (
+              draft.viewport.width === size.width &&
+              draft.viewport.height === size.height
+            ) {
+              return;
+            }
+            draft.viewport = { ...size };
           }),
         ),
       setElements: (elements) => {
@@ -168,17 +225,34 @@ const createElementsStore = () =>
         );
       },
       removeElement: (id) => {
+        if (!id) {
+          return;
+        }
+        get().actions.removeElements([id]);
+      },
+      removeElements: (ids) => {
+        const uniqueIds = Array.from(new Set(ids));
+        if (!uniqueIds.length) {
+          return;
+        }
         const snapshot = createSnapshot(get());
         set(
           produce<ElementsStoreState>((draft) => {
-            const index = draft.elements.findIndex((element) => element.id === id);
-            if (index === -1) {
+            const idSet = new Set(uniqueIds);
+            let removed = false;
+            draft.elements = draft.elements.filter((element) => {
+              if (idSet.has(element.id)) {
+                removed = true;
+                return false;
+              }
+              return true;
+            });
+            if (!removed) {
               return;
             }
             pushHistoryDraft(draft, snapshot);
-            draft.elements.splice(index, 1);
             draft.selectedElementIds = draft.selectedElementIds.filter(
-              (selectedId) => selectedId !== id,
+              (selectedId) => !idSet.has(selectedId),
             );
           }),
         );
@@ -205,6 +279,71 @@ const createElementsStore = () =>
             } else {
               draft.selectedElementIds.push(id);
             }
+          }),
+        ),
+      translateElements: (ids, delta) => {
+        const uniqueIds = Array.from(new Set(ids));
+        if (!uniqueIds.length || (!delta.x && !delta.y)) {
+          return;
+        }
+        const snapshot = createSnapshot(get());
+        set(
+          produce<ElementsStoreState>((draft) => {
+            const idSet = new Set(uniqueIds);
+            const timestamp = Date.now();
+            let changed = false;
+            draft.elements.forEach((element, index) => {
+              if (!idSet.has(element.id)) {
+                return;
+              }
+              changed = true;
+              draft.elements[index] = {
+                ...element,
+                position: {
+                  x: element.position.x + delta.x,
+                  y: element.position.y + delta.y,
+                },
+                updatedAt: timestamp,
+              };
+            });
+            if (!changed) {
+              return;
+            }
+            pushHistoryDraft(draft, snapshot);
+          }),
+        );
+      },
+      insertElements: (elements, options) => {
+        if (!elements.length) {
+          return [];
+        }
+        const clones = cloneElements(elements, options?.offset ?? { x: 0, y: 0 });
+        if (!clones.length) {
+          return [];
+        }
+        const snapshot = createSnapshot(get());
+        set(
+          produce<ElementsStoreState>((draft) => {
+            pushHistoryDraft(draft, snapshot);
+            draft.elements.push(...clones);
+            if (options?.select ?? true) {
+              draft.selectedElementIds = clones.map((element) => element.id);
+            }
+          }),
+        );
+        return clones;
+      },
+      setClipboard: (elements) =>
+        set(
+          produce<ElementsStoreState>((draft) => {
+            if (!elements || !elements.length) {
+              draft.clipboard = null;
+              return;
+            }
+            draft.clipboard = {
+              elements: deepClone(elements),
+              createdAt: Date.now(),
+            };
           }),
         ),
       setStrokeColor: (color, options) => {
