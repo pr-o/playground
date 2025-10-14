@@ -16,6 +16,7 @@ type ElementsStoreState = {
   elements: ExcalidrawElement[];
   selectedElementIds: string[];
   tool: ToolMode;
+  isToolLocked: boolean;
   isCanvasLocked: boolean;
   camera: CameraState;
   history: {
@@ -25,6 +26,7 @@ type ElementsStoreState = {
   };
   actions: {
     setTool: (tool: ToolMode) => void;
+    setToolLock: (value: boolean) => void;
     setCanvasLocked: (value: boolean) => void;
     setCamera: (partial: Partial<CameraState>) => void;
     setElements: (elements: ExcalidrawElement[]) => void;
@@ -37,6 +39,8 @@ type ElementsStoreState = {
     selectElements: (ids: string[]) => void;
     clearSelection: () => void;
     toggleSelection: (id: string) => void;
+    bringToFront: (ids: string[]) => void;
+    sendToBack: (ids: string[]) => void;
     undo: () => boolean;
     redo: () => boolean;
     resetHistory: () => void;
@@ -93,6 +97,7 @@ const createElementsStore = () =>
     elements: [],
     selectedElementIds: [],
     tool: 'selection',
+    isToolLocked: false,
     isCanvasLocked: false,
     camera: {
       ...initialCamera,
@@ -105,6 +110,7 @@ const createElementsStore = () =>
     },
     actions: {
       setTool: (tool) => set({ tool }),
+      setToolLock: (value) => set({ isToolLocked: value }),
       setCanvasLocked: (value) => set({ isCanvasLocked: value }),
       setCamera: (partial) =>
         set(
@@ -188,6 +194,46 @@ const createElementsStore = () =>
             }
           }),
         ),
+      bringToFront: (ids) =>
+        set(() => {
+          if (!ids.length) {
+            return null;
+          }
+          const snapshot = createSnapshot(get());
+          return produce<ElementsStoreState>((draft) => {
+            pushHistoryDraft(draft, snapshot);
+            const selectedSet = new Set(ids);
+            const front: ExcalidrawElement[] = [];
+            draft.elements = draft.elements.filter((element) => {
+              if (selectedSet.has(element.id)) {
+                front.push(element);
+                return false;
+              }
+              return true;
+            });
+            draft.elements.push(...front);
+          });
+        }),
+      sendToBack: (ids) =>
+        set(() => {
+          if (!ids.length) {
+            return null;
+          }
+          const snapshot = createSnapshot(get());
+          return produce<ElementsStoreState>((draft) => {
+            pushHistoryDraft(draft, snapshot);
+            const selectedSet = new Set(ids);
+            const back: ExcalidrawElement[] = [];
+            draft.elements = draft.elements.filter((element) => {
+              if (selectedSet.has(element.id)) {
+                back.push(element);
+                return false;
+              }
+              return true;
+            });
+            draft.elements.unshift(...back);
+          });
+        }),
       undo: () => {
         const { past } = get().history;
         if (!past.length) {

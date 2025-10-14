@@ -3,6 +3,7 @@
 import { shallow } from 'zustand/shallow';
 
 import { CanvasStage } from '@/components/clones/excalidraw/CanvasStage';
+import { ToolBar } from '@/components/clones/excalidraw/ToolBar';
 import { useElementsStore } from '@/store/excalidraw/elements-store';
 import { ToolMode } from '@/types/excalidraw/elements';
 
@@ -35,18 +36,30 @@ const clamp = (value: number, min: number, max: number) =>
   Math.min(Math.max(value, min), max);
 
 export function ExcalidrawApp() {
-  const { tool, camera, isLocked, setTool, setCamera, setCanvasLocked } =
-    useElementsStore(
-      (state) => ({
-        tool: state.tool,
-        camera: state.camera,
-        isLocked: state.isCanvasLocked,
-        setTool: state.actions.setTool,
-        setCamera: state.actions.setCamera,
-        setCanvasLocked: state.actions.setCanvasLocked,
-      }),
-      shallow,
-    );
+  const {
+    tool,
+    camera,
+    isLocked,
+    selectedIds,
+    setCamera,
+    setCanvasLocked,
+    bringToFront,
+    sendToBack,
+  } = useElementsStore(
+    (state) => ({
+      tool: state.tool,
+      camera: state.camera,
+      isLocked: state.isCanvasLocked,
+      selectedIds: state.selectedElementIds,
+      setCamera: state.actions.setCamera,
+      setCanvasLocked: state.actions.setCanvasLocked,
+      bringToFront: state.actions.bringToFront,
+      sendToBack: state.actions.sendToBack,
+    }),
+    shallow,
+  );
+
+  const selectedCount = selectedIds.length;
 
   const zoomPercentage = Math.round(camera.zoom * 100);
 
@@ -90,35 +103,9 @@ export function ExcalidrawApp() {
       <div className="relative flex flex-1 flex-col bg-transparent">
         <CanvasStage />
 
-        <div className="pointer-events-none absolute left-1/2 top-6 z-20 flex -translate-x-1/2 gap-2">
-          <div className="pointer-events-auto flex items-center gap-3 rounded-full border border-border/70 bg-white/90 px-4 py-2 shadow-lg backdrop-blur">
-            <span className="text-xs uppercase tracking-wide text-muted-foreground">
-              Selected tool
-            </span>
-            <span className="text-sm font-semibold text-foreground">
-              {toolLabels[tool]}
-            </span>
-          </div>
-          <div className="pointer-events-auto hidden items-center gap-2 rounded-full border border-border/70 bg-white/90 px-3 py-2 text-xs text-muted-foreground shadow-lg backdrop-blur md:flex">
-            <span>Change tool:</span>
-            <div className="flex items-center gap-1">
-              {Object.entries(toolLabels)
-                .slice(0, 4)
-                .map(([key, label]) => (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setTool(key as ToolMode)}
-                    className={`rounded-full px-2 py-1 transition ${
-                      tool === key
-                        ? 'bg-primary/10 text-primary'
-                        : 'hover:bg-muted text-foreground'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-            </div>
+        <div className="pointer-events-none absolute left-1/2 top-6 z-20 flex -translate-x-1/2">
+          <div className="pointer-events-auto">
+            <ToolBar />
           </div>
         </div>
 
@@ -170,7 +157,7 @@ export function ExcalidrawApp() {
           </div>
         </div>
 
-        <div className="pointer-events-none absolute bottom-6 right-6 z-20">
+        <div className="pointer-events-none absolute bottom-6 right-6 z-20 flex flex-col items-end gap-3">
           <button
             type="button"
             onClick={toggleLock}
@@ -182,6 +169,29 @@ export function ExcalidrawApp() {
           >
             {isLocked ? 'Canvas locked' : 'Canvas unlocked'}
           </button>
+          <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-border/70 bg-white/90 px-3 py-1 text-[0.7rem] font-medium uppercase tracking-wide shadow-md">
+            <button
+              type="button"
+              onClick={() => (selectedIds.length ? bringToFront(selectedIds) : null)}
+              disabled={!selectedIds.length}
+              className="rounded-full border border-transparent px-2 py-1 transition enabled:hover:border-border disabled:opacity-40"
+            >
+              Front
+            </button>
+            <button
+              type="button"
+              onClick={() => (selectedIds.length ? sendToBack(selectedIds) : null)}
+              disabled={!selectedIds.length}
+              className="rounded-full border border-transparent px-2 py-1 transition enabled:hover:border-border disabled:opacity-40"
+            >
+              Back
+            </button>
+          </div>
+          <div className="pointer-events-none rounded-full border border-border/60 bg-white/90 px-4 py-1 text-xs text-muted-foreground shadow-md">
+            {selectedCount > 0
+              ? `${selectedCount} element${selectedCount > 1 ? 's' : ''} selected`
+              : `Active tool: ${toolLabels[tool]}`}
+          </div>
         </div>
       </div>
     </div>
