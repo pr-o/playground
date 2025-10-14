@@ -118,4 +118,8 @@ export type ElementStyle = {
   strokeColor: string;
   fillColor: string | null;
   strokeWidth: number;
+  strokeStyle: StrokeStyle;
+  opacity: number;
+  startArrowhead: ArrowheadStyle;
+  endArrowhead: ArrowheadStyle;
 };

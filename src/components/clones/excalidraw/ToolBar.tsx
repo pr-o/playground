@@ -41,18 +41,30 @@ const TOOL_CONFIG: ToolConfig[] = [
 ];
 
 export function ToolBar() {
-  const { activeTool, isLocked, setTool, setToolLock } = useElementsStore(
+  const { activeTool, isLocked, theme, setTool, setToolLock } = useElementsStore(
     (state) => ({
       activeTool: state.tool,
       isLocked: state.isToolLocked,
+      theme: state.theme,
       setTool: state.actions.setTool,
       setToolLock: state.actions.setToolLock,
     }),
     shallow,
   );
 
+  const isDark = theme === 'dark';
+
+  const containerClass = clsx(
+    'flex items-center gap-2 rounded-full border px-4 py-2 shadow-xl backdrop-blur transition-colors',
+    isDark
+      ? 'border-slate-700 bg-slate-900/85 text-slate-100'
+      : 'border-border/70 bg-white/95 text-foreground',
+  );
+
+  const dividerClass = clsx('ml-2 h-6 w-px', isDark ? 'bg-slate-700' : 'bg-border/70');
+
   return (
-    <div className="flex items-center gap-2 rounded-full border border-border/70 bg-white/95 px-4 py-2 shadow-xl backdrop-blur">
+    <div className={containerClass}>
       <div className="flex items-center gap-1">
         {TOOL_CONFIG.map(({ name, tool, icon: Icon, shortcut }) => {
           const isActive = activeTool === tool;
@@ -62,10 +74,12 @@ export function ToolBar() {
               type="button"
               onClick={() => setTool(tool)}
               className={clsx(
-                'group flex h-10 w-10 items-center justify-center rounded-full border border-transparent text-muted-foreground transition',
+                'group flex h-10 w-10 items-center justify-center rounded-full border transition',
                 isActive
                   ? 'border-primary/50 bg-primary/10 text-primary shadow-inner'
-                  : 'hover:border-border hover:bg-muted hover:text-foreground',
+                  : isDark
+                    ? 'border-transparent text-slate-300 hover:border-slate-600 hover:bg-slate-800/80 hover:text-slate-100'
+                    : 'border-transparent text-muted-foreground hover:border-border hover:bg-muted hover:text-foreground',
               )}
               aria-pressed={isActive}
               aria-label={`${name}${shortcut ? ` (${shortcut})` : ''}`}
@@ -75,15 +89,17 @@ export function ToolBar() {
           );
         })}
       </div>
-      <div className="ml-2 h-6 w-px bg-border/70" />
+      <div className={dividerClass} />
       <button
         type="button"
         onClick={() => setToolLock(!isLocked)}
         className={clsx(
-          'flex h-10 items-center gap-2 rounded-full border border-transparent px-3 text-xs font-semibold uppercase tracking-wide transition',
+          'flex h-10 items-center gap-2 rounded-full border px-3 text-xs font-semibold uppercase tracking-wide transition',
           isLocked
-            ? 'bg-primary/90 text-white shadow-lg'
-            : 'bg-muted/60 text-muted-foreground hover:bg-muted',
+            ? 'border-transparent bg-primary/90 text-white shadow-lg'
+            : isDark
+              ? 'border-slate-600 bg-slate-800 text-slate-200 hover:border-primary/60 hover:bg-slate-700/60'
+              : 'border-transparent bg-muted/60 text-muted-foreground hover:bg-muted',
         )}
       >
         {isLocked ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}

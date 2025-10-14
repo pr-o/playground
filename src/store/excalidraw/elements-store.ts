@@ -7,11 +7,13 @@ import { useStore } from 'zustand';
 import { createStore } from 'zustand/vanilla';
 
 import {
+  ArrowheadStyle,
   CameraState,
   ElementStyle,
   ExcalidrawElement,
   HistorySnapshot,
   Point,
+  StrokeStyle,
   ToolMode,
 } from '@/types/excalidraw/elements';
 
@@ -35,6 +37,10 @@ type ElementsStoreState = {
   viewport: ViewportSize;
   style: ElementStyle;
   clipboard: ClipboardState | null;
+  theme: 'light' | 'dark';
+  showGrid: boolean;
+  canvasBackground: string;
+  pointer: Point | null;
   history: {
     past: HistorySnapshot[];
     future: HistorySnapshot[];
@@ -65,6 +71,19 @@ type ElementsStoreState = {
       options?: { offset?: Point; select?: boolean },
     ) => ExcalidrawElement[];
     setClipboard: (elements: ExcalidrawElement[] | null) => void;
+    setPointer: (point: Point | null) => void;
+    setStrokeStyle: (
+      style: StrokeStyle,
+      options?: { applyToSelection?: boolean },
+    ) => void;
+    setArrowheads: (
+      arrowheads: { start: ArrowheadStyle; end: ArrowheadStyle },
+      options?: { applyToSelection?: boolean },
+    ) => void;
+    setOpacity: (opacity: number, options?: { applyToSelection?: boolean }) => void;
+    setTheme: (theme: 'light' | 'dark') => void;
+    toggleGrid: () => void;
+    setCanvasBackground: (color: string) => void;
     undo: () => boolean;
     redo: () => boolean;
     resetHistory: () => void;
@@ -159,8 +178,16 @@ const createElementsStore = () =>
       strokeColor: '#1F2937',
       fillColor: null,
       strokeWidth: 2,
+      strokeStyle: 'solid',
+      opacity: 1,
+      startArrowhead: 'none',
+      endArrowhead: 'arrow',
     },
     clipboard: null,
+    theme: 'light',
+    showGrid: true,
+    canvasBackground: '#FDFCF8',
+    pointer: null,
     history: {
       past: [],
       future: [],
@@ -449,6 +476,138 @@ const createElementsStore = () =>
           }),
         );
       },
+      setStrokeStyle: (strokeStyle, options) => {
+        const applyToSelection = options?.applyToSelection ?? false;
+        const state = get();
+        const shouldApply = applyToSelection && state.selectedElementIds.length > 0;
+        const snapshot = shouldApply ? createSnapshot(state) : null;
+        const timestamp = Date.now();
+        set(
+          produce<ElementsStoreState>((draft) => {
+            draft.style.strokeStyle = strokeStyle;
+            if (!shouldApply || !snapshot) {
+              return;
+            }
+            const selected = new Set(draft.selectedElementIds);
+            let changed = false;
+            draft.elements.forEach((element, index) => {
+              if (!selected.has(element.id) || element.strokeStyle === strokeStyle) {
+                return;
+              }
+              if (!changed) {
+                pushHistoryDraft(draft, snapshot);
+                changed = true;
+              }
+              draft.elements[index] = {
+                ...element,
+                strokeStyle,
+                updatedAt: timestamp,
+              };
+            });
+          }),
+        );
+      },
+      setArrowheads: (arrowheads, options) => {
+        const applyToSelection = options?.applyToSelection ?? false;
+        const state = get();
+        const shouldApply = applyToSelection && state.selectedElementIds.length > 0;
+        const snapshot = shouldApply ? createSnapshot(state) : null;
+        const timestamp = Date.now();
+        set(
+          produce<ElementsStoreState>((draft) => {
+            draft.style.startArrowhead = arrowheads.start;
+            draft.style.endArrowhead = arrowheads.end;
+            if (!shouldApply || !snapshot) {
+              return;
+            }
+            const selected = new Set(draft.selectedElementIds);
+            let changed = false;
+            draft.elements.forEach((element, index) => {
+              if (!selected.has(element.id)) {
+                return;
+              }
+              if (element.type !== 'arrow' && element.type !== 'line') {
+                return;
+              }
+              if (
+                element.startArrowhead === arrowheads.start &&
+                element.endArrowhead === arrowheads.end
+              ) {
+                return;
+              }
+              if (!changed) {
+                pushHistoryDraft(draft, snapshot);
+                changed = true;
+              }
+              draft.elements[index] = {
+                ...element,
+                startArrowhead: arrowheads.start,
+                endArrowhead: arrowheads.end,
+                updatedAt: timestamp,
+              };
+            });
+          }),
+        );
+      },
+      setOpacity: (opacity, options) => {
+        const clamped = Math.min(1, Math.max(0.1, Number(opacity.toFixed(2))));
+        const applyToSelection = options?.applyToSelection ?? false;
+        const state = get();
+        const shouldApply = applyToSelection && state.selectedElementIds.length > 0;
+        const snapshot = shouldApply ? createSnapshot(state) : null;
+        const timestamp = Date.now();
+        set(
+          produce<ElementsStoreState>((draft) => {
+            draft.style.opacity = clamped;
+            if (!shouldApply || !snapshot) {
+              return;
+            }
+            const selected = new Set(draft.selectedElementIds);
+            let changed = false;
+            draft.elements.forEach((element, index) => {
+              if (
+                !selected.has(element.id) ||
+                Math.abs(element.opacity - clamped) < 0.005
+              ) {
+                return;
+              }
+              if (!changed) {
+                pushHistoryDraft(draft, snapshot);
+                changed = true;
+              }
+              draft.elements[index] = {
+                ...element,
+                opacity: clamped,
+                updatedAt: timestamp,
+              };
+            });
+          }),
+        );
+      },
+      setPointer: (point) =>
+        set(
+          produce<ElementsStoreState>((draft) => {
+            draft.pointer = point ? { ...point } : null;
+          }),
+        ),
+      setTheme: (theme) =>
+        set(
+          produce<ElementsStoreState>((draft) => {
+            draft.theme = theme;
+          }),
+        ),
+      toggleGrid: () =>
+        set(
+          produce<ElementsStoreState>((draft) => {
+            draft.showGrid = !draft.showGrid;
+          }),
+        ),
+      setCanvasBackground: (color) =>
+        set(
+          produce<ElementsStoreState>((draft) => {
+            draft.canvasBackground = color;
+          }),
+        ),
       bringToFront: (ids) =>
         set(() => {
           if (!ids.length) {

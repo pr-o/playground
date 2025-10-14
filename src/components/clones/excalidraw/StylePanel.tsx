@@ -1,10 +1,11 @@
 'use client';
 
 import clsx from 'clsx';
-import { useMemo } from 'react';
+import { type ChangeEvent, useMemo } from 'react';
 import { shallow } from 'zustand/shallow';
 
 import { useElementsStore } from '@/store/excalidraw/elements-store';
+import type { ArrowheadStyle, StrokeStyle } from '@/types/excalidraw/elements';
 
 const STROKE_COLORS = [
   '#1F2937',
@@ -29,20 +30,47 @@ const FILL_COLORS: Array<{ label: string; value: string | null }> = [
 
 const STROKE_WIDTHS = [1, 2, 3, 5, 7];
 
+const STROKE_STYLES: Array<{ label: string; value: StrokeStyle }> = [
+  { label: 'Solid', value: 'solid' },
+  { label: 'Dashed', value: 'dashed' },
+  { label: 'Dotted', value: 'dotted' },
+];
+
+const ARROWHEAD_OPTIONS: Array<{ label: string; value: ArrowheadStyle }> = [
+  { label: 'None', value: 'none' },
+  { label: 'Arrow', value: 'arrow' },
+  { label: 'Dot', value: 'dot' },
+  { label: 'Bar', value: 'bar' },
+];
+
 export function StylePanel() {
-  const { style, selectedIds, setStrokeColor, setFillColor, setStrokeWidth } =
-    useElementsStore(
-      (state) => ({
-        style: state.style,
-        selectedIds: state.selectedElementIds,
-        setStrokeColor: state.actions.setStrokeColor,
-        setFillColor: state.actions.setFillColor,
-        setStrokeWidth: state.actions.setStrokeWidth,
-      }),
-      shallow,
-    );
+  const {
+    style,
+    selectedIds,
+    theme,
+    setStrokeColor,
+    setFillColor,
+    setStrokeWidth,
+    setStrokeStyle,
+    setArrowheads,
+    setOpacity,
+  } = useElementsStore(
+    (state) => ({
+      style: state.style,
+      selectedIds: state.selectedElementIds,
+      theme: state.theme,
+      setStrokeColor: state.actions.setStrokeColor,
+      setFillColor: state.actions.setFillColor,
+      setStrokeWidth: state.actions.setStrokeWidth,
+      setStrokeStyle: state.actions.setStrokeStyle,
+      setArrowheads: state.actions.setArrowheads,
+      setOpacity: state.actions.setOpacity,
+    }),
+    shallow,
+  );
 
   const applyToSelection = selectedIds.length > 0;
+  const isDark = theme === 'dark';
 
   const strokeSwatches = useMemo(
     () =>
@@ -58,14 +86,19 @@ export function StylePanel() {
               'flex h-9 w-9 items-center justify-center rounded-full border transition',
               isActive
                 ? 'border-primary shadow-lg shadow-primary/20'
-                : 'border-border/60 hover:border-primary/60 hover:shadow-sm',
+                : clsx(
+                    isDark
+                      ? 'border-slate-600 bg-slate-800 hover:border-primary/50'
+                      : 'border-border/60 hover:border-primary/60',
+                    'hover:shadow-sm',
+                  ),
             )}
           >
             <span className="h-6 w-6 rounded-full" style={{ backgroundColor: color }} />
           </button>
         );
       }),
-    [applyToSelection, setStrokeColor, style.strokeColor],
+    [applyToSelection, isDark, setStrokeColor, style.strokeColor],
   );
 
   const fillSwatches = useMemo(
@@ -82,7 +115,12 @@ export function StylePanel() {
               'flex h-9 w-9 items-center justify-center rounded-full border transition',
               isActive
                 ? 'border-primary shadow-lg shadow-primary/20'
-                : 'border-border/60 hover:border-primary/60 hover:shadow-sm',
+                : clsx(
+                    isDark
+                      ? 'border-slate-600 bg-slate-800 hover:border-primary/50'
+                      : 'border-border/60 hover:border-primary/60',
+                    'hover:shadow-sm',
+                  ),
             )}
           >
             {entry.value ? (
@@ -98,7 +136,7 @@ export function StylePanel() {
           </button>
         );
       }),
-    [applyToSelection, setFillColor, style.fillColor],
+    [applyToSelection, isDark, setFillColor, style.fillColor],
   );
 
   const strokeWidthControls = useMemo(
@@ -115,7 +153,11 @@ export function StylePanel() {
               'flex h-9 w-12 items-center justify-center rounded-full border transition',
               isActive
                 ? 'border-primary shadow-lg shadow-primary/20 bg-primary/5'
-                : 'border-border/60 hover:border-primary/60 hover:bg-muted',
+                : clsx(
+                    isDark
+                      ? 'border-slate-600 bg-slate-800 hover:border-primary/50 hover:bg-slate-700/60'
+                      : 'border-border/60 hover:border-primary/60 hover:bg-muted',
+                  ),
             )}
           >
             <span
@@ -128,30 +170,173 @@ export function StylePanel() {
           </button>
         );
       }),
-    [applyToSelection, setStrokeWidth, style.strokeWidth],
+    [applyToSelection, isDark, setStrokeWidth, style.strokeWidth],
+  );
+
+  const strokeStyleControls = useMemo(
+    () =>
+      STROKE_STYLES.map((entry) => {
+        const isActive = style.strokeStyle === entry.value;
+        return (
+          <button
+            key={entry.value}
+            type="button"
+            onClick={() => setStrokeStyle(entry.value, { applyToSelection })}
+            className={clsx(
+              'flex h-9 items-center justify-center rounded-full border px-3 text-xs font-semibold uppercase tracking-wide transition',
+              isActive
+                ? 'border-primary bg-primary/10 text-primary shadow-lg shadow-primary/20'
+                : isDark
+                  ? 'border-slate-600 bg-slate-800 text-slate-200 hover:border-primary/50 hover:bg-slate-700/60'
+                  : 'border-border/60 text-muted-foreground hover:border-primary/60 hover:bg-muted/40',
+            )}
+          >
+            {entry.label}
+          </button>
+        );
+      }),
+    [applyToSelection, isDark, setStrokeStyle, style.strokeStyle],
+  );
+
+  const arrowheadControls = useMemo(
+    () => ({
+      start: ARROWHEAD_OPTIONS.map((option) => {
+        const isActive = style.startArrowhead === option.value;
+        return (
+          <button
+            key={`start-${option.value}`}
+            type="button"
+            onClick={() =>
+              setArrowheads(
+                { start: option.value, end: style.endArrowhead },
+                { applyToSelection },
+              )
+            }
+            className={clsx(
+              'flex h-8 items-center justify-center rounded-full border px-3 text-[0.65rem] font-semibold uppercase tracking-wide transition',
+              isActive
+                ? 'border-primary bg-primary/10 text-primary shadow-lg shadow-primary/20'
+                : isDark
+                  ? 'border-slate-600 bg-slate-800 text-slate-200 hover:border-primary/50 hover:bg-slate-700/60'
+                  : 'border-border/60 text-muted-foreground hover:border-primary/60 hover:bg-muted/40',
+            )}
+          >
+            {option.label}
+          </button>
+        );
+      }),
+      end: ARROWHEAD_OPTIONS.map((option) => {
+        const isActive = style.endArrowhead === option.value;
+        return (
+          <button
+            key={`end-${option.value}`}
+            type="button"
+            onClick={() =>
+              setArrowheads(
+                { start: style.startArrowhead, end: option.value },
+                { applyToSelection },
+              )
+            }
+            className={clsx(
+              'flex h-8 items-center justify-center rounded-full border px-3 text-[0.65rem] font-semibold uppercase tracking-wide transition',
+              isActive
+                ? 'border-primary bg-primary/10 text-primary shadow-lg shadow-primary/20'
+                : isDark
+                  ? 'border-slate-600 bg-slate-800 text-slate-200 hover:border-primary/50 hover:bg-slate-700/60'
+                  : 'border-border/60 text-muted-foreground hover:border-primary/60 hover:bg-muted/40',
+            )}
+          >
+            {option.label}
+          </button>
+        );
+      }),
+    }),
+    [applyToSelection, isDark, setArrowheads, style.endArrowhead, style.startArrowhead],
+  );
+
+  const opacityPercent = Math.round(style.opacity * 100);
+
+  const handleOpacityChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const nextValue = Number(event.target.value) / 100;
+    setOpacity(nextValue, { applyToSelection });
+  };
+
+  const panelClass = clsx(
+    'pointer-events-auto flex items-center gap-6 rounded-full border px-6 py-3 shadow-xl backdrop-blur transition-colors',
+    isDark
+      ? 'border-slate-700 bg-slate-900/85 text-slate-100'
+      : 'border-border/70 bg-white/95',
+  );
+
+  const labelClass = clsx(
+    'text-xs font-semibold uppercase tracking-wide',
+    isDark ? 'text-slate-300' : 'text-muted-foreground',
+  );
+
+  const dividerClass = clsx('h-10 w-px', isDark ? 'bg-slate-700/80' : 'bg-border/60');
+
+  const subLabelClass = clsx(
+    'text-[0.65rem] uppercase tracking-wide',
+    isDark ? 'text-slate-400' : 'text-muted-foreground',
   );
 
   return (
-    <div className="pointer-events-auto flex items-center gap-6 rounded-full border border-border/70 bg-white/95 px-6 py-3 shadow-xl backdrop-blur">
+    <div className={panelClass}>
       <div className="flex items-center gap-3">
-        <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Stroke
-        </span>
+        <span className={labelClass}>Stroke</span>
         <div className="flex items-center gap-2">{strokeSwatches}</div>
       </div>
-      <div className="h-10 w-px bg-border/60" />
+      <div className={dividerClass} />
       <div className="flex items-center gap-3">
-        <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Fill
-        </span>
+        <span className={labelClass}>Fill</span>
         <div className="flex items-center gap-2">{fillSwatches}</div>
       </div>
-      <div className="h-10 w-px bg-border/60" />
+      <div className={dividerClass} />
       <div className="flex items-center gap-3">
-        <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Width
-        </span>
+        <span className={labelClass}>Width</span>
         <div className="flex items-center gap-2">{strokeWidthControls}</div>
+      </div>
+      <div className={dividerClass} />
+      <div className="flex items-center gap-3">
+        <span className={labelClass}>Style</span>
+        <div className="flex items-center gap-2">{strokeStyleControls}</div>
+      </div>
+      <div className={dividerClass} />
+      <div className="flex items-center gap-3">
+        <span className={labelClass}>Arrowheads</span>
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2">
+            <span className={clsx(subLabelClass, 'opacity-80')}>Start</span>
+            <div className="flex items-center gap-1">{arrowheadControls.start}</div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className={clsx(subLabelClass, 'opacity-80')}>End</span>
+            <div className="flex items-center gap-1">{arrowheadControls.end}</div>
+          </div>
+        </div>
+      </div>
+      <div className={dividerClass} />
+      <div className="flex items-center gap-3">
+        <span className={labelClass}>Opacity</span>
+        <div className="flex items-center gap-3">
+          <input
+            type="range"
+            min={10}
+            max={100}
+            step={5}
+            value={opacityPercent}
+            onChange={handleOpacityChange}
+            className="h-1 w-32 accent-primary"
+          />
+          <span
+            className={clsx(
+              'text-xs font-semibold',
+              isDark ? 'text-slate-200' : 'text-muted-foreground',
+            )}
+          >
+            {opacityPercent}%
+          </span>
+        </div>
       </div>
     </div>
   );

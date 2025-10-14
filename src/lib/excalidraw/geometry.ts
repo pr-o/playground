@@ -15,6 +15,10 @@ import {
 const DEFAULT_STROKE = '#1F2937';
 const DEFAULT_FILL = null;
 const DEFAULT_STROKE_WIDTH = 2;
+const DEFAULT_STROKE_STYLE: StrokeStyle = 'solid';
+const DEFAULT_OPACITY = 1;
+const DEFAULT_START_ARROWHEAD: ArrowheadStyle = 'none';
+const DEFAULT_END_ARROWHEAD: ArrowheadStyle = 'arrow';
 
 const now = () => Date.now();
 
@@ -24,6 +28,8 @@ const applyStyle = (style?: ElementStyle) =>
         strokeColor: style.strokeColor,
         fillColor: style.fillColor,
         strokeWidth: style.strokeWidth,
+        strokeStyle: style.strokeStyle,
+        opacity: style.opacity,
       }
     : {};
 
@@ -41,8 +47,8 @@ const createBaseElement = <T extends ExcalidrawElementType>(
     strokeColor: DEFAULT_STROKE,
     fillColor: DEFAULT_FILL,
     strokeWidth: DEFAULT_STROKE_WIDTH,
-    strokeStyle: 'solid',
-    opacity: 1,
+    strokeStyle: DEFAULT_STROKE_STYLE,
+    opacity: DEFAULT_OPACITY,
     roughness: 0,
     seed: Math.floor(Math.random() * 10_000),
     isLocked: false,
@@ -127,13 +133,22 @@ export const createLinearElement = (
   }
   const { origin, points: translated } = translatePointsToOrigin(points);
   const size = getSizeFromPoints(points);
+  const style = options?.style;
+  const startArrowhead =
+    options?.startArrowhead ??
+    style?.startArrowhead ??
+    (type === 'arrow' ? DEFAULT_START_ARROWHEAD : 'none');
+  const endArrowhead =
+    options?.endArrowhead ??
+    style?.endArrowhead ??
+    (type === 'arrow' ? DEFAULT_END_ARROWHEAD : 'none');
   return createBaseElement(type, {
     position: origin,
     size,
     points: translated,
-    startArrowhead: options?.startArrowhead ?? 'none',
-    endArrowhead: options?.endArrowhead ?? (type === 'arrow' ? 'arrow' : 'none'),
-    ...applyStyle(options?.style),
+    startArrowhead,
+    endArrowhead,
+    ...applyStyle(style),
   }) as LinearElement;
 };
 

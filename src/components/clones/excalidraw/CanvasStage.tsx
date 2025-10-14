@@ -1,5 +1,6 @@
 'use client';
 
+import clsx from 'clsx';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Arrow,
@@ -34,8 +35,11 @@ import type {
   ToolMode,
 } from '@/types/excalidraw/elements';
 
-const gridBackground =
+const lightGridBackground =
   "bg-[url('data:image/svg+xml,%3Csvg width%3D%2740%27 height%3D%2740%27 viewBox%3D%270 0 40 40%27 fill%3D%27none%27 xmlns%3D%27http://www.w3.org/2000/svg%27%3E%3Cpath d%3D%27M40 39.5H0V40H40V39.5Z%27 fill%3D%27%23D9DEE7%27/%3E%3Cpath d%3D%27M0.5 0L0.5 40H0L0 0H0.5Z%27 fill%3D%27%23D9DEE7%27/%3E%3C/svg%3E')] bg-[length:40px_40px]";
+
+const darkGridBackground =
+  "bg-[url('data:image/svg+xml,%3Csvg width%3D%2740%27 height%3D%2740%27 viewBox%3D%270 0 40 40%27 fill%3D%27none%27 xmlns%3D%27http://www.w3.org/2000/svg%27%3E%3Cpath d%3D%27M40 39.5H0V40H40V39.5Z%27 fill%3D%27%23133452%27/%3E%3Cpath d%3D%27M0.5 0L0.5 40H0L0 0H0.5Z%27 fill%3D%27%23133452%27/%3E%3C/svg%3E')] bg-[length:40px_40px]";
 
 type RenderOptions = {
   isDraft?: boolean;
@@ -166,15 +170,9 @@ const renderElement = (element: ExcalidrawElement, options: RenderOptions = {}) 
         <Ellipse
           key={nodeKey}
           {...common}
-          radius={{
-            x: element.size.width / 2,
-            y: element.size.height / 2,
-          }}
+          radiusX={element.size.width / 2}
+          radiusY={element.size.height / 2}
           fill={element.fillColor ?? 'transparent'}
-          offset={{
-            x: element.size.width / 2,
-            y: element.size.height / 2,
-          }}
         />
       );
     case 'line':
@@ -308,6 +306,10 @@ export function CanvasStage() {
     toggleSelection,
     clipboard,
     insertElements,
+    theme,
+    showGrid,
+    canvasBackground,
+    setPointer,
   } = useElementsStore(
     (state) => ({
       elements: state.elements,
@@ -327,6 +329,10 @@ export function CanvasStage() {
       clearSelection: state.actions.clearSelection,
       toggleSelection: state.actions.toggleSelection,
       insertElements: state.actions.insertElements,
+      theme: state.theme,
+      showGrid: state.showGrid,
+      canvasBackground: state.canvasBackground,
+      setPointer: state.actions.setPointer,
     }),
     shallow,
   );
@@ -338,6 +344,8 @@ export function CanvasStage() {
     }
     return map;
   }, [elements]);
+
+  useEffect(() => () => setPointer(null), [setPointer]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -390,6 +398,18 @@ export function CanvasStage() {
         return 'cursor-crosshair';
     }
   }, [isCanvasLocked, tool]);
+
+  const isDark = theme === 'dark';
+
+  const containerClass = useMemo(
+    () =>
+      clsx(
+        'relative flex flex-1 transition-colors duration-200',
+        cursorClass,
+        showGrid ? (isDark ? darkGridBackground : lightGridBackground) : '',
+      ),
+    [cursorClass, isDark, showGrid],
+  );
 
   const getCanvasPointer = useCallback((stage: KonvaStage) => {
     const pointer = stage.getPointerPosition();
@@ -602,11 +622,17 @@ export function CanvasStage() {
         return;
       }
 
+      setPointer(pointer);
+
       const pressure = getPointerPressure(event.evt);
       const styleSnapshot: ElementStyle = {
         strokeColor: style.strokeColor,
         fillColor: style.fillColor,
         strokeWidth: style.strokeWidth,
+        strokeStyle: style.strokeStyle,
+        opacity: style.opacity,
+        startArrowhead: style.startArrowhead,
+        endArrowhead: style.endArrowhead,
       };
       const initialElement = createElementForTool(tool, pointer, pointer, {
         points: [pointer, pointer],
@@ -642,6 +668,7 @@ export function CanvasStage() {
       tool,
       getPointerPressure,
       style,
+      setPointer,
     ],
   );
 
@@ -654,8 +681,10 @@ export function CanvasStage() {
       }
       const pointer = getCanvasPointer(stage);
       if (!pointer) {
+        setPointer(null);
         return;
       }
+      setPointer(pointer);
 
       const selectionState = selectionStateRef.current;
       if (selectionState) {
@@ -702,17 +731,18 @@ export function CanvasStage() {
       state.element = preserved;
       setDraftElement(preserved);
     },
-    [getCanvasPointer, getPointerPressure],
+    [getCanvasPointer, getPointerPressure, setPointer],
   );
 
   const handlePointerUp = useCallback(
     (event?: KonvaEventObject<MouseEvent | TouchEvent>) => {
       event?.evt.preventDefault();
+      const stage = stageRef.current;
+      const pointer = stage ? getCanvasPointer(stage) : null;
+      setPointer(pointer);
 
       const selectionState = selectionStateRef.current;
       if (selectionState) {
-        const stage = stageRef.current;
-        const pointer = stage ? getCanvasPointer(stage) : null;
         finalizeSelection(
           selectionState.start,
           pointer ?? selectionState.start,
@@ -728,7 +758,7 @@ export function CanvasStage() {
       }
       finishDrawing();
     },
-    [finalizeSelection, finishDrawing, getCanvasPointer],
+    [finalizeSelection, finishDrawing, getCanvasPointer, setPointer],
   );
 
   const handleNodeDragEnd = useCallback(
@@ -794,10 +824,11 @@ export function CanvasStage() {
 
   useEffect(() => {
     const handleWindowPointerUp = () => {
+      const stage = stageRef.current;
+      const pointer = stage ? getCanvasPointer(stage) : null;
+      setPointer(pointer);
       const selectionState = selectionStateRef.current;
       if (selectionState) {
-        const stage = stageRef.current;
-        const pointer = stage ? getCanvasPointer(stage) : null;
         finalizeSelection(
           selectionState.start,
           pointer ?? selectionState.start,
@@ -818,7 +849,7 @@ export function CanvasStage() {
       window.removeEventListener('mouseup', handleWindowPointerUp);
       window.removeEventListener('touchend', handleWindowPointerUp);
     };
-  }, [finalizeSelection, finishDrawing, getCanvasPointer]);
+  }, [finalizeSelection, finishDrawing, getCanvasPointer, setPointer]);
 
   const handleDragEnd = useCallback(
     (event: KonvaEventObject<DragEvent>) => {
@@ -828,8 +859,10 @@ export function CanvasStage() {
       }
       const position = stage.position();
       setCamera({ offset: { x: position.x, y: position.y } });
+      const pointer = getCanvasPointer(stage);
+      setPointer(pointer);
     },
-    [setCamera],
+    [getCanvasPointer, setCamera, setPointer],
   );
 
   const handleWheel = useCallback(
@@ -866,8 +899,9 @@ export function CanvasStage() {
         zoom: Number(constrainedScale.toFixed(3)),
         offset: newPosition,
       });
+      setPointer(pointerPointTo);
     },
-    [camera.zoom, setCamera],
+    [camera.zoom, setCamera, setPointer],
   );
 
   const getCanvasCenter = useCallback(() => {
@@ -1043,10 +1077,16 @@ export function CanvasStage() {
     transformer.getLayer()?.batchDraw();
   }, [elementsById, selectedIds, tool]);
 
+  const handleMouseLeave = useCallback(() => {
+    setPointer(null);
+  }, [setPointer]);
+
   return (
     <div
       ref={containerRef}
-      className={`relative flex flex-1 ${gridBackground} ${cursorClass}`}
+      className={containerClass}
+      style={{ backgroundColor: canvasBackground }}
+      onMouseLeave={handleMouseLeave}
     >
       {size.width > 0 && size.height > 0 ? (
         <Stage

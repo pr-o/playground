@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
+import clsx from 'clsx';
+import { useEffect, useState } from 'react';
 import { shallow } from 'zustand/shallow';
 
 import { CanvasStage } from '@/components/clones/excalidraw/CanvasStage';
@@ -13,15 +14,26 @@ import {
 import { getElementsStore, useElementsStore } from '@/store/excalidraw/elements-store';
 import { ToolMode } from '@/types/excalidraw/elements';
 
-const sidebarItems = [
-  'Open...',
-  'Save to...',
-  'Export image',
-  'Live collaboration',
-  'Command palette',
-  'Canvas background',
-  'Help & shortcuts',
+const commandItems: Array<{ label: string; shortcut?: string }> = [
+  { label: 'Open…', shortcut: '⌘O' },
+  { label: 'Save as…', shortcut: '⌘⇧S' },
+  { label: 'Export image', shortcut: '⌘E' },
+  { label: 'Live collaboration' },
+  { label: 'Command palette', shortcut: '⌘K' },
+  { label: 'Help & shortcuts', shortcut: '?' },
 ];
+
+const backgroundSwatches = [
+  '#FDFCF8',
+  '#FFFFFF',
+  '#F1F5F9',
+  '#E2E8F0',
+  '#EDE9FE',
+  '#FDE68A',
+  '#0F172A',
+];
+
+const languageOptions = ['English', '한국어'];
 
 const topActions = ['Share', 'Library'];
 
@@ -65,8 +77,15 @@ export function ExcalidrawApp() {
     camera,
     isLocked,
     selectedIds,
+    theme,
+    showGrid,
+    canvasBackground,
+    pointer,
     setCamera,
     setCanvasLocked,
+    setTheme,
+    toggleGrid,
+    setCanvasBackground,
     bringToFront,
     sendToBack,
   } = useElementsStore(
@@ -75,17 +94,78 @@ export function ExcalidrawApp() {
       camera: state.camera,
       isLocked: state.isCanvasLocked,
       selectedIds: state.selectedElementIds,
+      theme: state.theme,
+      showGrid: state.showGrid,
+      canvasBackground: state.canvasBackground,
+      pointer: state.pointer,
       setCamera: state.actions.setCamera,
       setCanvasLocked: state.actions.setCanvasLocked,
+      setTheme: state.actions.setTheme,
+      toggleGrid: state.actions.toggleGrid,
+      setCanvasBackground: state.actions.setCanvasBackground,
       bringToFront: state.actions.bringToFront,
       sendToBack: state.actions.sendToBack,
     }),
     shallow,
   );
 
+  const [language, setLanguage] = useState('English');
+
   const selectedCount = selectedIds.length;
+  const isDark = theme === 'dark';
 
   const zoomPercentage = Math.round(camera.zoom * 100);
+  const sliderValue = clamp(zoomPercentage, 25, 300);
+  const pointerLabel = pointer
+    ? `${Math.round(pointer.x)}, ${Math.round(pointer.y)}`
+    : '—, —';
+
+  const rootClass = clsx(
+    'relative flex h-[calc(100vh-6rem)] min-h-[680px] w-full overflow-hidden rounded-3xl border shadow-2xl transition-colors',
+    isDark
+      ? 'border-slate-800 bg-slate-950 text-slate-100'
+      : 'border-border bg-[#FDFCF8] text-foreground',
+  );
+
+  const sidebarClass = clsx(
+    'flex w-72 flex-col border-r p-6 backdrop-blur transition-colors',
+    isDark ? 'border-slate-800 bg-slate-900/70' : 'border-border/60 bg-white/70',
+  );
+
+  const commandButtonClass = clsx(
+    'flex w-full items-center justify-between rounded-md border px-3 py-2 text-left text-sm font-medium transition',
+    isDark
+      ? 'border-slate-700/70 bg-slate-900/70 text-slate-200 hover:border-primary/50 hover:bg-slate-800/80'
+      : 'border-border/50 bg-white/80 text-foreground hover:border-primary/40 hover:bg-muted/60',
+  );
+
+  const surfaceClass = isDark
+    ? 'border-slate-700 bg-slate-900/80 text-slate-100'
+    : 'border-border/70 bg-white/95 text-foreground';
+
+  const subtleTextClass = isDark ? 'text-slate-300' : 'text-muted-foreground';
+
+  const pillClass = (active = false) =>
+    clsx(
+      'rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide transition',
+      active
+        ? 'border-primary bg-primary/10 text-primary shadow-lg shadow-primary/20'
+        : isDark
+          ? 'border-slate-600 bg-slate-800 text-slate-200 hover:border-primary/60 hover:bg-slate-700/60'
+          : 'border-border bg-white text-muted-foreground hover:border-primary/60 hover:bg-muted',
+    );
+
+  const iconButtonClass = clsx(
+    'rounded-full border px-2 py-1 text-xs transition',
+    isDark
+      ? 'border-slate-600 bg-slate-800 text-slate-200 hover:border-primary/60 hover:bg-slate-700/60'
+      : 'border-border bg-white text-muted-foreground hover:border-primary/60 hover:bg-muted',
+  );
+
+  const statusHeadline =
+    selectedCount > 0
+      ? `${selectedCount} element${selectedCount > 1 ? 's' : ''} selected`
+      : `Active tool: ${toolLabels[tool]}`;
 
   const toggleLock = () => setCanvasLocked(!isLocked);
 
@@ -97,6 +177,11 @@ export function ExcalidrawApp() {
 
   const handleResetView = () => {
     setCamera({ zoom: 1, offset: { x: 0, y: 0 } });
+  };
+
+  const handleZoomSlider = (value: number) => {
+    const next = clamp(Number((value / 100).toFixed(3)), 0.25, 3);
+    setCamera({ zoom: next });
   };
 
   useEffect(() => {
@@ -246,31 +331,144 @@ export function ExcalidrawApp() {
   }, []);
 
   return (
-    <div className="relative flex h-[calc(100vh-6rem)] min-h-[680px] w-full overflow-hidden rounded-3xl border border-border bg-[#FDFCF8] shadow-2xl">
-      <aside className="flex w-64 flex-col border-r border-border/60 bg-white/70 p-6 backdrop-blur">
-        <div className="mb-6">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+    <div className={rootClass} style={{ backgroundColor: canvasBackground }}>
+      <aside className={sidebarClass}>
+        <div className="mb-6 flex items-center justify-between">
+          <button
+            type="button"
+            className={clsx(
+              'flex h-9 w-9 items-center justify-center rounded-full border text-sm font-semibold transition',
+              isDark
+                ? 'border-slate-700 bg-slate-900/80 text-slate-200 hover:border-primary/50 hover:bg-slate-800'
+                : 'border-border bg-white text-muted-foreground hover:border-primary/40 hover:bg-muted',
+            )}
+            aria-label="Open command menu"
+          >
+            ☰
+          </button>
+          <h2
+            className={clsx(
+              'text-sm font-semibold uppercase tracking-wide',
+              subtleTextClass,
+            )}
+          >
             Command Menu
           </h2>
         </div>
-        <nav className="space-y-2 text-sm text-muted-foreground">
-          {sidebarItems.map((item) => (
-            <button
-              key={item}
-              type="button"
-              className="flex w-full items-center justify-between rounded-md px-3 py-2 text-left font-medium text-foreground transition hover:bg-muted"
-            >
-              <span>{item}</span>
-              <span className="text-xs text-muted-foreground/70">⌘K</span>
+        <nav className="space-y-2">
+          {commandItems.map(({ label, shortcut }) => (
+            <button key={label} type="button" className={commandButtonClass}>
+              <span>{label}</span>
+              {shortcut ? (
+                <span className={clsx('text-xs font-semibold', subtleTextClass)}>
+                  {shortcut}
+                </span>
+              ) : null}
             </button>
           ))}
         </nav>
-        <div className="mt-auto rounded-xl border border-dashed border-border/70 bg-muted/50 p-4 text-xs text-muted-foreground">
+        <div className="mt-6 space-y-6 text-sm">
+          <section>
+            <h3
+              className={clsx(
+                'text-xs font-semibold uppercase tracking-wide',
+                subtleTextClass,
+              )}
+            >
+              Theme &amp; Display
+            </h3>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setTheme('light')}
+                className={pillClass(theme === 'light')}
+              >
+                Light
+              </button>
+              <button
+                type="button"
+                onClick={() => setTheme('dark')}
+                className={pillClass(theme === 'dark')}
+              >
+                Dark
+              </button>
+              <button type="button" onClick={toggleGrid} className={pillClass(showGrid)}>
+                Grid {showGrid ? 'On' : 'Off'}
+              </button>
+            </div>
+          </section>
+          <section>
+            <h3
+              className={clsx(
+                'text-xs font-semibold uppercase tracking-wide',
+                subtleTextClass,
+              )}
+            >
+              Language
+            </h3>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {languageOptions.map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => setLanguage(option)}
+                  className={pillClass(language === option)}
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
+          </section>
+          <section>
+            <h3
+              className={clsx(
+                'text-xs font-semibold uppercase tracking-wide',
+                subtleTextClass,
+              )}
+            >
+              Canvas Background
+            </h3>
+            <div className="mt-3 grid grid-cols-4 gap-2">
+              {backgroundSwatches.map((color) => {
+                const isActive = canvasBackground === color;
+                return (
+                  <button
+                    key={color}
+                    type="button"
+                    onClick={() => setCanvasBackground(color)}
+                    aria-label={`Canvas background ${color}`}
+                    className={clsx(
+                      'flex h-10 w-10 items-center justify-center rounded-full border transition',
+                      isActive
+                        ? 'border-primary shadow-lg shadow-primary/20'
+                        : isDark
+                          ? 'border-slate-600 bg-slate-800 hover:border-primary/60'
+                          : 'border-border/60 bg-white hover:border-primary/60',
+                    )}
+                  >
+                    <span
+                      className="h-8 w-8 rounded-full border border-white/40"
+                      style={{ backgroundColor: color }}
+                    />
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        </div>
+        <div
+          className={clsx(
+            'mt-auto rounded-xl border border-dashed p-4 text-xs transition-colors',
+            isDark
+              ? 'border-slate-700 bg-slate-900/70 text-slate-300'
+              : 'border-border/70 bg-muted/50 text-muted-foreground',
+          )}
+        >
           Future live collaboration controls appear here.
         </div>
       </aside>
 
-      <div className="relative flex flex-1 flex-col bg-transparent">
+      <div className="relative flex flex-1 flex-col bg-transparent transition-colors">
         <CanvasStage />
 
         <div className="pointer-events-none absolute left-1/2 top-6 z-20 flex -translate-x-1/2">
@@ -288,7 +486,12 @@ export function ExcalidrawApp() {
             <button
               key={action}
               type="button"
-              className="pointer-events-auto rounded-full border border-border/70 bg-white/90 px-4 py-2 text-sm font-medium text-foreground shadow-lg transition hover:bg-white"
+              className={clsx(
+                'pointer-events-auto rounded-full border px-4 py-2 text-sm font-medium shadow-lg transition',
+                isDark
+                  ? 'border-slate-700 bg-slate-900/85 text-slate-200 hover:bg-slate-800'
+                  : 'border-border/70 bg-white/90 text-foreground hover:bg-white',
+              )}
             >
               {action}
             </button>
@@ -296,36 +499,54 @@ export function ExcalidrawApp() {
         </div>
 
         <div className="pointer-events-none absolute bottom-6 left-6 z-20">
-          <div className="pointer-events-auto flex items-center gap-3 rounded-full border border-border/70 bg-white/95 px-4 py-2 text-sm shadow-lg">
-            <button
-              type="button"
-              onClick={() => handleZoom('out')}
-              className="rounded-full border border-border bg-white px-2 py-1 text-xs transition hover:bg-muted"
-            >
-              −
-            </button>
-            <span className="font-semibold text-foreground">{zoomPercentage}%</span>
-            <button
-              type="button"
-              onClick={() => handleZoom('in')}
-              className="rounded-full border border-border bg-white px-2 py-1 text-xs transition hover:bg-muted"
-            >
-              ＋
-            </button>
-            <div className="flex items-center gap-2 pl-3 text-xs text-muted-foreground">
+          <div
+            className={clsx(
+              'pointer-events-auto flex items-center gap-4 rounded-full border px-4 py-2 shadow-lg transition',
+              surfaceClass,
+            )}
+          >
+            <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={handleResetView}
-                className="rounded-full border border-transparent px-2 py-1 transition hover:border-border"
+                onClick={() => handleZoom('out')}
+                className={iconButtonClass}
               >
+                −
+              </button>
+              <input
+                type="range"
+                min={25}
+                max={300}
+                step={5}
+                value={sliderValue}
+                onChange={(event) => handleZoomSlider(Number(event.target.value))}
+                className="h-1 w-36 accent-primary"
+                aria-label="Zoom"
+              />
+              <button
+                type="button"
+                onClick={() => handleZoom('in')}
+                className={iconButtonClass}
+              >
+                ＋
+              </button>
+              <span className={clsx('text-xs font-semibold', subtleTextClass)}>
+                {zoomPercentage}%
+              </span>
+            </div>
+            <div className="flex items-center gap-2 pl-2">
+              <button type="button" onClick={handleResetView} className={pillClass()}>
                 Reset
               </button>
               <button
                 type="button"
                 onClick={() => setCamera({ offset: { x: 0, y: 0 } })}
-                className="rounded-full border border-transparent px-2 py-1 transition hover:border-border"
+                className={pillClass()}
               >
                 Center
+              </button>
+              <button type="button" onClick={toggleGrid} className={pillClass(showGrid)}>
+                Grid {showGrid ? 'On' : 'Off'}
               </button>
             </div>
           </div>
@@ -335,20 +556,35 @@ export function ExcalidrawApp() {
           <button
             type="button"
             onClick={toggleLock}
-            className={`pointer-events-auto rounded-full border border-border/70 px-4 py-2 text-xs font-medium uppercase tracking-wide shadow-lg transition ${
+            className={clsx(
+              'pointer-events-auto rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-wide shadow-lg transition',
               isLocked
-                ? 'bg-primary/90 text-white'
-                : 'bg-white/90 text-muted-foreground hover:bg-white'
-            }`}
+                ? 'border-transparent bg-primary/90 text-white'
+                : isDark
+                  ? 'border-slate-600 bg-slate-800 text-slate-200 hover:border-primary/60 hover:bg-slate-700/60'
+                  : 'border-border/70 bg-white/90 text-muted-foreground hover:bg-white',
+            )}
           >
             {isLocked ? 'Canvas locked' : 'Canvas unlocked'}
           </button>
-          <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-border/70 bg-white/90 px-3 py-1 text-[0.7rem] font-medium uppercase tracking-wide shadow-md">
+          <div
+            className={clsx(
+              'pointer-events-auto flex items-center gap-2 rounded-full border px-3 py-1 text-[0.7rem] font-medium uppercase tracking-wide shadow-md transition',
+              surfaceClass,
+            )}
+          >
             <button
               type="button"
               onClick={() => (selectedIds.length ? bringToFront(selectedIds) : null)}
               disabled={!selectedIds.length}
-              className="rounded-full border border-transparent px-2 py-1 transition enabled:hover:border-border disabled:opacity-40"
+              className={clsx(
+                'rounded-full border border-transparent px-2 py-1 transition',
+                selectedIds.length
+                  ? isDark
+                    ? 'hover:border-primary/60 hover:bg-slate-700/60'
+                    : 'hover:border-border'
+                  : 'opacity-40',
+              )}
             >
               Front
             </button>
@@ -356,15 +592,43 @@ export function ExcalidrawApp() {
               type="button"
               onClick={() => (selectedIds.length ? sendToBack(selectedIds) : null)}
               disabled={!selectedIds.length}
-              className="rounded-full border border-transparent px-2 py-1 transition enabled:hover:border-border disabled:opacity-40"
+              className={clsx(
+                'rounded-full border border-transparent px-2 py-1 transition',
+                selectedIds.length
+                  ? isDark
+                    ? 'hover:border-primary/60 hover:bg-slate-700/60'
+                    : 'hover:border-border'
+                  : 'opacity-40',
+              )}
             >
               Back
             </button>
           </div>
-          <div className="pointer-events-none rounded-full border border-border/60 bg-white/90 px-4 py-1 text-xs text-muted-foreground shadow-md">
-            {selectedCount > 0
-              ? `${selectedCount} element${selectedCount > 1 ? 's' : ''} selected`
-              : `Active tool: ${toolLabels[tool]}`}
+          <div
+            className={clsx(
+              'pointer-events-none rounded-full border px-4 py-2 text-xs shadow-md transition',
+              surfaceClass,
+            )}
+          >
+            <div className="font-semibold">{statusHeadline}</div>
+            <div
+              className={clsx(
+                'mt-1 text-[0.65rem] uppercase tracking-wide',
+                subtleTextClass,
+              )}
+            >
+              Pointer {pointerLabel}
+            </div>
+          </div>
+          <div
+            className={clsx(
+              'pointer-events-none flex h-28 w-36 items-center justify-center rounded-xl border text-xs font-semibold uppercase tracking-wide transition',
+              isDark
+                ? 'border-slate-700 bg-slate-900/85 text-slate-400'
+                : 'border-border/70 bg-white/85 text-muted-foreground',
+            )}
+          >
+            Minimap (preview)
           </div>
         </div>
       </div>
