@@ -10,6 +10,7 @@ import {
   Point,
   TextAlignment,
   ToolMode,
+  StrokeStyle,
 } from '@/types/excalidraw/elements';
 
 const DEFAULT_STROKE = '#1F2937';
