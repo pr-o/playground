@@ -1,7 +1,17 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Arrow, Ellipse, Layer, Line, Rect, Stage, Text, Transformer } from 'react-konva';
+import {
+  Arrow,
+  Ellipse,
+  Layer,
+  Line,
+  Path,
+  Rect,
+  Stage,
+  Text,
+  Transformer,
+} from 'react-konva';
 import type { KonvaEventObject, Node as KonvaNode } from 'konva/lib/Node';
 import type { Stage as KonvaStage } from 'konva/lib/Stage';
 import type { Transformer as KonvaTransformer } from 'konva/lib/shapes/Transformer';
@@ -13,7 +23,12 @@ import {
   createTextElement,
 } from '@/lib/excalidraw/geometry';
 import { useElementsStore } from '@/store/excalidraw/elements-store';
-import type { ExcalidrawElement, Point, ToolMode } from '@/types/excalidraw/elements';
+import type {
+  ElementStyle,
+  ExcalidrawElement,
+  Point,
+  ToolMode,
+} from '@/types/excalidraw/elements';
 
 const gridBackground =
   "bg-[url('data:image/svg+xml,%3Csvg width%3D%2740%27 height%3D%2740%27 viewBox%3D%270 0 40 40%27 fill%3D%27none%27 xmlns%3D%27http://www.w3.org/2000/svg%27%3E%3Cpath d%3D%27M40 39.5H0V40H40V39.5Z%27 fill%3D%27%23D9DEE7%27/%3E%3Cpath d%3D%27M0.5 0L0.5 40H0L0 0H0.5Z%27 fill%3D%27%23D9DEE7%27/%3E%3C/svg%3E')] bg-[length:40px_40px]";
@@ -43,6 +58,43 @@ const getElementBounds = (element: ExcalidrawElement) => {
     minY: element.position.y,
     maxY: element.position.y + element.size.height,
   };
+};
+
+const buildFreeDrawPath = (points: Point[]) => {
+  if (points.length === 0) {
+    return '';
+  }
+  if (points.length === 1) {
+    const [point] = points;
+    return `M ${point.x} ${point.y}`;
+  }
+  if (points.length === 2) {
+    const [start, end] = points;
+    return `M ${start.x} ${start.y} L ${end.x} ${end.y}`;
+  }
+
+  const commands: string[] = [];
+  commands.push(`M ${points[0].x} ${points[0].y}`);
+
+  for (let i = 0; i < points.length - 1; i += 1) {
+    const p0 = points[i - 1] ?? points[i];
+    const p1 = points[i];
+    const p2 = points[i + 1];
+    const p3 = points[i + 2] ?? p2;
+
+    const cp1 = {
+      x: p1.x + (p2.x - p0.x) / 6,
+      y: p1.y + (p2.y - p0.y) / 6,
+    };
+    const cp2 = {
+      x: p2.x - (p3.x - p1.x) / 6,
+      y: p2.y - (p3.y - p1.y) / 6,
+    };
+
+    commands.push(`C ${cp1.x} ${cp1.y}, ${cp2.x} ${cp2.y}, ${p2.x} ${p2.y}`);
+  }
+
+  return commands.join(' ');
 };
 
 const renderElement = (element: ExcalidrawElement, options: RenderOptions = {}) => {
@@ -121,17 +173,13 @@ const renderElement = (element: ExcalidrawElement, options: RenderOptions = {}) 
           pointerAtEnding={element.endArrowhead !== 'none'}
         />
       );
-    case 'freedraw':
-      return (
-        <Line
-          key={nodeKey}
-          {...common}
-          points={toKonvaPoints(element.points)}
-          tension={0.5}
-          bezier
-          fillEnabled={false}
-        />
-      );
+    case 'freedraw': {
+      const data = buildFreeDrawPath(element.points);
+      if (!data) {
+        return null;
+      }
+      return <Path key={nodeKey} {...common} data={data} fill="transparent" />;
+    }
     case 'text':
       return (
         <Text
@@ -173,6 +221,8 @@ type DrawingState = {
   tool: ToolMode;
   start: Point;
   points: Point[];
+  pressures: number[];
+  style: ElementStyle;
   element: ExcalidrawElement;
 };
 
@@ -222,6 +272,7 @@ export function CanvasStage() {
     isCanvasLocked,
     camera,
     selectedIds,
+    style,
     setCamera,
     setTool,
     addElement,
@@ -237,6 +288,7 @@ export function CanvasStage() {
       isCanvasLocked: state.isCanvasLocked,
       camera: state.camera,
       selectedIds: state.selectedElementIds,
+      style: state.style,
       setCamera: state.actions.setCamera,
       setTool: state.actions.setTool,
       addElement: state.actions.addElement,
@@ -327,6 +379,26 @@ export function CanvasStage() {
     return touch ? { x: touch.clientX, y: touch.clientY } : { x: 0, y: 0 };
   }, []);
 
+  const getPointerPressure = useCallback((event: MouseEvent | TouchEvent) => {
+    const pointerEvent = event as Partial<PointerEvent>;
+    if (typeof pointerEvent.pressure === 'number' && pointerEvent.pressure > 0) {
+      return pointerEvent.pressure;
+    }
+    if ('touches' in event && event.touches.length) {
+      const force = event.touches[0]?.force;
+      if (typeof force === 'number' && force > 0) {
+        return force;
+      }
+    }
+    if ('changedTouches' in event && event.changedTouches.length) {
+      const force = event.changedTouches[0]?.force;
+      if (typeof force === 'number' && force > 0) {
+        return force;
+      }
+    }
+    return 0.5;
+  }, []);
+
   const resetInteraction = useCallback(() => {
     drawingStateRef.current = null;
     setDraftElement(null);
@@ -406,7 +478,7 @@ export function CanvasStage() {
     (value: string, position: Point) => {
       const textValue = value.trim();
       if (textValue) {
-        const element = createTextElement(position, textValue);
+        const element = createTextElement(position, textValue, { style });
         addElement(element);
       }
       setTextEditor(null);
@@ -414,7 +486,7 @@ export function CanvasStage() {
         setTool('selection');
       }
     },
-    [addElement, isToolLocked, setTool],
+    [addElement, isToolLocked, setTool, style],
   );
 
   const cancelText = useCallback(() => {
@@ -497,9 +569,16 @@ export function CanvasStage() {
         return;
       }
 
+      const pressure = getPointerPressure(event.evt);
+      const styleSnapshot: ElementStyle = {
+        strokeColor: style.strokeColor,
+        fillColor: style.fillColor,
+        strokeWidth: style.strokeWidth,
+      };
       const initialElement = createElementForTool(tool, pointer, pointer, {
         points: [pointer, pointer],
-        pressures: [0.5, 0.5],
+        pressures: [pressure, pressure],
+        style: styleSnapshot,
       });
 
       if (!initialElement) {
@@ -510,6 +589,8 @@ export function CanvasStage() {
         tool,
         start: pointer,
         points: [pointer, pointer],
+        pressures: [pressure, pressure],
+        style: styleSnapshot,
         element: initialElement,
       };
       setDraftElement(initialElement);
@@ -526,6 +607,8 @@ export function CanvasStage() {
       textEditor,
       toggleSelection,
       tool,
+      getPointerPressure,
+      style,
     ],
   );
 
@@ -555,14 +638,22 @@ export function CanvasStage() {
         return;
       }
 
+      const pressure = getPointerPressure(event.evt);
+
       if (state.tool === 'draw') {
         state.points = [...state.points, pointer];
+        state.pressures = [...state.pressures, pressure];
       } else if (state.points.length) {
         state.points[state.points.length - 1] = pointer;
+        if (state.pressures.length) {
+          state.pressures[state.pressures.length - 1] = pressure;
+        }
       }
 
       const nextElement = createElementForTool(state.tool, state.start, pointer, {
         points: state.tool === 'draw' ? state.points : [state.start, pointer],
+        pressures: state.tool === 'draw' ? state.pressures : undefined,
+        style: state.style,
       });
 
       if (!nextElement) {
@@ -578,7 +669,7 @@ export function CanvasStage() {
       state.element = preserved;
       setDraftElement(preserved);
     },
-    [getCanvasPointer],
+    [getCanvasPointer, getPointerPressure],
   );
 
   const handlePointerUp = useCallback(

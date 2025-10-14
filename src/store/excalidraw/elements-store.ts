@@ -7,6 +7,7 @@ import { createStore } from 'zustand/vanilla';
 
 import {
   CameraState,
+  ElementStyle,
   ExcalidrawElement,
   HistorySnapshot,
   ToolMode,
@@ -19,6 +20,7 @@ type ElementsStoreState = {
   isToolLocked: boolean;
   isCanvasLocked: boolean;
   camera: CameraState;
+  style: ElementStyle;
   history: {
     past: HistorySnapshot[];
     future: HistorySnapshot[];
@@ -44,6 +46,12 @@ type ElementsStoreState = {
     undo: () => boolean;
     redo: () => boolean;
     resetHistory: () => void;
+    setStrokeColor: (color: string, options?: { applyToSelection?: boolean }) => void;
+    setFillColor: (
+      color: string | null,
+      options?: { applyToSelection?: boolean },
+    ) => void;
+    setStrokeWidth: (width: number, options?: { applyToSelection?: boolean }) => void;
   };
 };
 
@@ -102,6 +110,11 @@ const createElementsStore = () =>
     camera: {
       ...initialCamera,
       offset: { ...initialCamera.offset },
+    },
+    style: {
+      strokeColor: '#1F2937',
+      fillColor: null,
+      strokeWidth: 2,
     },
     history: {
       past: [],
@@ -194,6 +207,109 @@ const createElementsStore = () =>
             }
           }),
         ),
+      setStrokeColor: (color, options) => {
+        const applyToSelection = options?.applyToSelection ?? false;
+        const state = get();
+        const shouldApply = applyToSelection && state.selectedElementIds.length > 0;
+        const snapshot = shouldApply ? createSnapshot(state) : null;
+        const timestamp = Date.now();
+        set(
+          produce<ElementsStoreState>((draft) => {
+            draft.style.strokeColor = color;
+            if (!shouldApply || !snapshot) {
+              return;
+            }
+            const selected = new Set(draft.selectedElementIds);
+            let changed = false;
+            draft.elements.forEach((element, index) => {
+              if (!selected.has(element.id) || element.strokeColor === color) {
+                return;
+              }
+              if (!changed) {
+                pushHistoryDraft(draft, snapshot);
+                changed = true;
+              }
+              draft.elements[index] = {
+                ...element,
+                strokeColor: color,
+                updatedAt: timestamp,
+              };
+            });
+          }),
+        );
+      },
+      setFillColor: (color, options) => {
+        const applyToSelection = options?.applyToSelection ?? false;
+        const state = get();
+        const shouldApply = applyToSelection && state.selectedElementIds.length > 0;
+        const snapshot = shouldApply ? createSnapshot(state) : null;
+        const timestamp = Date.now();
+        set(
+          produce<ElementsStoreState>((draft) => {
+            draft.style.fillColor = color;
+            if (!shouldApply || !snapshot) {
+              return;
+            }
+            const selected = new Set(draft.selectedElementIds);
+            let changed = false;
+            draft.elements.forEach((element, index) => {
+              if (!selected.has(element.id)) {
+                return;
+              }
+              if (
+                element.type !== 'rectangle' &&
+                element.type !== 'ellipse' &&
+                element.type !== 'image'
+              ) {
+                return;
+              }
+              if (element.fillColor === color) {
+                return;
+              }
+              if (!changed) {
+                pushHistoryDraft(draft, snapshot);
+                changed = true;
+              }
+              draft.elements[index] = {
+                ...element,
+                fillColor: color,
+                updatedAt: timestamp,
+              };
+            });
+          }),
+        );
+      },
+      setStrokeWidth: (width, options) => {
+        const applyToSelection = options?.applyToSelection ?? false;
+        const state = get();
+        const shouldApply = applyToSelection && state.selectedElementIds.length > 0;
+        const snapshot = shouldApply ? createSnapshot(state) : null;
+        const timestamp = Date.now();
+        set(
+          produce<ElementsStoreState>((draft) => {
+            draft.style.strokeWidth = width;
+            if (!shouldApply || !snapshot) {
+              return;
+            }
+            const selected = new Set(draft.selectedElementIds);
+            let changed = false;
+            draft.elements.forEach((element, index) => {
+              if (!selected.has(element.id) || element.strokeWidth === width) {
+                return;
+              }
+              if (!changed) {
+                pushHistoryDraft(draft, snapshot);
+                changed = true;
+              }
+              draft.elements[index] = {
+                ...element,
+                strokeWidth: width,
+                updatedAt: timestamp,
+              };
+            });
+          }),
+        );
+      },
       bringToFront: (ids) =>
         set(() => {
           if (!ids.length) {

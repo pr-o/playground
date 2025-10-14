@@ -3,6 +3,7 @@
 import { shallow } from 'zustand/shallow';
 
 import { CanvasStage } from '@/components/clones/excalidraw/CanvasStage';
+import { StylePanel } from '@/components/clones/excalidraw/StylePanel';
 import { ToolBar } from '@/components/clones/excalidraw/ToolBar';
 import { useElementsStore } from '@/store/excalidraw/elements-store';
 import { ToolMode } from '@/types/excalidraw/elements';
@@ -107,6 +108,10 @@ export function ExcalidrawApp() {
           <div className="pointer-events-auto">
             <ToolBar />
           </div>
+        </div>
+
+        <div className="pointer-events-none absolute left-1/2 top-28 z-20 flex -translate-x-1/2">
+          <StylePanel />
         </div>
 
         <div className="pointer-events-none absolute right-6 top-6 z-20 flex gap-3">

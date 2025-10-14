@@ -2,6 +2,7 @@ import { v4 as uuid } from 'uuid';
 
 import {
   ArrowheadStyle,
+  ElementStyle,
   ExcalidrawElement,
   ExcalidrawElementType,
   FreeDrawElement,
@@ -16,6 +17,15 @@ const DEFAULT_FILL = null;
 const DEFAULT_STROKE_WIDTH = 2;
 
 const now = () => Date.now();
+
+const applyStyle = (style?: ElementStyle) =>
+  style
+    ? {
+        strokeColor: style.strokeColor,
+        fillColor: style.fillColor,
+        strokeWidth: style.strokeWidth,
+      }
+    : {};
 
 const createBaseElement = <T extends ExcalidrawElementType>(
   type: T,
@@ -76,16 +86,22 @@ const getSizeFromPoints = (points: Point[]) => {
   };
 };
 
-export const createRectangle = (start: Point, end: Point, radius = 12) => {
+export const createRectangle = (
+  start: Point,
+  end: Point,
+  radius = 12,
+  style?: ElementStyle,
+) => {
   const { position, size } = normalizeBounds(start, end);
   return createBaseElement('rectangle', {
     position,
     size,
     radius,
+    ...applyStyle(style),
   });
 };
 
-export const createEllipse = (start: Point, end: Point) => {
+export const createEllipse = (start: Point, end: Point, style?: ElementStyle) => {
   const { position, size } = normalizeBounds(start, end);
   return createBaseElement('ellipse', {
     position: {
@@ -93,13 +109,18 @@ export const createEllipse = (start: Point, end: Point) => {
       y: position.y + size.height / 2,
     },
     size,
+    ...applyStyle(style),
   });
 };
 
 export const createLinearElement = (
   type: Extract<LinearElement['type'], 'line' | 'arrow'>,
   points: Point[],
-  options?: { startArrowhead?: ArrowheadStyle; endArrowhead?: ArrowheadStyle },
+  options?: {
+    startArrowhead?: ArrowheadStyle;
+    endArrowhead?: ArrowheadStyle;
+    style?: ElementStyle;
+  },
 ) => {
   if (points.length < 2) {
     throw new Error('Linear elements require at least two points.');
@@ -112,10 +133,15 @@ export const createLinearElement = (
     points: translated,
     startArrowhead: options?.startArrowhead ?? 'none',
     endArrowhead: options?.endArrowhead ?? (type === 'arrow' ? 'arrow' : 'none'),
+    ...applyStyle(options?.style),
   }) as LinearElement;
 };
 
-export const createFreeDrawElement = (points: Point[], pressures?: number[]) => {
+export const createFreeDrawElement = (
+  points: Point[],
+  pressures?: number[],
+  style?: ElementStyle,
+) => {
   const safePoints = points.length ? points : [{ x: 0, y: 0 }];
   const { origin, points: translated } = translatePointsToOrigin(safePoints);
   const size = getSizeFromPoints(safePoints);
@@ -125,7 +151,7 @@ export const createFreeDrawElement = (points: Point[], pressures?: number[]) => 
     points: translated,
     pressures: pressures ?? translated.map(() => 0.5),
     simulatePressure: !pressures,
-    strokeWidth: 2.5,
+    ...applyStyle(style),
   }) as FreeDrawElement;
 };
 
@@ -136,6 +162,7 @@ export const createTextElement = (
     fontSize?: number;
     fontFamily?: string;
     alignment?: TextAlignment;
+    style?: ElementStyle;
   },
 ) => {
   const fontSize = options?.fontSize ?? 20;
@@ -151,6 +178,7 @@ export const createTextElement = (
     lineHeight: 1.3,
     textAlign: options?.alignment ?? 'left',
     verticalAlign: 'top',
+    ...applyStyle(options?.style),
   });
 };
 
@@ -162,6 +190,7 @@ export const createImagePlaceholder = (start: Point, end: Point, url: string) =>
     url,
     status: 'pending',
     naturalSize: { width: size.width, height: size.height },
+    ...applyStyle(),
   });
 };
 
@@ -175,14 +204,15 @@ export const createElementForTool = (
     pressures?: number[];
     arrowheads?: { start?: ArrowheadStyle; end?: ArrowheadStyle };
     imageUrl?: string;
+    style?: ElementStyle;
   },
 ): ExcalidrawElement | null => {
   switch (tool) {
     case 'rectangle':
-      return createRectangle(start, end);
+      return createRectangle(start, end, 12, options?.style);
     case 'ellipse':
     case 'diamond': {
-      const ellipse = createEllipse(start, end);
+      const ellipse = createEllipse(start, end, options?.style);
       if (tool === 'diamond') {
         const { position, size } = normalizeBounds(start, end);
         const center = {
@@ -195,22 +225,32 @@ export const createElementForTool = (
           { x: center.x, y: position.y + size.height },
           { x: position.x, y: center.y },
         ];
-        return createLinearElement('line', points.concat(points[0]));
+        return createLinearElement('line', points.concat(points[0]), {
+          style: options?.style,
+        });
       }
       return ellipse;
     }
     case 'line':
-      return createLinearElement('line', options?.points ?? [start, end]);
+      return createLinearElement('line', options?.points ?? [start, end], {
+        style: options?.style,
+      });
     case 'arrow':
-      return createLinearElement(
-        'arrow',
-        options?.points ?? [start, end],
-        options?.arrowheads,
-      );
+      return createLinearElement('arrow', options?.points ?? [start, end], {
+        startArrowhead: options?.arrowheads?.start,
+        endArrowhead: options?.arrowheads?.end,
+        style: options?.style,
+      });
     case 'draw':
-      return createFreeDrawElement(options?.points ?? [start, end], options?.pressures);
+      return createFreeDrawElement(
+        options?.points ?? [start, end],
+        options?.pressures,
+        options?.style,
+      );
     case 'text':
-      return options?.text ? createTextElement(start, options.text) : null;
+      return options?.text
+        ? createTextElement(start, options.text, { style: options?.style })
+        : null;
     case 'image':
       return options?.imageUrl
         ? createImagePlaceholder(start, end, options.imageUrl)

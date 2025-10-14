@@ -113,3 +113,9 @@ export type HistorySnapshot = {
   selectedElementIds: string[];
   camera: CameraState;
 };
+
+export type ElementStyle = {
+  strokeColor: string;
+  fillColor: string | null;
+  strokeWidth: number;
+};
