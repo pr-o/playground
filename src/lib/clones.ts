@@ -23,4 +23,10 @@ export const cloneEntries: CloneEntry[] = [
     description:
       'A local-first documents workspace with block editing, inline formatting, and persistence in the browser.',
   },
+  {
+    title: 'Excalidraw Clone',
+    href: '/clones/excalidraw',
+    description:
+      'Infinite canvas whiteboard with Excalidraw-inspired layout, tools, and drawing surface.',
+  },
 ];
