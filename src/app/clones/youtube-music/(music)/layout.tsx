@@ -1,9 +1,11 @@
 import type { ReactNode } from 'react';
+import { MusicProviders } from '@/components/clones/youtube-music/MusicProviders';
+import { MusicShell } from '@/components/clones/youtube-music/MusicShell';
 
 export default function YoutubeMusicShellLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-screen flex-col bg-music-hero text-white transition-colors">
-      {children}
-    </div>
+    <MusicProviders>
+      <MusicShell>{children}</MusicShell>
+    </MusicProviders>
   );
 }

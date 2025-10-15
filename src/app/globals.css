@@ -218,4 +218,48 @@
       0 0 20px rgba(255, 76, 96, 0.25),
       0 0 8px rgba(116, 92, 255, 0.2);
   }
+
+  .text-music-primary {
+    color: var(--music-text-primary);
+  }
+
+  .text-music-secondary {
+    color: var(--music-text-secondary);
+  }
+
+  .text-music-muted {
+    color: var(--music-text-muted);
+  }
+
+  .text-music-ghost {
+    color: var(--music-text-ghost);
+  }
+
+  .bg-music-card {
+    background-color: var(--music-card);
+  }
+
+  .bg-music-card-alt {
+    background-color: var(--music-card-alt);
+  }
+
+  .border-music {
+    border-color: var(--music-border);
+  }
+
+  .border-music-strong {
+    border-color: var(--music-border-strong);
+  }
+
+  .ring-music {
+    box-shadow: 0 0 0 1px var(--music-focus-ring);
+  }
+
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
 }
