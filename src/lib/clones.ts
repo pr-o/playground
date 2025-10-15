@@ -12,6 +12,12 @@ export const cloneEntries: CloneEntry[] = [
       'Browse trending films and series powered by the TMDB API, complete with hero banners, carousels, and a personal watch list.',
   },
   {
+    title: 'YouTube Music Clone',
+    href: '/clones/youtube-music',
+    description:
+      'Responsive recreation of the YouTube Music web app with Spotify-powered data, multi-tab navigation, and a rich playback experience.',
+  },
+  {
     title: 'Upbit Dashboard',
     href: '/clones/upbit',
     description:

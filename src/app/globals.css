@@ -119,6 +119,37 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  .music-theme {
+    color-scheme: dark;
+    --music-surface-950: #04030b;
+    --music-surface-900: #050714;
+    --music-surface-850: #0c0f1f;
+    --music-surface-800: #151728;
+    --music-surface-750: #1e2133;
+    --music-card: #1f2236;
+    --music-card-alt: #1a1d2c;
+    --music-border: rgba(255, 255, 255, 0.08);
+    --music-border-strong: rgba(255, 255, 255, 0.16);
+    --music-overlay-strong: rgba(20, 22, 37, 0.72);
+    --music-text-primary: #f8f9ff;
+    --music-text-secondary: rgba(235, 238, 255, 0.68);
+    --music-text-muted: rgba(235, 238, 255, 0.48);
+    --music-text-ghost: rgba(235, 238, 255, 0.32);
+    --music-accent: #ff4c60;
+    --music-accent-soft: rgba(255, 76, 96, 0.24);
+    --music-accent-strong: #ff375f;
+    --music-like: #ff6ea7;
+    --music-queue-badge: #3dd0ff;
+    --music-focus-ring: rgba(255, 76, 96, 0.6);
+    --music-pill-bg: rgba(255, 255, 255, 0.06);
+    --music-pill-bg-hover: rgba(255, 255, 255, 0.14);
+    --music-pill-border: rgba(255, 255, 255, 0.12);
+    --music-glow: rgba(246, 71, 165, 0.36);
+    --music-shadow-elevated: 0 12px 40px rgba(8, 8, 20, 0.45);
+    background-color: var(--music-surface-900);
+    color: var(--music-text-primary);
+  }
 }
 
 @keyframes flash-border {
@@ -153,5 +184,38 @@
 
   .flash-border-bid {
     --flash-border-color: rgba(59, 130, 246, 0.85);
+  }
+
+  .bg-music-hero {
+    background-image:
+      radial-gradient(120% 100% at 20% 20%, rgba(102, 76, 255, 0.32) 0%, transparent 65%),
+      radial-gradient(120% 100% at 80% 0%, rgba(255, 76, 96, 0.35) 0%, transparent 70%),
+      linear-gradient(
+        180deg,
+        rgba(15, 16, 32, 0.95) 0%,
+        rgba(5, 7, 20, 0.94) 70%,
+        rgba(4, 3, 11, 1) 100%
+      );
+  }
+
+  .bg-music-queue {
+    background-image: linear-gradient(
+      180deg,
+      rgba(25, 27, 44, 0.95) 0%,
+      rgba(15, 17, 30, 0.98) 60%,
+      rgba(8, 8, 17, 1) 100%
+    );
+  }
+
+  .music-card-glow {
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.04),
+      0 18px 36px -12px var(--music-glow);
+  }
+
+  .text-glow-music {
+    text-shadow:
+      0 0 20px rgba(255, 76, 96, 0.25),
+      0 0 8px rgba(116, 92, 255, 0.2);
   }
 }

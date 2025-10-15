@@ -1,0 +1,144 @@
+{
+  "featuredPlaylists": {
+    "message": "Featured playlists for demo",
+    "playlists": {
+      "href": "https://api.spotify.com/v1/browse/featured-playlists?country=US",
+      "items": [
+        {
+          "id": "coffeehouse-moments",
+          "name": "Coffeehouse Moments",
+          "description": "Mellow acoustic tracks to ease into the day.",
+          "images": [
+            {
+              "url": "https://images.unsplash.com/photo-1512428559087-560fa5ceab42?auto=format&fit=crop&w=512&q=80",
+              "width": 512,
+              "height": 512
+            }
+          ],
+          "owner": {
+            "id": "spotify",
+            "display_name": "Spotify"
+          },
+          "tracks": {
+            "total": 48
+          }
+        },
+        {
+          "id": "synthwave-run",
+          "name": "Synthwave Run",
+          "description": "Neon soaked beats to keep your momentum going.",
+          "images": [
+            {
+              "url": "https://images.unsplash.com/photo-1487180144351-b8472da7d491?auto=format&fit=crop&w=512&q=80",
+              "width": 512,
+              "height": 512
+            }
+          ],
+          "owner": {
+            "id": "spotify",
+            "display_name": "Spotify"
+          },
+          "tracks": {
+            "total": 60
+          }
+        }
+      ],
+      "limit": 2,
+      "offset": 0,
+      "total": 2
+    }
+  },
+  "categories": {
+    "categories": {
+      "href": "https://api.spotify.com/v1/browse/categories?country=US",
+      "items": [
+        {
+          "id": "chill",
+          "name": "Chill",
+          "icons": [
+            {
+              "url": "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=256&q=80",
+              "width": 256,
+              "height": 256
+            }
+          ]
+        },
+        {
+          "id": "workout",
+          "name": "Workout",
+          "icons": [
+            {
+              "url": "https://images.unsplash.com/photo-1534367507873-d2d7e24c797f?auto=format&fit=crop&w=256&q=80",
+              "width": 256,
+              "height": 256
+            }
+          ]
+        },
+        {
+          "id": "focus",
+          "name": "Focus",
+          "icons": [
+            {
+              "url": "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=256&q=80",
+              "width": 256,
+              "height": 256
+            }
+          ]
+        }
+      ],
+      "limit": 3,
+      "offset": 0,
+      "total": 3
+    }
+  },
+  "newReleases": {
+    "albums": {
+      "href": "https://api.spotify.com/v1/browse/new-releases?country=US",
+      "items": [
+        {
+          "id": "palettes-ep",
+          "name": "Palettes",
+          "album_type": "single",
+          "release_date": "2024-08-16",
+          "total_tracks": 4,
+          "images": [
+            {
+              "url": "https://images.unsplash.com/photo-1464375117522-1311d6a5b81b?auto=format&fit=crop&w=512&q=80",
+              "width": 512,
+              "height": 512
+            }
+          ],
+          "artists": [
+            {
+              "id": "artist-lumina",
+              "name": "Lumina Lines"
+            }
+          ]
+        },
+        {
+          "id": "astral-season",
+          "name": "Astral Season",
+          "album_type": "album",
+          "release_date": "2024-09-06",
+          "total_tracks": 12,
+          "images": [
+            {
+              "url": "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=512&q=80",
+              "width": 512,
+              "height": 512
+            }
+          ],
+          "artists": [
+            {
+              "id": "artist-nova",
+              "name": "Nova Haze"
+            }
+          ]
+        }
+      ],
+      "limit": 2,
+      "offset": 0,
+      "total": 2
+    }
+  }
+}
