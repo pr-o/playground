@@ -1,0 +1,98 @@
+{
+  "newReleases": [
+    {
+      "id": 1,
+      "title": "Neon Horizons",
+      "year": 2024,
+      "genres": ["Electronic"],
+      "styles": ["Synth-pop", "Dream Pop"],
+      "thumb": "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=256&q=80",
+      "artists": [
+        {
+          "id": 101,
+          "name": "Aurora Lines",
+          "resource_url": "https://api.discogs.com/artists/101"
+        }
+      ],
+      "tracklist": [
+        {
+          "position": "A1",
+          "type_": "track",
+          "title": "Skyline",
+          "duration": "03:45"
+        },
+        {
+          "position": "A2",
+          "type_": "track",
+          "title": "Neon Mist",
+          "duration": "04:12"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Analog Dreams",
+      "year": 2023,
+      "genres": ["Electronic"],
+      "styles": ["Downtempo"],
+      "thumb": "https://images.unsplash.com/photo-1464375117522-1311d6a5b81b?auto=format&fit=crop&w=256&q=80",
+      "artists": [
+        {
+          "id": 102,
+          "name": "Midnight Passenger",
+          "resource_url": "https://api.discogs.com/artists/102"
+        }
+      ],
+      "tracklist": [
+        {
+          "position": "A1",
+          "type_": "track",
+          "title": "Sleepless",
+          "duration": "05:21"
+        },
+        {
+          "position": "A2",
+          "type_": "track",
+          "title": "Into the Night",
+          "duration": "04:56"
+        }
+      ]
+    }
+  ],
+  "featuredArtists": [
+    {
+      "id": 101,
+      "name": "Aurora Lines",
+      "thumbnail_url": "https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?auto=format&fit=crop&w=256&q=80",
+      "resource_url": "https://api.discogs.com/artists/101"
+    },
+    {
+      "id": 103,
+      "name": "Echo Shift",
+      "thumbnail_url": "https://images.unsplash.com/photo-1487412912498-0447578fcca8?auto=format&fit=crop&w=256&q=80",
+      "resource_url": "https://api.discogs.com/artists/103"
+    }
+  ],
+  "editorialPlaylists": [
+    {
+      "id": 5001,
+      "title": "City Pop Essentials",
+      "genre": ["Pop"],
+      "style": ["City Pop"],
+      "thumb": "https://images.unsplash.com/photo-1499084732479-de2c02d45fc4?auto=format&fit=crop&w=256&q=80",
+      "resource_url": "https://api.discogs.com/masters/5001",
+      "label": ["Editorial Picks"],
+      "format": ["Compilation"]
+    },
+    {
+      "id": 5002,
+      "title": "Late Night Electronic",
+      "genre": ["Electronic"],
+      "style": ["House", "Ambient"],
+      "thumb": "https://images.unsplash.com/photo-1487180144351-b8472da7d491?auto=format&fit=crop&w=256&q=80",
+      "resource_url": "https://api.discogs.com/masters/5002",
+      "label": ["Editorial Picks"],
+      "format": ["Compilation"]
+    }
+  ]
+}
