@@ -7,6 +7,8 @@ import { MusicQueueDrawer } from '@/components/clones/youtube-music/MusicQueueDr
 import { MusicSidebar } from '@/components/clones/youtube-music/MusicSidebar';
 import { MusicTopBar } from '@/components/clones/youtube-music/MusicTopBar';
 import { MusicToastViewport } from '@/components/clones/youtube-music/MusicToastViewport';
+import { MusicTrackActionSheet } from '@/components/clones/youtube-music/MusicTrackActionSheet';
+import { usePlaybackShortcuts } from '@/hooks/music/use-playback-shortcuts';
 import { useMusicUIStore } from '@/store/music';
 
 type MusicShellProps = {
@@ -15,6 +17,7 @@ type MusicShellProps = {
 
 export function MusicShell({ children }: MusicShellProps) {
   const isQueueOpen = useMusicUIStore((state) => state.isQueueOpen);
+  usePlaybackShortcuts();
 
   return (
     <div className="flex min-h-screen flex-col bg-music-hero text-music-primary transition-colors">
@@ -29,6 +32,7 @@ export function MusicShell({ children }: MusicShellProps) {
       <MusicBottomPlayer />
       <MusicMobileNav />
       <MusicToastViewport />
+      <MusicTrackActionSheet />
     </div>
   );
 }

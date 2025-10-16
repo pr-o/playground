@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import type { MusicPlaybackTrack } from '@/types/playback';
 
 export type PrimaryMusicRoute = 'home' | 'explore' | 'library' | 'search';
 export type LibraryTab = 'playlists' | 'songs' | 'albums' | 'artists';
@@ -26,6 +27,7 @@ export type MusicUIState = {
   highlightedTrackId?: string;
   hoveredTrackId?: string;
   toasts: MusicToast[];
+  trackActionSheetTrack?: MusicPlaybackTrack;
 };
 
 export type MusicUIActions = {
@@ -41,6 +43,7 @@ export type MusicUIActions = {
   setHoveredTrack: (trackId?: string) => void;
   pushToast: (toast: Omit<MusicToast, 'id'> & { id?: string }) => string;
   dismissToast: (id: string) => void;
+  setTrackActionSheetTrack: (track?: MusicPlaybackTrack) => void;
   resetUIState: () => void;
 };
 
@@ -58,6 +61,7 @@ const initialState: MusicUIState = {
   highlightedTrackId: undefined,
   hoveredTrackId: undefined,
   toasts: [],
+  trackActionSheetTrack: undefined,
 };
 
 export const useMusicUIStore = create<MusicUIStore>((set) => ({
@@ -155,6 +159,13 @@ export const useMusicUIStore = create<MusicUIStore>((set) => ({
     set((state) => ({
       ...state,
       toasts: state.toasts.filter((toast) => toast.id !== id),
+    }));
+  },
+
+  setTrackActionSheetTrack: (track) => {
+    set((state) => ({
+      ...state,
+      trackActionSheetTrack: track,
     }));
   },
 

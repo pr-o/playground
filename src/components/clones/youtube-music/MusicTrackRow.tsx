@@ -1,7 +1,8 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { ListPlus, Play, Plus } from 'lucide-react';
+import { ListPlus, MoreVertical, Play, Plus } from 'lucide-react';
 import { formatDurationMs } from '@/lib/format';
 import type { TrackRowData } from '@/types/music';
 import { cn } from '@/lib/utils';
@@ -19,6 +20,11 @@ export function MusicTrackRow({ track, index, className }: MusicTrackRowProps) {
   const addToQueue = useMusicPlaybackStore((state) => state.addToQueue);
   const toggleQueue = useMusicUIStore((state) => state.toggleQueue);
   const pushToast = useMusicUIStore((state) => state.pushToast);
+  const setTrackActionSheetTrack = useMusicUIStore(
+    (state) => state.setTrackActionSheetTrack,
+  );
+  const sidebarDensity = useMusicUIStore((state) => state.sidebarDensity);
+  const [contextMenu, setContextMenu] = useState<null | { x: number; y: number }>(null);
 
   const playbackTrack = trackRowToPlayback(track);
 
@@ -50,12 +56,27 @@ export function MusicTrackRow({ track, index, className }: MusicTrackRowProps) {
     toggleQueue(true);
   };
 
+  const openContextMenu = (event: React.MouseEvent) => {
+    event.preventDefault();
+    setContextMenu({ x: event.clientX, y: event.clientY });
+  };
+
+  const closeContextMenu = () => setContextMenu(null);
+
+  useEffect(() => {
+    if (!contextMenu) return;
+    const handleClick = () => setContextMenu(null);
+    window.addEventListener('click', handleClick);
+    return () => window.removeEventListener('click', handleClick);
+  }, [contextMenu]);
+
   return (
     <div
       className={cn(
         'group relative flex items-center gap-4 rounded-2xl border border-white/5 bg-white/5 px-4 py-3 transition hover:border-white/20 hover:bg-white/10',
         className,
       )}
+      onContextMenu={openContextMenu}
     >
       <button
         type="button"
@@ -112,7 +133,58 @@ export function MusicTrackRow({ track, index, className }: MusicTrackRowProps) {
         >
           <Plus className="h-4 w-4" />
         </button>
+        {sidebarDensity === 'hidden' && (
+          <button
+            type="button"
+            onClick={() => setTrackActionSheetTrack(playbackTrack)}
+            className="rounded-full border border-white/20 p-1.5 text-music-muted transition hover:border-white/40 hover:text-music-primary"
+            aria-label="Track actions"
+          >
+            <MoreVertical className="h-4 w-4" />
+          </button>
+        )}
       </div>
+
+      {contextMenu && sidebarDensity !== 'hidden' && (
+        <div
+          className="fixed z-[9999] min-w-[180px] rounded-xl border border-white/20 bg-music-hero/95 p-2 text-sm text-music-primary shadow-lg backdrop-blur"
+          style={{ top: contextMenu.y, left: contextMenu.x }}
+        >
+          <ContextMenuButton
+            label="Play"
+            onClick={() => {
+              handlePlay();
+              closeContextMenu();
+            }}
+          />
+          <ContextMenuButton
+            label="Play next"
+            onClick={() => {
+              handlePlayNext();
+              closeContextMenu();
+            }}
+          />
+          <ContextMenuButton
+            label="Add to queue"
+            onClick={() => {
+              handleAddToQueue();
+              closeContextMenu();
+            }}
+          />
+        </div>
+      )}
     </div>
+  );
+}
+
+function ContextMenuButton({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex w-full items-center rounded-lg px-3 py-2 text-left text-sm text-music-muted transition hover:bg-white/10 hover:text-music-primary"
+    >
+      {label}
+    </button>
   );
 }
