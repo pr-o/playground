@@ -14,6 +14,8 @@ import {
   cloneGrid,
   createEmptyGrid,
   getMaxTileValue,
+  hasReachedWinningTile,
+  isGameOver,
   seedInitialTiles,
   spawnRandomTile,
 } from '@/lib/game-2048/logic';
@@ -212,13 +214,9 @@ export const useGame2048Store = create<Game2048Store>((set, get) => ({
     const score = current.score + moveResult.scoreGained;
     const bestScore = Math.max(current.bestScore, score);
     const moveCount = current.moveCount + 1;
-    const maxTile = Math.max(
-      current.maxTile,
-      moveResult.maxTile,
-      spawnedTile?.value ?? 0,
-    );
-    const hasWon = current.hasWon || maxTile >= WINNING_VALUE;
-    const hasMoves = canMove(gridWithSpawn);
+    const maxTile = Math.max(current.maxTile, getMaxTileValue(gridWithSpawn));
+    const hasWon = current.hasWon || hasReachedWinningTile(gridWithSpawn);
+    const hasMoves = !isGameOver(gridWithSpawn);
 
     set(() => ({
       ...current,
@@ -249,7 +247,7 @@ export const useGame2048Store = create<Game2048Store>((set, get) => ({
     const previousSnapshot = current.history[current.history.length - 1];
     const nextHistory = current.history.slice(0, -1);
     const restoredGrid = cloneGrid(previousSnapshot.grid);
-    const hasMoves = canMove(restoredGrid);
+    const hasMoves = !isGameOver(restoredGrid);
     const maxTile = Math.max(previousSnapshot.maxTile, getMaxTileValue(restoredGrid));
 
     set(() => ({
@@ -276,7 +274,7 @@ export const useGame2048Store = create<Game2048Store>((set, get) => ({
 
   hydrate: (snapshot) => {
     const merged = mergeState(snapshot);
-    const hasMoves = canMove(merged.grid);
+    const hasMoves = !isGameOver(merged.grid);
     set(() => ({
       ...merged,
       hasMoves,

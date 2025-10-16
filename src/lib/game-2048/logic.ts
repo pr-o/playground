@@ -1,4 +1,9 @@
-import { BOARD_SIZE, INITIAL_TILE_COUNT, SPAWN_PROBABILITY } from './constants';
+import {
+  BOARD_SIZE,
+  INITIAL_TILE_COUNT,
+  SPAWN_PROBABILITY,
+  WINNING_VALUE,
+} from './constants';
 import { createTileId } from './ids';
 import type { Cell, Grid, MoveDirection } from './types';
 
@@ -98,13 +103,115 @@ export type MoveOperationResult = {
   maxTile: number;
 };
 
+const VECTORS: Record<MoveDirection, [number, number]> = {
+  up: [-1, 0],
+  down: [1, 0],
+  left: [0, -1],
+  right: [0, 1],
+};
+
+const withinBounds = (row: number, column: number) =>
+  row >= 0 && row < BOARD_SIZE && column >= 0 && column < BOARD_SIZE;
+
+const buildTraversals = (direction: MoveDirection) => {
+  const vector = VECTORS[direction];
+  const rows = Array.from({ length: BOARD_SIZE }, (_, index) => index);
+  const columns = Array.from({ length: BOARD_SIZE }, (_, index) => index);
+
+  if (vector[0] === 1) {
+    rows.reverse();
+  }
+  if (vector[1] === 1) {
+    columns.reverse();
+  }
+
+  return { rows, columns, vector };
+};
+
 export const applyMove = (grid: Grid, direction: MoveDirection): MoveOperationResult => {
-  void direction;
+  const { rows, columns, vector } = buildTraversals(direction);
+  const [deltaRow, deltaColumn] = vector;
+  const nextGrid = createEmptyGrid();
+
+  let moved = false;
+  let scoreGained = 0;
+  let maxTile = 0;
+
+  const recordMax = (value: number) => {
+    if (value > maxTile) {
+      maxTile = value;
+    }
+  };
+
+  for (const rowIndex of rows) {
+    for (const columnIndex of columns) {
+      const cell = grid[rowIndex]?.[columnIndex];
+      if (!cell) continue;
+
+      let targetRow = rowIndex;
+      let targetColumn = columnIndex;
+
+      let nextRow = targetRow + deltaRow;
+      let nextColumn = targetColumn + deltaColumn;
+
+      while (
+        withinBounds(nextRow, nextColumn) &&
+        nextGrid[nextRow]?.[nextColumn] === null
+      ) {
+        targetRow = nextRow;
+        targetColumn = nextColumn;
+        nextRow += deltaRow;
+        nextColumn += deltaColumn;
+      }
+
+      if (
+        withinBounds(nextRow, nextColumn) &&
+        nextGrid[nextRow]?.[nextColumn] &&
+        nextGrid[nextRow]?.[nextColumn]?.value === cell.value &&
+        nextGrid[nextRow]?.[nextColumn]?.mergedFrom === null
+      ) {
+        const base = nextGrid[nextRow][nextColumn] as Cell;
+        const mergedValue = base.value + cell.value;
+        const mergedCell: Cell = {
+          id: createTileId(),
+          value: mergedValue,
+          mergedFrom: [base.id, cell.id],
+        };
+
+        nextGrid[nextRow][nextColumn] = mergedCell;
+        scoreGained += mergedValue;
+        recordMax(mergedValue);
+        moved = true;
+      } else {
+        const destinationCell: Cell = {
+          id: cell.id,
+          value: cell.value,
+          mergedFrom: null,
+        };
+
+        nextGrid[targetRow][targetColumn] = destinationCell;
+        recordMax(destinationCell.value);
+        if (targetRow !== rowIndex || targetColumn !== columnIndex) {
+          moved = true;
+        }
+      }
+    }
+  }
+
+  if (!moved) {
+    return {
+      grid: cloneGrid(grid),
+      moved: false,
+      scoreGained: 0,
+      maxTile: getMaxTileValue(grid),
+    };
+  }
+
   return {
-    grid: cloneGrid(grid),
-    moved: false,
-    scoreGained: 0,
-    maxTile: getMaxTileValue(grid),
+    grid: nextGrid,
+    moved: true,
+    scoreGained,
+    maxTile: maxTile || getMaxTileValue(nextGrid),
   };
 };
 
@@ -129,3 +236,11 @@ export const canMove = (grid: Grid): boolean => {
 
   return false;
 };
+
+export const hasTileWithValue = (grid: Grid, target: number): boolean =>
+  grid.some((row) => row.some((cell) => cell?.value === target));
+
+export const hasReachedWinningTile = (grid: Grid, winningValue = WINNING_VALUE) =>
+  grid.some((row) => row.some((cell) => (cell?.value ?? 0) >= winningValue));
+
+export const isGameOver = (grid: Grid): boolean => !canMove(grid);
