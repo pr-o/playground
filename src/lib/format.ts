@@ -38,3 +38,29 @@ export function formatDateLabel(dateIso: string) {
     hour12: false,
   }).format(new Date(dateIso));
 }
+
+export function formatDurationMs(durationMs: number) {
+  const totalSeconds = Math.floor(durationMs / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
+export function formatPlayCount(count: number) {
+  if (count >= 1_000_000) {
+    return `${(count / 1_000_000).toFixed(1)}M`;
+  }
+  if (count >= 1_000) {
+    return `${(count / 1_000).toFixed(1)}K`;
+  }
+  return formatNumber(count, { maximumFractionDigits: 0 });
+}
+
+export function formatRelativeDate(dateIso: string) {
+  const date = new Date(dateIso);
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(date);
+}

@@ -12,6 +12,12 @@ export const cloneEntries: CloneEntry[] = [
       'Browse trending films and series powered by the TMDB API, complete with hero banners, carousels, and a personal watch list.',
   },
   {
+    title: 'YouTube Music Clone',
+    href: '/clones/youtube-music',
+    description:
+      'Responsive recreation of the YouTube Music web app with Spotify-powered data, multi-tab navigation, and a rich playback experience.',
+  },
+  {
     title: 'Upbit Dashboard',
     href: '/clones/upbit',
     description:
@@ -22,5 +28,11 @@ export const cloneEntries: CloneEntry[] = [
     href: '/clones/notion',
     description:
       'A local-first documents workspace with block editing, inline formatting, and persistence in the browser.',
+  },
+  {
+    title: 'Excalidraw Clone',
+    href: '/clones/excalidraw',
+    description:
+      'Infinite canvas whiteboard with Excalidraw-inspired layout, tools, and drawing surface.',
   },
 ];
