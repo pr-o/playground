@@ -14,6 +14,7 @@ import type {
   MusicHomeData,
   MusicLibraryData,
   MusicResult,
+  TrackRowData,
 } from '@/types/music';
 import type {
   DiscogsMasterRelease,
@@ -143,6 +144,28 @@ export const getMusicHomeData = cache(async (): Promise<MusicResult<MusicHomeDat
       });
     }
 
+    const quickPickAlbums = genreResults
+      .flat()
+      .slice(0, 6)
+      .map(mapSearchResultToAlbumCard);
+
+    if (quickPickAlbums.length) {
+      sections.push({
+        kind: 'quick-picks',
+        title: 'Quick picks for you',
+        items: quickPickAlbums,
+      });
+    }
+
+    const mixCards = compilationResults.slice(0, 6).map(mapSearchResultToPlaylistCard);
+    if (mixCards.length) {
+      sections.push({
+        kind: 'mixes',
+        title: 'Your Discogs mixes',
+        items: mixCards,
+      });
+    }
+
     if (compilationResults.length) {
       sections.push({
         kind: 'featured-playlists',
@@ -179,10 +202,21 @@ export const getMusicExploreData = cache(
   async (): Promise<MusicResult<MusicExploreData>> => {
     return withResult(async () => {
       const genrePromises = EXPLORE_GENRES.map((genre) => fetchGenreReleases(genre, 16));
-      const [genreReleases, trendingReleases] = await Promise.all([
-        Promise.all(genrePromises),
-        fetchGenreReleases('Electronic', 8),
-      ]);
+      const [genreReleases, trendingReleases, singlesResponse, popularArtists] =
+        await Promise.all([
+          Promise.all(genrePromises),
+          fetchGenreReleases('Electronic', 8),
+          fetchDiscogs<DiscogsSearchResponse>('/database/search', {
+            searchParams: {
+              type: 'release',
+              format: 'Single',
+              per_page: 12,
+              sort: 'year',
+              sort_order: 'desc',
+            },
+          }),
+          fetchPopularArtists(8),
+        ]);
 
       const topReleaseResults = trendingReleases
         .filter((result) => result.type === 'release')
@@ -202,17 +236,7 @@ export const getMusicExploreData = cache(
           return firstTrack ? [mapTrackToRow(firstTrack, release)] : [];
         });
 
-      const sections: MusicExploreData['sections'] = [
-        {
-          kind: 'categories',
-          title: 'Explore genres',
-          items: EXPLORE_GENRES.map((genre) => ({
-            id: genre.toLowerCase(),
-            name: genre,
-            iconUrl: undefined,
-          })),
-        },
-      ];
+      const sections: MusicExploreData['sections'] = [];
 
       genreReleases.forEach((results, index) => {
         if (!results.length) return;
@@ -223,13 +247,53 @@ export const getMusicExploreData = cache(
         });
       });
 
+      const singleResults = singlesResponse.results.filter(
+        (result) => result.type === 'release',
+      );
+      if (singleResults.length) {
+        sections.push({
+          kind: 'new-releases',
+          title: 'New singles & EPs',
+          items: singleResults.map(mapSearchResultToAlbumCard),
+        });
+      }
+
       if (trackRows.length) {
         sections.push({
-          kind: 'top-tracks',
-          title: 'Notable tracks',
+          kind: 'chart-tracks',
+          title: 'Top tracks - Global',
+          region: 'Global',
           items: trackRows,
         });
       }
+
+      if (popularArtists.length) {
+        const chartArtists = popularArtists.map((result) =>
+          mapArtistSummary({
+            id: Number.parseInt(String(result.id), 10),
+            name: result.title,
+            resource_url: result.resource_url,
+            thumbnail_url: result.thumb,
+          }),
+        );
+
+        sections.push({
+          kind: 'chart-artists',
+          title: 'Top artists - Global',
+          region: 'Global',
+          items: chartArtists,
+        });
+      }
+
+      sections.push({
+        kind: 'categories',
+        title: 'Moods & genres',
+        items: EXPLORE_GENRES.map((genre) => ({
+          id: genre.toLowerCase(),
+          name: genre,
+          iconUrl: undefined,
+        })),
+      });
 
       return { sections };
     });
@@ -238,8 +302,14 @@ export const getMusicExploreData = cache(
 
 export const getMusicLibraryData = cache(
   async (): Promise<MusicResult<MusicLibraryData>> => {
+    const mock = buildLibraryDataFromMock();
+
+    if (!hasDiscogsAuth()) {
+      return { ok: true, data: mock };
+    }
+
     return withResult(async () => {
-      const [compilations, albums] = await Promise.all([
+      const [compilations, albums, trackReleases, popularArtists] = await Promise.all([
         fetchCompilationReleases(12),
         fetchDiscogs<DiscogsSearchResponse>('/database/search', {
           searchParams: {
@@ -250,7 +320,37 @@ export const getMusicLibraryData = cache(
             sort_order: 'desc',
           },
         }),
+        fetchGenreReleases('Electronic', 6),
+        fetchPopularArtists(8),
       ]);
+
+      const trackReleaseDetails = await Promise.all(
+        trackReleases
+          .slice(0, 4)
+          .map((result) => fetchReleaseById(result.id, { includeTracklist: true })),
+      );
+
+      const trackCollection = trackReleaseDetails
+        .filter((release): release is DiscogsRelease =>
+          Boolean(release && release.tracklist && release.tracklist.length),
+        )
+        .flatMap(
+          (release) =>
+            release.tracklist
+              ?.filter((track) => track.type_ === 'track')
+              .slice(0, 2)
+              .map((track) => mapTrackToRow(track, release)) ?? [],
+        )
+        .slice(0, 10);
+
+      const artistCollection = popularArtists.map((result) =>
+        mapArtistSummary({
+          id: Number.parseInt(String(result.id), 10),
+          name: result.title,
+          resource_url: result.resource_url,
+          thumbnail_url: result.thumb,
+        }),
+      );
 
       return {
         collections: [
@@ -264,11 +364,51 @@ export const getMusicLibraryData = cache(
               .filter((result) => result.type === 'release')
               .map(mapSearchResultToAlbumCard),
           },
+          {
+            kind: 'tracks',
+            items: trackCollection,
+          },
+          {
+            kind: 'artists',
+            items: artistCollection,
+          },
         ],
       };
-    });
+    }, mock);
   },
 );
+
+function buildLibraryDataFromMock(): MusicLibraryData {
+  const mockTracks = discogsHomeMock.newReleases
+    .flatMap((release) =>
+      release.tracklist
+        ?.filter((track) => track.type_ === 'track')
+        .slice(0, 1)
+        .map((track) => mapTrackToRow(track, release)),
+    )
+    .filter(Boolean) as TrackRowData[];
+
+  return {
+    collections: [
+      {
+        kind: 'playlists',
+        items: discogsHomeMock.editorialPlaylists.map(mapSearchResultToPlaylistCard),
+      },
+      {
+        kind: 'albums',
+        items: discogsHomeMock.newReleases.map(mapReleaseToCard),
+      },
+      {
+        kind: 'tracks',
+        items: mockTracks,
+      },
+      {
+        kind: 'artists',
+        items: discogsHomeMock.featuredArtists.map((artist) => mapArtistSummary(artist)),
+      },
+    ],
+  };
+}
 
 function buildHomeDataFromMock(): MusicHomeData {
   return {
@@ -278,6 +418,18 @@ function buildHomeDataFromMock(): MusicHomeData {
         kind: 'new-releases',
         title: 'Latest releases',
         items: discogsHomeMock.newReleases.map(mapReleaseToCard),
+      },
+      {
+        kind: 'quick-picks',
+        title: 'Quick picks for you',
+        items: discogsHomeMock.newReleases.slice(0, 6).map(mapReleaseToCard),
+      },
+      {
+        kind: 'mixes',
+        title: 'Your Discogs mixes',
+        items: discogsHomeMock.editorialPlaylists
+          .slice(0, 6)
+          .map(mapSearchResultToPlaylistCard),
       },
       {
         kind: 'featured-playlists',

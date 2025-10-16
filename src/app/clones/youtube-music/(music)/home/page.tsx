@@ -3,7 +3,9 @@ import { ContentSection } from '@/components/clones/youtube-music/ContentSection
 import { HorizontalScroller } from '@/components/clones/youtube-music/HorizontalScroller';
 import {
   MusicArtistCard,
+  MusicMixCard,
   MusicPlaylistCard,
+  MusicQuickPickCard,
   MusicReleaseCard,
 } from '@/components/clones/youtube-music/MusicCards';
 
@@ -76,6 +78,26 @@ export default async function YoutubeMusicHomePage() {
                     <MusicArtistCard key={artist.id} artist={artist} />
                   ))}
                 </HorizontalScroller>
+              </ContentSection>
+            );
+          case 'mixes':
+            return (
+              <ContentSection key={section.title} title={section.title}>
+                <HorizontalScroller>
+                  {section.items.map((item) => (
+                    <MusicMixCard key={item.id} playlist={item} />
+                  ))}
+                </HorizontalScroller>
+              </ContentSection>
+            );
+          case 'quick-picks':
+            return (
+              <ContentSection key={section.title} title={section.title}>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {section.items.map((item) => (
+                    <MusicQuickPickCard key={item.id} release={item} />
+                  ))}
+                </div>
               </ContentSection>
             );
           default:

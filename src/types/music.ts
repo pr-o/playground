@@ -76,6 +76,16 @@ export type MusicHomeSection =
       kind: 'new-releases';
       title: string;
       items: AlbumCardData[];
+    }
+  | {
+      kind: 'mixes';
+      title: string;
+      items: PlaylistCardData[];
+    }
+  | {
+      kind: 'quick-picks';
+      title: string;
+      items: AlbumCardData[];
     };
 
 export type MusicHomeData = {
@@ -99,9 +109,16 @@ export type MusicExploreSection =
       items: AlbumCardData[];
     }
   | {
-      kind: 'top-tracks';
+      kind: 'chart-tracks';
       title: string;
       items: TrackRowData[];
+      region?: string;
+    }
+  | {
+      kind: 'chart-artists';
+      title: string;
+      items: ArtistSummaryData[];
+      region?: string;
     };
 
 export type MusicExploreData = {
@@ -120,6 +137,10 @@ export type MusicLibraryCollection =
   | {
       kind: 'tracks';
       items: TrackRowData[];
+    }
+  | {
+      kind: 'artists';
+      items: ArtistSummaryData[];
     };
 
 export type MusicLibraryData = {

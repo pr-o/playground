@@ -101,6 +101,93 @@ export function MusicPlaylistCard({ playlist, href, className }: MusicPlaylistCa
   );
 }
 
+type MusicMixCardProps = MusicPlaylistCardProps;
+
+export function MusicMixCard({ playlist, href, className }: MusicMixCardProps) {
+  const targetHref = href ?? `/clones/youtube-music/playlist/${playlist.id}`;
+
+  return (
+    <Link
+      href={targetHref}
+      className={cn(
+        'group flex w-48 flex-col gap-3 rounded-3xl border border-white/5 bg-gradient-to-br from-white/10 via-white/5 to-transparent p-4 text-music-muted transition hover:border-white/20 hover:from-white/20 hover:via-white/10',
+        className,
+      )}
+    >
+      <div className="relative aspect-square w-full overflow-hidden rounded-3xl bg-music-card-alt">
+        <Image
+          src={playlist.imageUrl ?? FALLBACK_ART}
+          alt={playlist.name}
+          fill
+          className="object-cover transition duration-500 group-hover:scale-105"
+          sizes="192px"
+        />
+        <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.3em] text-black shadow">
+          Mix
+        </span>
+      </div>
+      <div className="space-y-2">
+        <h3 className="line-clamp-2 text-sm font-semibold text-music-primary">
+          {playlist.name}
+        </h3>
+        {playlist.description && (
+          <p className="line-clamp-2 text-xs text-music-muted">{playlist.description}</p>
+        )}
+        <p className="text-xs uppercase tracking-[0.25em] text-music-ghost">
+          {playlist.ownerName ?? 'Discogs Curated'}
+        </p>
+      </div>
+    </Link>
+  );
+}
+
+type MusicQuickPickCardProps = {
+  release: AlbumCardData;
+  href?: string;
+  className?: string;
+};
+
+export function MusicQuickPickCard({
+  release,
+  href,
+  className,
+}: MusicQuickPickCardProps) {
+  const targetHref = href ?? `/clones/youtube-music/album/${release.id}`;
+
+  return (
+    <Link
+      href={targetHref}
+      className={cn(
+        'group flex items-center gap-3 rounded-2xl border border-white/5 bg-white/5 px-4 py-3 transition hover:border-white/20 hover:bg-white/10',
+        className,
+      )}
+    >
+      <div className="relative h-12 w-12 overflow-hidden rounded-xl bg-music-card-alt">
+        <Image
+          src={release.imageUrl ?? FALLBACK_ART}
+          alt={release.name}
+          fill
+          className="object-cover transition duration-500 group-hover:scale-110"
+          sizes="64px"
+        />
+      </div>
+      <div className="min-w-0 flex-1 text-left">
+        <p className="truncate text-sm font-semibold text-music-primary">
+          {release.name}
+        </p>
+        <p className="truncate text-xs text-music-muted">
+          {release.primaryArtist ?? 'Various artists'}
+        </p>
+      </div>
+      {release.releaseDate && (
+        <span className="text-[10px] uppercase tracking-[0.3em] text-music-ghost">
+          {release.releaseDate}
+        </span>
+      )}
+    </Link>
+  );
+}
+
 export function MusicArtistCard({ artist, href, className }: MusicArtistCardProps) {
   const targetHref = href ?? `/clones/youtube-music/artist/${artist.id}`;
 
