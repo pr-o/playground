@@ -1,7 +1,7 @@
 'use client';
 
 import { AnimatePresence, motion } from 'motion/react';
-import { useEffect, useMemo, useRef, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { BOARD_SIZE } from '@/lib/game-2048';
 import type { MoveDirection } from '@/lib/game-2048';
 import { useGame2048Store } from '@/store/game-2048';
@@ -12,6 +12,8 @@ const integerFormatter = new Intl.NumberFormat('en-US', {
   maximumFractionDigits: 0,
 });
 
+const SPAWN_DELAY_MS = 160;
+
 const ScoreCard = ({ label, value }: { label: string; value: number }) => (
   <div className="flex w-full min-w-[120px] flex-col rounded-2xl bg-gradient-to-br from-muted to-muted/60 px-4 py-3 text-left shadow-sm">
     <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
@@ -20,10 +22,10 @@ const ScoreCard = ({ label, value }: { label: string; value: number }) => (
     <AnimatePresence mode="popLayout" initial={false}>
       <motion.span
         key={value}
-        initial={{ y: 12, opacity: 0 }}
+        initial={{ y: 8, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        exit={{ y: -12, opacity: 0 }}
-        transition={{ duration: 0.18 }}
+        exit={{ y: -8, opacity: 0 }}
+        transition={{ duration: 0.12 }}
         className="mt-1 text-2xl font-semibold text-foreground tabular-nums"
       >
         {integerFormatter.format(value)}
@@ -179,19 +181,55 @@ export function Game2048() {
     return items;
   }, [grid]);
 
-  const newlySpawnedTileIds = useMemo(() => {
-    const previousIds = previousTileIdsRef.current;
-    const newIds = new Set<string>();
-    tiles.forEach((tile) => {
-      if (!previousIds.has(tile.id)) {
-        newIds.add(tile.id);
-      }
-    });
-    return newIds;
-  }, [tiles]);
+  const [spawnReadyIds, setSpawnReadyIds] = useState<string[]>(() =>
+    tiles.map((tile) => tile.id),
+  );
+  const [activeSpawnIds, setActiveSpawnIds] = useState<string[]>([]);
+  const spawnTimersRef = useRef<number[]>([]);
+  const spawnReadySet = useMemo(() => new Set(spawnReadyIds), [spawnReadyIds]);
+  const activeSpawnSet = useMemo(() => new Set(activeSpawnIds), [activeSpawnIds]);
 
   useEffect(() => {
-    previousTileIdsRef.current = new Set(tiles.map((tile) => tile.id));
+    spawnTimersRef.current.forEach((timer) => window.clearTimeout(timer));
+    spawnTimersRef.current = [];
+
+    const currentIds = new Set<string>();
+    tiles.forEach((tile) => currentIds.add(tile.id));
+
+    setSpawnReadyIds((prev) => prev.filter((id) => currentIds.has(id)));
+    setActiveSpawnIds((prev) => prev.filter((id) => currentIds.has(id)));
+
+    const previousIds = previousTileIdsRef.current;
+
+    if (previousIds.size === 0 && currentIds.size > 0) {
+      setSpawnReadyIds(Array.from(currentIds));
+      previousTileIdsRef.current = currentIds;
+      return () => undefined;
+    }
+
+    const freshIds: string[] = [];
+    tiles.forEach((tile) => {
+      if (!previousIds.has(tile.id)) {
+        freshIds.push(tile.id);
+      }
+    });
+
+    if (freshIds.length) {
+      freshIds.forEach((id) => {
+        const timer = window.setTimeout(() => {
+          setSpawnReadyIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
+          setActiveSpawnIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
+        }, SPAWN_DELAY_MS);
+        spawnTimersRef.current.push(timer);
+      });
+    }
+
+    previousTileIdsRef.current = currentIds;
+
+    return () => {
+      spawnTimersRef.current.forEach((timer) => window.clearTimeout(timer));
+      spawnTimersRef.current = [];
+    };
   }, [tiles]);
 
   useEffect(() => {
@@ -282,26 +320,45 @@ export function Game2048() {
               <AnimatePresence>
                 {tiles.map((tile) => {
                   const isMerged = Boolean(tile.mergedFrom);
-                  const isNew = newlySpawnedTileIds.has(tile.id);
+                  const isNew = activeSpawnSet.has(tile.id);
+                  if (!spawnReadySet.has(tile.id)) {
+                    return null;
+                  }
                   return (
                     <motion.div
                       key={tile.id}
                       layout
                       layoutId={tile.id}
-                      initial={{ scale: isMerged ? 1.12 : 0.6, opacity: 0 }}
+                      initial={
+                        isMerged
+                          ? { scale: 1.1, opacity: 0.95 }
+                          : isNew
+                            ? { scale: 0.4, opacity: 0 }
+                            : { scale: 0.7, opacity: 0.6 }
+                      }
                       animate={{ scale: 1, opacity: 1 }}
                       exit={{ scale: 0.5, opacity: 0 }}
                       transition={{
                         scale: isMerged
-                          ? { type: 'spring', stiffness: 620, damping: 24, delay: 0 }
+                          ? { type: 'spring', stiffness: 720, damping: 22 }
                           : {
                               type: 'spring',
-                              stiffness: 420,
-                              damping: 30,
-                              mass: 0.6,
-                              delay: isNew ? 0.08 : 0,
+                              stiffness: isNew ? 640 : 520,
+                              damping: isNew ? 18 : 26,
+                              mass: 0.4,
+                              delay: isNew ? 0.04 : 0,
                             },
-                        opacity: { duration: 0.12, delay: isNew ? 0.08 : 0 },
+                        opacity: {
+                          duration: isNew ? 0.08 : 0.06,
+                          delay: isNew ? 0.04 : 0,
+                        },
+                      }}
+                      onAnimationComplete={() => {
+                        if (isNew) {
+                          setActiveSpawnIds((prev) =>
+                            prev.filter((id) => id !== tile.id),
+                          );
+                        }
                       }}
                       className={`pointer-events-none flex h-full w-full items-center justify-center rounded-2xl font-semibold shadow-lg ${getTileClasses(tile.value)} ${getTileFontSize(tile.value)}`}
                       style={{
