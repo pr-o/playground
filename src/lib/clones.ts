@@ -35,4 +35,10 @@ export const cloneEntries: CloneEntry[] = [
     description:
       'Infinite canvas whiteboard with Excalidraw-inspired layout, tools, and drawing surface.',
   },
+  {
+    title: '2048 Remix',
+    href: '/2048',
+    description:
+      'A modern take on 2048 with persistent state, upcoming animations, and achievement tracking.',
+  },
 ];
