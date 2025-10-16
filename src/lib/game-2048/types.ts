@@ -45,6 +45,7 @@ export interface GameState {
   hasWon: boolean;
   isOver: boolean;
   moveCount: number;
+  maxTile: number;
   metrics: GameMetrics;
   achievements: Achievement[];
   history: GameSnapshot[];
