@@ -5,6 +5,7 @@ import { discogsHomeMock } from '@/lib/mock-data/discogs';
 import {
   mapArtistSummary,
   mapReleaseToCard,
+  mapReleaseToHero,
   mapSearchResultToAlbumCard,
   mapSearchResultToPlaylistCard,
   mapTrackToRow,
@@ -15,6 +16,12 @@ import type {
   MusicLibraryData,
   MusicResult,
   TrackRowData,
+  MusicAlbumDetail,
+  MusicPlaylistDetail,
+  MusicSearchGroup,
+  MusicSearchResult,
+  MusicSearchSuggestion,
+  MusicTopResult,
 } from '@/types/music';
 import type {
   DiscogsMasterRelease,
@@ -111,6 +118,27 @@ async function fetchPopularArtists(limit = 6) {
     },
   });
   return response.results.filter((result) => result.type === 'artist');
+}
+
+function deriveHeroColor(
+  release?: Pick<DiscogsRelease, 'genres'> | { genres?: string[] } | null,
+): string | undefined {
+  const genre = release?.genres?.[0]?.toLowerCase();
+  switch (genre) {
+    case 'electronic':
+      return 'rgba(138, 79, 255, 0.65)';
+    case 'jazz':
+      return 'rgba(45, 156, 219, 0.6)';
+    case 'hip hop':
+    case 'hip-hop':
+      return 'rgba(242, 153, 74, 0.6)';
+    case 'rock':
+      return 'rgba(235, 87, 87, 0.6)';
+    case 'pop':
+      return 'rgba(255, 87, 161, 0.6)';
+    default:
+      return release?.genres?.length ? 'rgba(94, 114, 228, 0.6)' : undefined;
+  }
 }
 
 export const getMusicHomeData = cache(async (): Promise<MusicResult<MusicHomeData>> => {
@@ -300,6 +328,286 @@ export const getMusicExploreData = cache(
   },
 );
 
+export const getMusicAlbumDetail = cache(
+  async (id: string): Promise<MusicResult<MusicAlbumDetail>> => {
+    const fallback = buildAlbumDetailFromMock(id);
+
+    if (!id) {
+      return {
+        ok: false,
+        error: 'Missing album identifier',
+      };
+    }
+
+    return withResult(async () => {
+      const release = await fetchReleaseById(id, { includeTracklist: true });
+      if (!release) {
+        throw new Error(`Unable to load release ${id}`);
+      }
+
+      const hero = mapReleaseToHero(release, {
+        dominantColor: deriveHeroColor(release),
+      });
+      const tracks =
+        release.tracklist
+          ?.filter((track) => track.type_ === 'track')
+          .map((track) => mapTrackToRow(track, release)) ?? [];
+
+      const relatedGenre = release.genres?.[0];
+      let related: MusicAlbumDetail['related'] = [];
+      if (relatedGenre) {
+        const relatedResults = await fetchGenreReleases(relatedGenre, 8);
+        related = relatedResults
+          .filter((result) => String(result.id) !== String(release.id))
+          .map(mapSearchResultToAlbumCard);
+      }
+
+      return {
+        hero,
+        tracks,
+        related,
+      };
+    }, fallback);
+  },
+);
+
+export const getMusicPlaylistDetail = cache(
+  async (id: string): Promise<MusicResult<MusicPlaylistDetail>> => {
+    const fallback = buildPlaylistDetailFromMock(id);
+
+    if (!id) {
+      return {
+        ok: false,
+        error: 'Missing playlist identifier',
+      };
+    }
+
+    return withResult(async () => {
+      const release = await fetchReleaseById(id, { includeTracklist: true });
+      if (!release) {
+        throw new Error(`Unable to load playlist ${id}`);
+      }
+
+      const hero = mapReleaseToHero(release, {
+        dominantColor: deriveHeroColor(release),
+      });
+      const tracks =
+        release.tracklist
+          ?.filter((track) => track.type_ === 'track')
+          .map((track) => mapTrackToRow(track, release)) ?? [];
+
+      const relatedResults = await fetchCompilationReleases(12);
+      const related = relatedResults
+        .filter((result) => String(result.id) !== String(release.id))
+        .map(mapSearchResultToPlaylistCard);
+
+      return {
+        hero,
+        tracks,
+        related,
+      };
+    }, fallback);
+  },
+);
+
+export async function searchMusicCatalog(
+  query: string,
+): Promise<MusicResult<MusicSearchResult>> {
+  const trimmed = query.trim();
+  if (!trimmed) {
+    return {
+      ok: true,
+      data: { query: '', groups: [] },
+    };
+  }
+
+  const fallback = buildSearchResultFromMock(trimmed);
+
+  return withResult(async () => {
+    const [releaseResponse, artistResponse] = await Promise.all([
+      fetchDiscogs<DiscogsSearchResponse>('/database/search', {
+        searchParams: {
+          q: trimmed,
+          type: 'release',
+          per_page: 15,
+        },
+      }),
+      fetchDiscogs<DiscogsSearchResponse>('/database/search', {
+        searchParams: {
+          q: trimmed,
+          type: 'artist',
+          per_page: 10,
+        },
+      }),
+    ]);
+
+    const releaseResults = releaseResponse.results.filter(
+      (result) => result.type === 'release',
+    );
+    const albumResults = releaseResults.filter((result) =>
+      result.format?.some((format) => /album/i.test(format)),
+    );
+    const playlistResults = releaseResults.filter((result) =>
+      result.format?.some((format) => /compilation|mix/i.test(format)),
+    );
+
+    const albumItems = albumResults.slice(0, 6).map(mapSearchResultToAlbumCard);
+    const playlistItems = playlistResults.slice(0, 6).map(mapSearchResultToPlaylistCard);
+
+    const songReleaseDetails = await Promise.all(
+      releaseResults
+        .slice(0, 3)
+        .map((result) => fetchReleaseById(result.id, { includeTracklist: true })),
+    );
+    const songItems = songReleaseDetails
+      .filter((release): release is DiscogsRelease =>
+        Boolean(release && release.tracklist && release.tracklist.length),
+      )
+      .flatMap(
+        (release) =>
+          release.tracklist
+            ?.filter((track) => track.type_ === 'track')
+            .slice(0, 4)
+            .map((track) => mapTrackToRow(track, release)) ?? [],
+      )
+      .slice(0, 10);
+
+    const artistItems = artistResponse.results
+      .filter((result) => result.type === 'artist')
+      .slice(0, 6)
+      .map((result) =>
+        mapArtistSummary({
+          id: Number.parseInt(String(result.id), 10),
+          name: result.title,
+          resource_url: result.resource_url,
+          thumbnail_url: result.thumb,
+        }),
+      );
+
+    const groups: MusicSearchGroup[] = [];
+    if (songItems.length) {
+      groups.push({
+        kind: 'songs',
+        title: 'Songs',
+        items: songItems,
+        total: songItems.length,
+      });
+    }
+    if (albumItems.length) {
+      groups.push({
+        kind: 'albums',
+        title: 'Albums',
+        items: albumItems,
+        total: albumResults.length,
+      });
+    }
+    if (playlistItems.length) {
+      groups.push({
+        kind: 'playlists',
+        title: 'Playlists',
+        items: playlistItems,
+        total: playlistResults.length,
+      });
+    }
+    if (artistItems.length) {
+      groups.push({
+        kind: 'artists',
+        title: 'Artists',
+        items: artistItems,
+        total: artistResponse.results.length,
+      });
+    }
+
+    let topResult: MusicTopResult | undefined;
+    if (albumItems[0]) {
+      topResult = { kind: 'album', item: albumItems[0] };
+    } else if (artistItems[0]) {
+      topResult = { kind: 'artist', item: artistItems[0] };
+    } else if (playlistItems[0]) {
+      topResult = { kind: 'playlist', item: playlistItems[0] };
+    } else if (songItems[0]) {
+      topResult = { kind: 'song', item: songItems[0] };
+    }
+
+    return {
+      query: trimmed,
+      topResult,
+      groups,
+    };
+  }, fallback);
+}
+
+export async function getMusicSearchSuggestions(
+  query: string,
+): Promise<MusicSearchSuggestion[]> {
+  const trimmed = query.trim();
+  if (!trimmed) return [];
+
+  if (!hasDiscogsAuth()) {
+    return buildSearchSuggestionsFromMock(trimmed);
+  }
+
+  try {
+    const [releaseResponse, artistResponse] = await Promise.all([
+      fetchDiscogs<DiscogsSearchResponse>('/database/search', {
+        searchParams: {
+          q: trimmed,
+          type: 'release',
+          per_page: 6,
+        },
+      }),
+      fetchDiscogs<DiscogsSearchResponse>('/database/search', {
+        searchParams: {
+          q: trimmed,
+          type: 'artist',
+          per_page: 6,
+        },
+      }),
+    ]);
+
+    const suggestions: MusicSearchSuggestion[] = [];
+
+    releaseResponse.results
+      .filter((result) => result.type === 'release')
+      .slice(0, 6)
+      .forEach((result) => {
+        const kind: MusicTopResult['kind'] = result.format?.some((format) =>
+          /compilation|mix/i.test(format),
+        )
+          ? 'playlist'
+          : 'album';
+        suggestions.push({
+          id: String(result.id),
+          label: result.title,
+          kind,
+          href:
+            kind === 'playlist'
+              ? `/clones/youtube-music/playlist/${result.id}`
+              : `/clones/youtube-music/album/${result.id}`,
+        });
+      });
+
+    artistResponse.results
+      .filter((result) => result.type === 'artist')
+      .slice(0, 6)
+      .forEach((result) => {
+        suggestions.push({
+          id: String(result.id),
+          label: result.title,
+          kind: 'artist',
+          href: `/clones/youtube-music/search?q=${encodeURIComponent(result.title)}&filter=artists`,
+        });
+      });
+
+    return suggestions.slice(0, 8);
+  } catch (error) {
+    if (isDiscogsApiError(error)) {
+      return buildSearchSuggestionsFromMock(trimmed);
+    }
+    return buildSearchSuggestionsFromMock(trimmed);
+  }
+}
+
 export const getMusicLibraryData = cache(
   async (): Promise<MusicResult<MusicLibraryData>> => {
     const mock = buildLibraryDataFromMock();
@@ -408,6 +716,163 @@ function buildLibraryDataFromMock(): MusicLibraryData {
       },
     ],
   };
+}
+
+function buildAlbumDetailFromMock(id?: string): MusicAlbumDetail {
+  const release =
+    discogsHomeMock.newReleases.find((item) => String(item.id) === String(id)) ??
+    discogsHomeMock.newReleases[0];
+  const castRelease = release as unknown as DiscogsRelease;
+  const hero = mapReleaseToHero(castRelease, {
+    dominantColor: deriveHeroColor(castRelease),
+  });
+  const tracks =
+    castRelease.tracklist
+      ?.filter((track) => track.type_ === 'track')
+      .map((track) => mapTrackToRow(track, castRelease)) ?? [];
+  const related = discogsHomeMock.newReleases
+    .filter((item) => item.id !== release.id)
+    .slice(0, 8)
+    .map((item) => mapReleaseToCard(item as unknown as DiscogsRelease));
+
+  return {
+    hero,
+    tracks,
+    related,
+  };
+}
+
+function buildPlaylistDetailFromMock(id?: string): MusicPlaylistDetail {
+  const playlist =
+    discogsHomeMock.editorialPlaylists.find((item) => String(item.id) === String(id)) ??
+    discogsHomeMock.editorialPlaylists[0];
+  const matchingRelease =
+    discogsHomeMock.newReleases.find((item) => String(item.id) === String(playlist.id)) ??
+    discogsHomeMock.newReleases[0];
+  const castRelease = matchingRelease as unknown as DiscogsRelease;
+
+  const hero = mapReleaseToHero(castRelease, {
+    dominantColor: deriveHeroColor(castRelease),
+  });
+  const tracks =
+    castRelease.tracklist
+      ?.filter((track) => track.type_ === 'track')
+      .map((track) => mapTrackToRow(track, castRelease)) ?? [];
+  const related = discogsHomeMock.editorialPlaylists
+    .filter((item) => item.id !== playlist.id)
+    .slice(0, 8)
+    .map((item) => mapSearchResultToPlaylistCard(item));
+
+  return {
+    hero,
+    tracks,
+    related,
+  };
+}
+
+function buildSearchResultFromMock(query: string): MusicSearchResult {
+  const albums = discogsHomeMock.newReleases.map((release) =>
+    mapReleaseToCard(release as unknown as DiscogsRelease),
+  );
+  const playlists = discogsHomeMock.editorialPlaylists.map((item) =>
+    mapSearchResultToPlaylistCard(item),
+  );
+  const tracks = discogsHomeMock.newReleases
+    .flatMap((release) =>
+      release.tracklist
+        ?.filter((track) => track.type_ === 'track')
+        .slice(0, 2)
+        .map((track) => mapTrackToRow(track, release as unknown as DiscogsRelease)),
+    )
+    .filter(Boolean) as TrackRowData[];
+  const artists = discogsHomeMock.featuredArtists.map((artist) =>
+    mapArtistSummary(artist),
+  );
+
+  const groups: MusicSearchGroup[] = [];
+  if (tracks.length) {
+    groups.push({
+      kind: 'songs',
+      title: 'Songs',
+      items: tracks.slice(0, 8),
+      total: tracks.length,
+    });
+  }
+  if (albums.length) {
+    groups.push({
+      kind: 'albums',
+      title: 'Albums',
+      items: albums.slice(0, 6),
+      total: albums.length,
+    });
+  }
+  if (playlists.length) {
+    groups.push({
+      kind: 'playlists',
+      title: 'Playlists',
+      items: playlists.slice(0, 6),
+      total: playlists.length,
+    });
+  }
+  if (artists.length) {
+    groups.push({
+      kind: 'artists',
+      title: 'Artists',
+      items: artists.slice(0, 6),
+      total: artists.length,
+    });
+  }
+
+  const topResult: MusicTopResult | undefined = albums[0]
+    ? { kind: 'album', item: albums[0] }
+    : artists[0]
+      ? { kind: 'artist', item: artists[0] }
+      : playlists[0]
+        ? { kind: 'playlist', item: playlists[0] }
+        : tracks[0]
+          ? { kind: 'song', item: tracks[0] }
+          : undefined;
+
+  return {
+    query,
+    topResult,
+    groups,
+  };
+}
+
+function buildSearchSuggestionsFromMock(query: string): MusicSearchSuggestion[] {
+  const lower = query.toLowerCase();
+  const albumSuggestions = discogsHomeMock.newReleases
+    .filter((release) => release.title.toLowerCase().includes(lower))
+    .slice(0, 4)
+    .map((release) => ({
+      id: String(release.id),
+      label: release.title,
+      kind: 'album' as const,
+      href: `/clones/youtube-music/album/${release.id}`,
+    }));
+
+  const playlistSuggestions = discogsHomeMock.editorialPlaylists
+    .filter((playlist) => playlist.title.toLowerCase().includes(lower))
+    .slice(0, 3)
+    .map((playlist) => ({
+      id: String(playlist.id),
+      label: playlist.title,
+      kind: 'playlist' as const,
+      href: `/clones/youtube-music/playlist/${playlist.id}`,
+    }));
+
+  const artistSuggestions = discogsHomeMock.featuredArtists
+    .filter((artist) => artist.name.toLowerCase().includes(lower))
+    .slice(0, 3)
+    .map((artist) => ({
+      id: String(artist.id),
+      label: artist.name,
+      kind: 'artist' as const,
+      href: `/clones/youtube-music/search?q=${encodeURIComponent(artist.name)}&filter=artists`,
+    }));
+
+  return [...albumSuggestions, ...playlistSuggestions, ...artistSuggestions].slice(0, 8);
 }
 
 function buildHomeDataFromMock(): MusicHomeData {

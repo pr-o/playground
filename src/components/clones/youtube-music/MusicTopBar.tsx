@@ -1,9 +1,17 @@
 'use client';
 
-import { useMemo } from 'react';
+import type { FormEvent, KeyboardEvent } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Bell, Info, MoreHorizontal, Search as SearchIcon, X } from 'lucide-react';
+import {
+  Bell,
+  Info,
+  Loader2,
+  MoreHorizontal,
+  Search as SearchIcon,
+  X,
+} from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -13,6 +21,8 @@ import {
   MUSIC_PRIMARY_NAV,
 } from '@/lib/music/constants';
 import { useMusicUIStore } from '@/store/music';
+import { useMusicSearchSuggestions } from '@/hooks/music/use-music-search-suggestions';
+import type { MusicSearchSuggestion } from '@/types/music';
 
 const MAX_PRESETS_DESKTOP = 10;
 const MAX_PRESETS_MOBILE = 5;
@@ -27,11 +37,99 @@ export function MusicTopBar() {
 
   const authError = searchParams?.get('auth_error') ?? null;
   const showAuthError = Boolean(authError);
+  const initialQuery = searchParams?.get('q') ?? '';
+
+  const [searchValue, setSearchValue] = useState(initialQuery);
+  const [highlightIndex, setHighlightIndex] = useState<number>(-1);
+
+  const { suggestions, isLoading } = useMusicSearchSuggestions(searchValue);
+
+  useEffect(() => {
+    setSearchValue(initialQuery);
+  }, [initialQuery]);
+
+  useEffect(() => {
+    setHighlightIndex(-1);
+  }, [suggestions]);
 
   const pills = useMemo(() => {
     const limit = sidebarDensity === 'hidden' ? MAX_PRESETS_MOBILE : MAX_PRESETS_DESKTOP;
     return MUSIC_FILTER_PRESETS.slice(0, limit);
   }, [sidebarDensity]);
+
+  const hasSuggestions = isSearchFocused && suggestions.length > 0;
+
+  const navigateToSearch = useCallback(
+    (query: string) => {
+      const trimmed = query.trim();
+      if (!trimmed) return;
+      router.push(`/clones/youtube-music/search?q=${encodeURIComponent(trimmed)}`);
+      setSearchFocused(false);
+    },
+    [router, setSearchFocused],
+  );
+
+  const handleSubmit = useCallback(
+    (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      navigateToSearch(searchValue);
+    },
+    [navigateToSearch, searchValue],
+  );
+
+  const handleSelectSuggestion = useCallback(
+    (suggestion: MusicSearchSuggestion) => {
+      setSearchValue(suggestion.label);
+      router.push(suggestion.href);
+      setSearchFocused(false);
+      setHighlightIndex(-1);
+    },
+    [router, setSearchFocused],
+  );
+
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent<HTMLInputElement>) => {
+      if (!hasSuggestions) {
+        if (event.key === 'Enter') {
+          navigateToSearch(searchValue);
+        }
+        return;
+      }
+
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        setHighlightIndex((prev) => {
+          const next = prev + 1;
+          return next >= suggestions.length ? 0 : next;
+        });
+      } else if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        setHighlightIndex((prev) => {
+          const next = prev - 1;
+          return next < 0 ? suggestions.length - 1 : next;
+        });
+      } else if (event.key === 'Enter') {
+        event.preventDefault();
+        if (highlightIndex >= 0 && suggestions[highlightIndex]) {
+          handleSelectSuggestion(suggestions[highlightIndex]);
+        } else {
+          navigateToSearch(searchValue);
+        }
+      } else if (event.key === 'Escape') {
+        setSearchFocused(false);
+        setHighlightIndex(-1);
+      }
+    },
+    [
+      hasSuggestions,
+      highlightIndex,
+      suggestions,
+      navigateToSearch,
+      searchValue,
+      handleSelectSuggestion,
+      setSearchFocused,
+    ],
+  );
 
   return (
     <div className="sticky top-0 z-40 border-b border-music/60 bg-music-hero/80 backdrop-blur">
@@ -58,19 +156,59 @@ export function MusicTopBar() {
           </div>
         )}
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-start gap-4">
           <div className="relative flex-1">
-            <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-music-muted" />
-            <Input
-              type="search"
-              placeholder="Search songs, albums, artists, podcasts"
-              onFocus={() => setSearchFocused(true)}
-              onBlur={() => setSearchFocused(false)}
-              className={cn(
-                'h-11 w-full rounded-full border-music/60 bg-white/10 pl-10 text-sm text-music-primary placeholder:text-music-muted focus:border-white/30 focus:bg-white/15 focus-visible:ring-0',
-                isSearchFocused && 'ring-music',
-              )}
-            />
+            <form onSubmit={handleSubmit}>
+              <div className="relative">
+                <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-music-muted" />
+                <Input
+                  type="search"
+                  value={searchValue}
+                  placeholder="Search songs, albums, artists, podcasts"
+                  onChange={(event) => setSearchValue(event.target.value)}
+                  onFocus={() => setSearchFocused(true)}
+                  onBlur={() => setSearchFocused(false)}
+                  onKeyDown={handleKeyDown}
+                  className={cn(
+                    'h-11 w-full rounded-full border-music/60 bg-white/10 pl-10 text-sm text-music-primary placeholder:text-music-muted focus:border-white/30 focus:bg-white/15 focus-visible:ring-0',
+                    isSearchFocused && 'ring-music',
+                  )}
+                />
+              </div>
+            </form>
+            {(hasSuggestions || (isSearchFocused && isLoading)) && (
+              <div className="absolute left-0 right-0 top-full z-30 mt-2 rounded-2xl border border-white/10 bg-music-hero/95 p-2 shadow-xl backdrop-blur">
+                {isLoading && !suggestions.length ? (
+                  <div className="flex items-center gap-2 px-3 py-2 text-sm text-music-muted">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Searching Discogs…
+                  </div>
+                ) : (
+                  <ul className="space-y-1">
+                    {suggestions.map((suggestion, index) => (
+                      <li key={`${suggestion.kind}-${suggestion.id}`}>
+                        <button
+                          type="button"
+                          onMouseDown={(event) => event.preventDefault()}
+                          onClick={() => handleSelectSuggestion(suggestion)}
+                          className={cn(
+                            'flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left text-sm transition',
+                            highlightIndex === index
+                              ? 'bg-white/15 text-music-primary'
+                              : 'text-music-muted hover:bg-white/10 hover:text-music-primary',
+                          )}
+                        >
+                          <span className="truncate">{suggestion.label}</span>
+                          <span className="text-[10px] uppercase tracking-[0.3em] text-music-ghost">
+                            {suggestion.kind}
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
           </div>
           <div className="hidden items-center gap-3 md:flex">
             <button

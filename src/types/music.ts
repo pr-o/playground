@@ -147,6 +147,75 @@ export type MusicLibraryData = {
   collections: MusicLibraryCollection[];
 };
 
+export type MusicAlbumDetail = {
+  hero: AlbumHeroData;
+  tracks: TrackRowData[];
+  related: AlbumCardData[];
+};
+
+export type MusicPlaylistDetail = {
+  hero: AlbumHeroData;
+  tracks: TrackRowData[];
+  related: PlaylistCardData[];
+};
+
+export type MusicSearchGroup =
+  | {
+      kind: 'songs';
+      title: string;
+      items: TrackRowData[];
+      total: number;
+    }
+  | {
+      kind: 'albums';
+      title: string;
+      items: AlbumCardData[];
+      total: number;
+    }
+  | {
+      kind: 'playlists';
+      title: string;
+      items: PlaylistCardData[];
+      total: number;
+    }
+  | {
+      kind: 'artists';
+      title: string;
+      items: ArtistSummaryData[];
+      total: number;
+    };
+
+export type MusicTopResult =
+  | {
+      kind: 'album';
+      item: AlbumCardData;
+    }
+  | {
+      kind: 'playlist';
+      item: PlaylistCardData;
+    }
+  | {
+      kind: 'artist';
+      item: ArtistSummaryData;
+    }
+  | {
+      kind: 'song';
+      item: TrackRowData;
+    };
+
+export type MusicSearchResult = {
+  query: string;
+  topResult?: MusicTopResult;
+  groups: MusicSearchGroup[];
+};
+
+export type MusicSearchSuggestion = {
+  id: string;
+  label: string;
+  kind: MusicTopResult['kind'];
+  href: string;
+};
+
 export type MusicResult<T> =
   | {
       ok: true;
