@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useMemo, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { BOARD_SIZE } from '@/lib/game-2048';
+import type { MoveDirection } from '@/lib/game-2048';
 import { useGame2048Store } from '@/store/game-2048';
 import { useGamePersistence } from '@/hooks/game-2048/useGamePersistence';
+import { useGameInput } from '@/hooks/game-2048/useGameInput';
 
 const ScoreCard = ({ label, value }: { label: string; value: number }) => (
   <div className="flex w-full min-w-[120px] flex-col rounded-2xl bg-gradient-to-br from-muted to-muted/60 px-4 py-3 text-left shadow-sm">
@@ -45,6 +47,50 @@ const ControlButton = ({
   );
 };
 
+const directionLabels: Record<MoveDirection, string> = {
+  up: '↑',
+  down: '↓',
+  left: '←',
+  right: '→',
+};
+
+function DirectionPad({
+  onMove,
+  disabled,
+}: {
+  onMove: (direction: MoveDirection) => void;
+  disabled: boolean;
+}) {
+  const padButtonClasses =
+    'flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-card text-lg font-semibold text-foreground transition hover:bg-card/80 disabled:cursor-not-allowed disabled:text-muted-foreground';
+
+  const renderButton = (direction: MoveDirection) => (
+    <button
+      key={direction}
+      type="button"
+      className={padButtonClasses}
+      onClick={() => onMove(direction)}
+      disabled={disabled}
+      aria-label={`Move ${direction}`}
+    >
+      {directionLabels[direction]}
+    </button>
+  );
+
+  return (
+    <div className="mt-6 flex justify-center">
+      <div className="grid grid-cols-3 gap-2">
+        <span />
+        {renderButton('up')}
+        <span />
+        {renderButton('left')}
+        {renderButton('down')}
+        {renderButton('right')}
+      </div>
+    </div>
+  );
+}
+
 export function Game2048() {
   useGamePersistence();
 
@@ -59,6 +105,7 @@ export function Game2048() {
   const newGame = useGame2048Store((state) => state.newGame);
   const undo = useGame2048Store((state) => state.undo);
   const isHydrated = useGame2048Store((state) => state.isHydrated);
+  const move = useGame2048Store((state) => state.move);
 
   const hasTiles = useMemo(
     () => grid.some((row) => row.some((cell) => cell !== null)),
@@ -81,7 +128,7 @@ export function Game2048() {
     if (!hasMoves && !isOver) {
       return 'Moves unavailable. Try a different direction.';
     }
-    return 'Merge tiles with arrow keys, WASD, or touch swipes (coming soon).';
+    return 'Merge tiles with arrow keys, WASD, on-screen controls, or touch swipes.';
   }, [hasWon, isOver, hasMoves]);
 
   const canUndo = historyLength > 0;
@@ -90,6 +137,10 @@ export function Game2048() {
     isOver,
     canContinue: hasWon && !isOver,
   };
+
+  const canInteract = isHydrated && !isOver;
+  const boardRef = useRef<HTMLDivElement>(null);
+  useGameInput(boardRef);
 
   return (
     <section className="flex w-full max-w-5xl flex-col items-stretch gap-8">
@@ -117,7 +168,10 @@ export function Game2048() {
 
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_260px]">
         <div className="relative mx-auto w-full max-w-xl">
-          <div className="relative aspect-square w-full rounded-[32px] bg-gradient-to-br from-muted/80 via-muted to-muted/60 p-5 shadow-xl">
+          <div
+            ref={boardRef}
+            className="relative aspect-square w-full touch-pan-y rounded-[32px] bg-gradient-to-br from-muted/80 via-muted to-muted/60 p-5 shadow-xl"
+          >
             <div
               className="grid h-full w-full gap-3"
               style={{
@@ -181,6 +235,15 @@ export function Game2048() {
           </div>
         </aside>
       </div>
+
+      <DirectionPad
+        onMove={(direction) => {
+          if (canInteract) {
+            move(direction);
+          }
+        }}
+        disabled={!canInteract}
+      />
     </section>
   );
 }
