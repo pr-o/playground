@@ -1,5 +1,6 @@
 'use client';
 
+import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { BOARD_SIZE } from '@/lib/game-2048';
 import type { MoveDirection } from '@/lib/game-2048';
@@ -7,14 +8,27 @@ import { useGame2048Store } from '@/store/game-2048';
 import { useGamePersistence } from '@/hooks/game-2048/useGamePersistence';
 import { useGameInput } from '@/hooks/game-2048/useGameInput';
 
+const integerFormatter = new Intl.NumberFormat('en-US', {
+  maximumFractionDigits: 0,
+});
+
 const ScoreCard = ({ label, value }: { label: string; value: number }) => (
   <div className="flex w-full min-w-[120px] flex-col rounded-2xl bg-gradient-to-br from-muted to-muted/60 px-4 py-3 text-left shadow-sm">
     <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
       {label}
     </span>
-    <span className="mt-1 text-2xl font-semibold text-foreground tabular-nums">
-      {value}
-    </span>
+    <AnimatePresence mode="popLayout" initial={false}>
+      <motion.span
+        key={value}
+        initial={{ y: 12, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: -12, opacity: 0 }}
+        transition={{ duration: 0.18 }}
+        className="mt-1 text-2xl font-semibold text-foreground tabular-nums"
+      >
+        {integerFormatter.format(value)}
+      </motion.span>
+    </AnimatePresence>
   </div>
 );
 
@@ -80,16 +94,50 @@ function DirectionPad({
   return (
     <div className="mt-6 flex justify-center">
       <div className="grid grid-cols-3 gap-2">
-        <span />
+        <span aria-hidden />
         {renderButton('up')}
-        <span />
+        <span aria-hidden />
         {renderButton('left')}
-        {renderButton('down')}
+        <span aria-hidden />
         {renderButton('right')}
+        <span aria-hidden />
+        {renderButton('down')}
+        <span aria-hidden />
       </div>
     </div>
   );
 }
+
+type TileView = {
+  id: string;
+  value: number;
+  row: number;
+  column: number;
+  mergedFrom?: [string, string] | null;
+};
+
+const getTileClasses = (value: number) => {
+  if (value <= 2) return 'bg-amber-100 text-amber-900';
+  if (value <= 4) return 'bg-amber-200 text-amber-900';
+  if (value <= 8) return 'bg-orange-300 text-orange-900';
+  if (value <= 16) return 'bg-orange-400 text-orange-950';
+  if (value <= 32) return 'bg-orange-500 text-orange-50';
+  if (value <= 64) return 'bg-orange-600 text-orange-50';
+  if (value <= 128) return 'bg-amber-500 text-amber-950';
+  if (value <= 256) return 'bg-yellow-500 text-yellow-950';
+  if (value <= 512) return 'bg-lime-500 text-lime-900';
+  if (value <= 1024) return 'bg-emerald-500 text-emerald-50';
+  if (value <= 2048) return 'bg-teal-500 text-teal-50';
+  if (value <= 4096) return 'bg-cyan-500 text-cyan-50';
+  return 'bg-indigo-500 text-white';
+};
+
+const getTileFontSize = (value: number) => {
+  if (value >= 8192) return 'text-xl';
+  if (value >= 4096) return 'text-2xl';
+  if (value >= 1024) return 'text-3xl';
+  return 'text-4xl';
+};
 
 export function Game2048() {
   useGamePersistence();
@@ -111,6 +159,40 @@ export function Game2048() {
     () => grid.some((row) => row.some((cell) => cell !== null)),
     [grid],
   );
+
+  const previousTileIdsRef = useRef<Set<string>>(new Set());
+
+  const tiles: TileView[] = useMemo(() => {
+    const items: TileView[] = [];
+    grid.forEach((row, rowIndex) => {
+      row.forEach((cell, columnIndex) => {
+        if (!cell) return;
+        items.push({
+          id: cell.id,
+          value: cell.value,
+          row: rowIndex,
+          column: columnIndex,
+          mergedFrom: cell.mergedFrom ?? null,
+        });
+      });
+    });
+    return items;
+  }, [grid]);
+
+  const newlySpawnedTileIds = useMemo(() => {
+    const previousIds = previousTileIdsRef.current;
+    const newIds = new Set<string>();
+    tiles.forEach((tile) => {
+      if (!previousIds.has(tile.id)) {
+        newIds.add(tile.id);
+      }
+    });
+    return newIds;
+  }, [tiles]);
+
+  useEffect(() => {
+    previousTileIdsRef.current = new Set(tiles.map((tile) => tile.id));
+  }, [tiles]);
 
   useEffect(() => {
     if (isHydrated && !hasTiles) {
@@ -139,7 +221,7 @@ export function Game2048() {
   };
 
   const canInteract = isHydrated && !isOver;
-  const boardRef = useRef<HTMLDivElement>(null);
+  const boardRef = useRef<HTMLDivElement | null>(null);
   useGameInput(boardRef);
 
   return (
@@ -180,16 +262,59 @@ export function Game2048() {
               }}
             >
               {grid.map((row, rowIndex) =>
-                row.map((cell, columnIndex) => (
+                row.map((_, columnIndex) => (
                   <div
-                    key={`${rowIndex}-${columnIndex}`}
-                    className="flex h-full w-full items-center justify-center rounded-2xl bg-background/70 text-lg font-semibold text-foreground/70 shadow-inner"
-                  >
-                    {cell?.value ?? ''}
-                  </div>
+                    key={`bg-${rowIndex}-${columnIndex}`}
+                    className="rounded-2xl bg-background/60 shadow-inner"
+                  />
                 )),
               )}
             </div>
+
+            <motion.div
+              layout
+              className="pointer-events-none absolute inset-5 grid h-[calc(100%-2.5rem)] w-[calc(100%-2.5rem)] gap-3"
+              style={{
+                gridTemplateColumns: `repeat(${BOARD_SIZE}, minmax(0, 1fr))`,
+                gridTemplateRows: `repeat(${BOARD_SIZE}, minmax(0, 1fr))`,
+              }}
+            >
+              <AnimatePresence>
+                {tiles.map((tile) => {
+                  const isMerged = Boolean(tile.mergedFrom);
+                  const isNew = newlySpawnedTileIds.has(tile.id);
+                  return (
+                    <motion.div
+                      key={tile.id}
+                      layout
+                      layoutId={tile.id}
+                      initial={{ scale: isMerged ? 1.12 : 0.6, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0.5, opacity: 0 }}
+                      transition={{
+                        scale: isMerged
+                          ? { type: 'spring', stiffness: 620, damping: 24, delay: 0 }
+                          : {
+                              type: 'spring',
+                              stiffness: 420,
+                              damping: 30,
+                              mass: 0.6,
+                              delay: isNew ? 0.08 : 0,
+                            },
+                        opacity: { duration: 0.12, delay: isNew ? 0.08 : 0 },
+                      }}
+                      className={`pointer-events-none flex h-full w-full items-center justify-center rounded-2xl font-semibold shadow-lg ${getTileClasses(tile.value)} ${getTileFontSize(tile.value)}`}
+                      style={{
+                        gridRowStart: tile.row + 1,
+                        gridColumnStart: tile.column + 1,
+                      }}
+                    >
+                      {integerFormatter.format(tile.value)}
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            </motion.div>
 
             {overlayState.isOver && (
               <div className="absolute inset-5 z-10 flex flex-col items-center justify-center gap-4 rounded-[28px] bg-background/90 text-center shadow-xl">
@@ -228,9 +353,9 @@ export function Game2048() {
               Coming soon
             </p>
             <ul className="mt-2 space-y-1">
-              <li>• Animated tiles with smooth slide & merge transitions</li>
-              <li>• Keyboard & touch input with move preview</li>
-              <li>• Achievement shelf and celebratory toasts</li>
+              <li>• Particle effects for merges and spawns</li>
+              <li>• Detailed achievement shelf with unlock toasts</li>
+              <li>• Session insights and challenge modes</li>
             </ul>
           </div>
         </aside>
