@@ -6,6 +6,7 @@ import { MusicMobileNav } from '@/components/clones/youtube-music/MusicMobileNav
 import { MusicQueueDrawer } from '@/components/clones/youtube-music/MusicQueueDrawer';
 import { MusicSidebar } from '@/components/clones/youtube-music/MusicSidebar';
 import { MusicTopBar } from '@/components/clones/youtube-music/MusicTopBar';
+import { MusicToastViewport } from '@/components/clones/youtube-music/MusicToastViewport';
 import { useMusicUIStore } from '@/store/music';
 
 type MusicShellProps = {
@@ -27,6 +28,7 @@ export function MusicShell({ children }: MusicShellProps) {
       </div>
       <MusicBottomPlayer />
       <MusicMobileNav />
+      <MusicToastViewport />
     </div>
   );
 }

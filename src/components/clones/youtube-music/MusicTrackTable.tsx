@@ -1,10 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { Clock, MoreHorizontal, Play, Plus } from 'lucide-react';
+import { Clock, ListPlus, Play, Plus } from 'lucide-react';
 import type { TrackRowData } from '@/types/music';
 import { formatDurationMs } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import { trackRowToPlayback } from '@/lib/music/playback';
+import { useMusicPlaybackStore, useMusicUIStore } from '@/store/music';
 
 type MusicTrackTableProps = {
   tracks: TrackRowData[];
@@ -13,6 +15,9 @@ type MusicTrackTableProps = {
 
 export function MusicTrackTable({ tracks, className }: MusicTrackTableProps) {
   const [activeTrackId, setActiveTrackId] = useState<string | null>(null);
+  const playTrack = useMusicPlaybackStore((state) => state.playTrack);
+  const addToQueue = useMusicPlaybackStore((state) => state.addToQueue);
+  const pushToast = useMusicUIStore((state) => state.pushToast);
 
   return (
     <div className={cn('rounded-3xl border border-white/10 bg-white/5', className)}>
@@ -28,14 +33,51 @@ export function MusicTrackTable({ tracks, className }: MusicTrackTableProps) {
       <div>
         {tracks.map((track, index) => {
           const isActive = activeTrackId === track.id;
+          const playbackTrack = trackRowToPlayback(track);
+
+          const handlePlay = () => {
+            playTrack(playbackTrack, { startPlaying: true });
+            pushToast({
+              title: 'Now playing',
+              description: `${track.title} • ${track.artists.join(', ')}`,
+              variant: 'info',
+            });
+          };
+
+          const handleAddToQueue = () => {
+            addToQueue(playbackTrack);
+            pushToast({
+              title: 'Added to queue',
+              description: track.title,
+              variant: 'success',
+            });
+          };
+
+          const handlePlayNext = () => {
+            addToQueue(playbackTrack, { next: true });
+            pushToast({
+              title: 'Queued to play next',
+              description: track.title,
+              variant: 'success',
+            });
+          };
+
           return (
-            <button
+            <div
               key={track.id}
-              type="button"
+              role="button"
+              tabIndex={0}
               onMouseEnter={() => setActiveTrackId(track.id)}
               onFocus={() => setActiveTrackId(track.id)}
               onBlur={() => setActiveTrackId(null)}
               onMouseLeave={() => setActiveTrackId(null)}
+              onClick={handlePlay}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  handlePlay();
+                }
+              }}
               className={cn(
                 'group grid w-full grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-4 px-6 py-3 text-left transition',
                 'border-b border-white/5 last:border-none',
@@ -69,12 +111,32 @@ export function MusicTrackTable({ tracks, className }: MusicTrackTableProps) {
               <p className="hidden truncate text-xs text-music-muted md:block">
                 {track.albumName}
               </p>
-              <div className="flex items-center gap-3 justify-self-end text-music-muted">
+              <div className="flex items-center gap-2 justify-self-end text-music-muted">
                 <span className="text-xs">{formatDurationMs(track.durationMs)}</span>
-                <Plus className="h-4 w-4 opacity-0 transition group-hover:opacity-100" />
-                <MoreHorizontal className="h-4 w-4 opacity-0 transition group-hover:opacity-100" />
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handlePlayNext();
+                  }}
+                  className="rounded-full border border-white/20 p-1.5 opacity-0 transition group-hover:opacity-100 hover:border-white/40 hover:text-music-primary"
+                  aria-label="Play next"
+                >
+                  <ListPlus className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleAddToQueue();
+                  }}
+                  className="rounded-full border border-white/20 p-1.5 opacity-0 transition group-hover:opacity-100 hover:border-white/40 hover:text-music-primary"
+                  aria-label="Add to queue"
+                >
+                  <Plus className="h-4 w-4" />
+                </button>
               </div>
-            </button>
+            </div>
           );
         })}
       </div>

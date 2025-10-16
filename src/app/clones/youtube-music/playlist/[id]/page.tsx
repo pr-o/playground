@@ -1,9 +1,5 @@
 import { getMusicPlaylistDetail } from '@/lib/music';
-import { ContentSection } from '@/components/clones/youtube-music/ContentSection';
-import { HorizontalScroller } from '@/components/clones/youtube-music/HorizontalScroller';
-import { MusicDetailHero } from '@/components/clones/youtube-music/MusicDetailHero';
-import { MusicPlaylistCard } from '@/components/clones/youtube-music/MusicCards';
-import { MusicTrackTable } from '@/components/clones/youtube-music/MusicTrackTable';
+import { MusicPlaylistDetail } from '@/components/clones/youtube-music/MusicPlaylistDetail';
 
 type YoutubeMusicPlaylistPageProps = {
   params: {
@@ -38,23 +34,5 @@ export default async function YoutubeMusicPlaylistPage({
 
   const { hero, tracks, related } = result.data;
 
-  return (
-    <section className="flex flex-1 flex-col gap-10 p-6">
-      <MusicDetailHero hero={hero} variant="playlist" />
-      <MusicTrackTable tracks={tracks} />
-
-      {related.length > 0 && (
-        <ContentSection
-          title="Featured compilations"
-          description="More Discogs mixes curated for deep listening."
-        >
-          <HorizontalScroller>
-            {related.map((item) => (
-              <MusicPlaylistCard key={item.id} playlist={item} />
-            ))}
-          </HorizontalScroller>
-        </ContentSection>
-      )}
-    </section>
-  );
+  return <MusicPlaylistDetail hero={hero} tracks={tracks} related={related} />;
 }

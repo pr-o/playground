@@ -1,11 +1,11 @@
 import { create } from 'zustand';
-import type { SpotifyTrack } from '@/types/spotify';
+import type { MusicPlaybackTrack } from '@/types/playback';
 
 export type RepeatMode = 'off' | 'context' | 'track';
 
 export type PlaybackState = {
-  queue: SpotifyTrack[];
-  history: SpotifyTrack[];
+  queue: MusicPlaybackTrack[];
+  history: MusicPlaybackTrack[];
   currentIndex: number;
   isPlaying: boolean;
   shuffle: boolean;
@@ -17,15 +17,15 @@ export type PlaybackState = {
 };
 
 export type PlaybackActions = {
-  loadQueue: (tracks: SpotifyTrack[], startIndex?: number) => void;
-  playTrack: (track: SpotifyTrack, options?: { startPlaying?: boolean }) => void;
+  loadQueue: (tracks: MusicPlaybackTrack[], startIndex?: number) => void;
+  playTrack: (track: MusicPlaybackTrack, options?: { startPlaying?: boolean }) => void;
   togglePlay: () => void;
   pause: () => void;
   resume: () => void;
   next: () => void;
   previous: () => void;
   addToQueue: (
-    tracks: SpotifyTrack | SpotifyTrack[],
+    tracks: MusicPlaybackTrack | MusicPlaybackTrack[],
     options?: { next?: boolean },
   ) => void;
   removeFromQueue: (trackId: string) => void;
@@ -35,6 +35,7 @@ export type PlaybackActions = {
   toggleMute: () => void;
   setRepeatMode: (mode: RepeatMode) => void;
   setShuffle: (value: boolean) => void;
+  moveQueueItem: (fromIndex: number, toIndex: number) => void;
 };
 
 export type PlaybackStore = PlaybackState & PlaybackActions;
@@ -316,5 +317,43 @@ export const useMusicPlaybackStore = create<PlaybackStore>((set, get) => ({
       ...state,
       shuffle: value,
     }));
+  },
+
+  moveQueueItem: (fromIndex, toIndex) => {
+    set((state) => {
+      if (
+        fromIndex < 0 ||
+        toIndex < 0 ||
+        fromIndex >= state.queue.length ||
+        toIndex >= state.queue.length ||
+        fromIndex === toIndex
+      ) {
+        return state;
+      }
+
+      const updatedQueue = [...state.queue];
+      const [moved] = updatedQueue.splice(fromIndex, 1);
+      updatedQueue.splice(toIndex, 0, moved);
+
+      let currentIndex = state.currentIndex;
+
+      if (fromIndex === state.currentIndex) {
+        currentIndex = toIndex;
+      } else {
+        if (fromIndex < state.currentIndex && toIndex >= state.currentIndex) {
+          currentIndex -= 1;
+        } else if (fromIndex > state.currentIndex && toIndex <= state.currentIndex) {
+          currentIndex += 1;
+        }
+      }
+
+      currentIndex = Math.max(0, Math.min(currentIndex, updatedQueue.length - 1));
+
+      return {
+        ...state,
+        queue: updatedQueue,
+        currentIndex,
+      };
+    });
   },
 }));

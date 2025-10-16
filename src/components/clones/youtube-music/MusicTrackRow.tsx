@@ -1,10 +1,12 @@
 'use client';
 
 import Image from 'next/image';
-import { Play } from 'lucide-react';
+import { ListPlus, Play, Plus } from 'lucide-react';
 import { formatDurationMs } from '@/lib/format';
 import type { TrackRowData } from '@/types/music';
 import { cn } from '@/lib/utils';
+import { useMusicPlaybackStore, useMusicUIStore } from '@/store/music';
+import { trackRowToPlayback } from '@/lib/music/playback';
 
 type MusicTrackRowProps = {
   track: TrackRowData;
@@ -13,6 +15,41 @@ type MusicTrackRowProps = {
 };
 
 export function MusicTrackRow({ track, index, className }: MusicTrackRowProps) {
+  const playTrack = useMusicPlaybackStore((state) => state.playTrack);
+  const addToQueue = useMusicPlaybackStore((state) => state.addToQueue);
+  const toggleQueue = useMusicUIStore((state) => state.toggleQueue);
+  const pushToast = useMusicUIStore((state) => state.pushToast);
+
+  const playbackTrack = trackRowToPlayback(track);
+
+  const handlePlay = () => {
+    playTrack(playbackTrack, { startPlaying: true });
+    pushToast({
+      title: 'Now playing',
+      description: `${track.title} • ${track.artists.join(', ')}`,
+      variant: 'info',
+    });
+  };
+
+  const handleAddToQueue = () => {
+    addToQueue(playbackTrack);
+    pushToast({
+      title: 'Added to queue',
+      description: `${track.title} will play later`,
+      variant: 'success',
+    });
+  };
+
+  const handlePlayNext = () => {
+    addToQueue(playbackTrack, { next: true });
+    pushToast({
+      title: 'Queued to play next',
+      description: track.title,
+      variant: 'success',
+    });
+    toggleQueue(true);
+  };
+
   return (
     <div
       className={cn(
@@ -24,6 +61,7 @@ export function MusicTrackRow({ track, index, className }: MusicTrackRowProps) {
         type="button"
         className="absolute left-3 top-1/2 hidden h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-black transition group-hover:flex"
         aria-label={`Play ${track.title}`}
+        onClick={handlePlay}
       >
         <Play className="h-4 w-4" />
       </button>
@@ -57,6 +95,24 @@ export function MusicTrackRow({ track, index, className }: MusicTrackRowProps) {
           {formatDurationMs(track.durationMs)}
         </span>
       ) : null}
+      <div className="flex items-center gap-1 opacity-0 transition group-hover:opacity-100">
+        <button
+          type="button"
+          onClick={handlePlayNext}
+          className="rounded-full border border-white/20 p-1.5 text-music-muted transition hover:border-white/40 hover:text-music-primary"
+          aria-label="Play next"
+        >
+          <ListPlus className="h-4 w-4" />
+        </button>
+        <button
+          type="button"
+          onClick={handleAddToQueue}
+          className="rounded-full border border-white/20 p-1.5 text-music-muted transition hover:border-white/40 hover:text-music-primary"
+          aria-label="Add to queue"
+        >
+          <Plus className="h-4 w-4" />
+        </button>
+      </div>
     </div>
   );
 }

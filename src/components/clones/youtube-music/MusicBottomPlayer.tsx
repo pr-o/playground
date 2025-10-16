@@ -14,8 +14,10 @@ import {
 import { useMusicPlaybackStore } from '@/store/music';
 import { formatDurationMs } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import { useAudioPlayer } from '@/hooks/music/use-audio-player';
 
 export function MusicBottomPlayer() {
+  const { seek } = useAudioPlayer();
   const currentTrack = useMusicPlaybackStore((state) =>
     state.currentIndex >= 0 ? state.queue[state.currentIndex] : undefined,
   );
@@ -31,16 +33,32 @@ export function MusicBottomPlayer() {
   const setShuffle = useMusicPlaybackStore((state) => state.setShuffle);
   const setRepeatMode = useMusicPlaybackStore((state) => state.setRepeatMode);
   const toggleMute = useMusicPlaybackStore((state) => state.toggleMute);
+  const setProgress = useMusicPlaybackStore((state) => state.setProgress);
+  const setVolume = useMusicPlaybackStore((state) => state.setVolume);
+  const durationMs = currentTrack?.durationMs ?? 0;
+
+  const handleSeek = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = Number.parseInt(event.target.value, 10);
+    seek(value);
+  };
+
+  const handleVolumeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = Number.parseFloat(event.target.value);
+    setVolume(value);
+    if (value > 0 && isMuted) {
+      toggleMute();
+    }
+  };
 
   return (
     <footer className="fixed inset-x-0 bottom-0 z-30 border-t border-music/70 bg-music-card/80 backdrop-blur">
       <div className="mx-auto flex w-full max-w-6xl items-center gap-6 px-4 py-3 text-sm">
         <div className="flex min-w-0 flex-1 items-center gap-3">
-          {currentTrack?.album.images?.[0]?.url ? (
+          {currentTrack?.artworkUrl ? (
             <div className="relative h-14 w-14 overflow-hidden rounded-md bg-music-card-alt">
               <Image
-                src={currentTrack.album.images[0].url}
-                alt={currentTrack.name}
+                src={currentTrack.artworkUrl}
+                alt={currentTrack.title}
                 fill
                 sizes="56px"
               />
@@ -52,11 +70,10 @@ export function MusicBottomPlayer() {
           )}
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-music-primary">
-              {currentTrack?.name ?? 'Nothing playing'}
+              {currentTrack?.title ?? 'Nothing playing'}
             </p>
             <p className="truncate text-xs text-music-muted">
-              {currentTrack?.artists?.map((artist) => artist.name).join(', ') ??
-                'Queue up a song'}
+              {currentTrack?.artists?.join(', ') ?? 'Queue up a song'}
             </p>
           </div>
         </div>
@@ -117,18 +134,20 @@ export function MusicBottomPlayer() {
             <span className="w-10 text-right">
               {currentTrack ? formatDurationMs(progressMs) : '0:00'}
             </span>
-            <div className="relative h-1 flex-1 rounded-full bg-white/10">
-              <div
-                className="absolute inset-y-0 left-0 rounded-full bg-white"
-                style={{
-                  width: currentTrack
-                    ? `${Math.min(progressMs / currentTrack.duration_ms, 1) * 100}%`
-                    : '0%',
-                }}
-              />
-            </div>
+            <input
+              type="range"
+              min={0}
+              max={durationMs || 1}
+              value={Math.min(progressMs, durationMs || 1)}
+              step={500}
+              onChange={(event) => {
+                handleSeek(event);
+                setProgress(Number.parseInt(event.target.value, 10));
+              }}
+              className="h-1 w-full cursor-pointer appearance-none rounded-full bg-white/10 transition hover:bg-white/20 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow"
+            />
             <span className="w-10">
-              {currentTrack ? formatDurationMs(currentTrack.duration_ms) : '0:00'}
+              {currentTrack ? formatDurationMs(durationMs) : '0:00'}
             </span>
           </div>
         </div>
@@ -145,12 +164,15 @@ export function MusicBottomPlayer() {
               <Volume2 className="h-5 w-5" />
             )}
           </button>
-          <div className="relative h-1 w-28 rounded-full bg-white/10">
-            <div
-              className="absolute inset-y-0 left-0 rounded-full bg-white"
-              style={{ width: `${isMuted ? 0 : volume * 100}%` }}
-            />
-          </div>
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.01}
+            value={isMuted ? 0 : volume}
+            onChange={handleVolumeChange}
+            className="h-1 w-28 cursor-pointer appearance-none rounded-full bg-white/10 transition hover:bg-white/20 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow"
+          />
         </div>
       </div>
     </footer>

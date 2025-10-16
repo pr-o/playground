@@ -3,6 +3,7 @@
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMusicPlaybackStore, useMusicUIStore } from '@/store/music';
+import type { MusicPlaybackTrack } from '@/types/playback';
 
 type MusicQueueDrawerProps = {
   isOpen: boolean;
@@ -13,8 +14,18 @@ export function MusicQueueDrawer({ isOpen }: MusicQueueDrawerProps) {
   const toggleQueue = useMusicUIStore((state) => state.toggleQueue);
   const queue = useMusicPlaybackStore((state) => state.queue);
   const currentIndex = useMusicPlaybackStore((state) => state.currentIndex);
+  const history = useMusicPlaybackStore((state) => state.history);
+  const removeFromQueue = useMusicPlaybackStore((state) => state.removeFromQueue);
+  const moveQueueItem = useMusicPlaybackStore((state) => state.moveQueueItem);
+  const playTrack = useMusicPlaybackStore((state) => state.playTrack);
 
   const isMobile = sidebarDensity === 'hidden';
+  const currentTrack =
+    currentIndex >= 0 && currentIndex < queue.length ? queue[currentIndex] : undefined;
+  const nextUp =
+    currentIndex >= 0 && currentIndex < queue.length
+      ? queue.slice(currentIndex + 1)
+      : queue;
 
   if (isMobile) {
     return (
@@ -39,27 +50,15 @@ export function MusicQueueDrawer({ isOpen }: MusicQueueDrawerProps) {
           </button>
         </div>
         <div className="flex-1 overflow-y-auto px-4 py-6">
-          {queue.length === 0 ? (
-            <EmptyQueueNote />
-          ) : (
-            <ol className="space-y-3 text-sm">
-              {queue.map((track, index) => (
-                <li
-                  key={track.id}
-                  className={cn(
-                    'rounded-lg border border-transparent bg-white/5 px-4 py-2',
-                    index === currentIndex &&
-                      'border-white/30 bg-white/15 text-music-primary',
-                  )}
-                >
-                  <p className="truncate font-medium">{track.name}</p>
-                  <p className="truncate text-xs text-music-muted">
-                    {track.artists.map((artist) => artist.name).join(', ')}
-                  </p>
-                </li>
-              ))}
-            </ol>
-          )}
+          <QueueSections
+            currentTrack={currentTrack}
+            nextUp={nextUp}
+            history={history}
+            currentIndex={currentIndex}
+            onRemove={removeFromQueue}
+            onMove={moveQueueItem}
+            onPlay={(track) => playTrack(track)}
+          />
         </div>
       </div>
     );
@@ -85,31 +84,169 @@ export function MusicQueueDrawer({ isOpen }: MusicQueueDrawerProps) {
             </button>
           </div>
           <div className="flex-1 overflow-y-auto pr-1">
-            {queue.length === 0 ? (
-              <EmptyQueueNote />
-            ) : (
-              <ol className="space-y-3 text-sm">
-                {queue.map((track, index) => (
-                  <li
-                    key={track.id}
-                    className={cn(
-                      'rounded-lg border border-transparent bg-white/5 px-3 py-2 transition hover:bg-white/10',
-                      index === currentIndex &&
-                        'border-white/40 bg-white/15 text-music-primary',
-                    )}
-                  >
-                    <p className="truncate font-medium">{track.name}</p>
-                    <p className="truncate text-xs text-music-muted">
-                      {track.artists.map((artist) => artist.name).join(', ')}
-                    </p>
-                  </li>
-                ))}
-              </ol>
-            )}
+            <QueueSections
+              currentTrack={currentTrack}
+              nextUp={nextUp}
+              history={history}
+              currentIndex={currentIndex}
+              onRemove={removeFromQueue}
+              onMove={moveQueueItem}
+              onPlay={(track) => playTrack(track)}
+            />
           </div>
         </>
       )}
     </aside>
+  );
+}
+
+type QueueSectionsProps = {
+  currentTrack?: MusicPlaybackTrack;
+  nextUp: MusicPlaybackTrack[];
+  history: MusicPlaybackTrack[];
+  currentIndex: number;
+  onRemove: (trackId: string) => void;
+  onMove: (fromIndex: number, toIndex: number) => void;
+  onPlay: (track: MusicPlaybackTrack) => void;
+};
+
+function QueueSections({
+  currentTrack,
+  nextUp,
+  history,
+  currentIndex,
+  onRemove,
+  onMove,
+  onPlay,
+}: QueueSectionsProps) {
+  if (!currentTrack && nextUp.length === 0) {
+    return <EmptyQueueNote />;
+  }
+
+  return (
+    <div className="space-y-6 text-sm">
+      {currentTrack && (
+        <section>
+          <h3 className="text-xs uppercase tracking-[0.3em] text-music-ghost">
+            Now playing
+          </h3>
+          <button
+            type="button"
+            onClick={() => onPlay(currentTrack)}
+            className="mt-3 w-full rounded-2xl border border-white/20 bg-white/10 px-3 py-3 text-left transition hover:bg-white/15"
+          >
+            <p className="truncate font-semibold text-music-primary">
+              {currentTrack.title}
+            </p>
+            <p className="truncate text-xs text-music-muted">
+              {currentTrack.artists.join(', ')} • {currentTrack.albumName ?? 'Single'}
+            </p>
+          </button>
+        </section>
+      )}
+
+      <section>
+        <div className="flex items-center justify-between">
+          <h3 className="text-xs uppercase tracking-[0.3em] text-music-ghost">Next up</h3>
+          <p className="text-[10px] uppercase tracking-[0.3em] text-music-muted">
+            {nextUp.length} tracks
+          </p>
+        </div>
+        {nextUp.length === 0 ? (
+          <p className="mt-3 text-xs text-music-muted">
+            Queue new tracks to keep the music going.
+          </p>
+        ) : (
+          <ol className="mt-3 space-y-2">
+            {nextUp.map((track, index) => {
+              const absoluteIndex = currentIndex + 1 + index;
+              return (
+                <li
+                  key={`${track.id}-${absoluteIndex}`}
+                  className="group rounded-xl border border-transparent bg-white/5 px-3 py-2 transition hover:border-white/30 hover:bg-white/10"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="truncate font-medium text-music-primary">
+                        {track.title}
+                      </p>
+                      <p className="truncate text-xs text-music-muted">
+                        {track.artists.join(', ')}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1 opacity-0 transition group-hover:opacity-100">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onMove(
+                            absoluteIndex,
+                            Math.max(currentIndex + 1, absoluteIndex - 1),
+                          )
+                        }
+                        className="rounded-full border border-white/20 px-2 py-1 text-[10px] uppercase tracking-[0.3em] text-music-muted transition hover:border-white/40 hover:text-music-primary"
+                        aria-label="Move track up"
+                      >
+                        ↑
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onMove(
+                            absoluteIndex,
+                            Math.min(absoluteIndex + 1, currentIndex + nextUp.length),
+                          )
+                        }
+                        className="rounded-full border border-white/20 px-2 py-1 text-[10px] uppercase tracking-[0.3em] text-music-muted transition hover:border-white/40 hover:text-music-primary"
+                        aria-label="Move track down"
+                      >
+                        ↓
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onRemove(track.id)}
+                        className="rounded-full border border-white/20 px-2 py-1 text-[10px] uppercase tracking-[0.3em] text-music-muted transition hover:border-white/40 hover:text-red-200"
+                        aria-label="Remove from queue"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+        )}
+      </section>
+
+      <section>
+        <div className="flex items-center justify-between">
+          <h3 className="text-xs uppercase tracking-[0.3em] text-music-ghost">History</h3>
+          <p className="text-[10px] uppercase tracking-[0.3em] text-music-muted">
+            {history.length} plays
+          </p>
+        </div>
+        {history.length === 0 ? (
+          <p className="mt-3 text-xs text-music-muted">
+            Tracks you play will appear here.
+          </p>
+        ) : (
+          <ol className="mt-3 space-y-2">
+            {history
+              .slice()
+              .reverse()
+              .map((track) => (
+                <li
+                  key={`${track.id}-history`}
+                  className="rounded-xl border border-transparent bg-white/5 px-3 py-2 text-xs text-music-muted transition hover:border-white/30 hover:bg-white/10"
+                >
+                  <p className="truncate font-medium text-music-primary">{track.title}</p>
+                  <p className="truncate">{track.artists.join(', ')}</p>
+                </li>
+              ))}
+          </ol>
+        )}
+      </section>
+    </div>
   );
 }
 

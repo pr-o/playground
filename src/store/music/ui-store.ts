@@ -4,6 +4,15 @@ export type PrimaryMusicRoute = 'home' | 'explore' | 'library' | 'search';
 export type LibraryTab = 'playlists' | 'songs' | 'albums' | 'artists';
 export type CollectionViewMode = 'grid' | 'list';
 export type SidebarDensity = 'expanded' | 'compact' | 'hidden';
+export type MusicToastVariant = 'default' | 'info' | 'success' | 'warning' | 'error';
+
+export type MusicToast = {
+  id: string;
+  title: string;
+  description?: string;
+  variant?: MusicToastVariant;
+  durationMs?: number;
+};
 
 export type MusicUIState = {
   sidebarDensity: SidebarDensity;
@@ -16,6 +25,7 @@ export type MusicUIState = {
   mobileNowPlayingOpen: boolean;
   highlightedTrackId?: string;
   hoveredTrackId?: string;
+  toasts: MusicToast[];
 };
 
 export type MusicUIActions = {
@@ -29,6 +39,8 @@ export type MusicUIActions = {
   setMobileNowPlayingOpen: (value: boolean) => void;
   setHighlightedTrack: (trackId?: string) => void;
   setHoveredTrack: (trackId?: string) => void;
+  pushToast: (toast: Omit<MusicToast, 'id'> & { id?: string }) => string;
+  dismissToast: (id: string) => void;
   resetUIState: () => void;
 };
 
@@ -45,6 +57,7 @@ const initialState: MusicUIState = {
   mobileNowPlayingOpen: false,
   highlightedTrackId: undefined,
   hoveredTrackId: undefined,
+  toasts: [],
 };
 
 export const useMusicUIStore = create<MusicUIStore>((set) => ({
@@ -117,6 +130,31 @@ export const useMusicUIStore = create<MusicUIStore>((set) => ({
     set((state) => ({
       ...state,
       hoveredTrackId: trackId,
+    }));
+  },
+
+  pushToast: (toast) => {
+    const id = toast.id ?? `toast-${Math.random().toString(36).slice(2, 9)}`;
+    set((state) => ({
+      ...state,
+      toasts: [
+        ...state.toasts.filter((existing) => existing.id !== id),
+        {
+          id,
+          title: toast.title,
+          description: toast.description,
+          variant: toast.variant ?? 'default',
+          durationMs: toast.durationMs ?? 4000,
+        },
+      ],
+    }));
+    return id;
+  },
+
+  dismissToast: (id) => {
+    set((state) => ({
+      ...state,
+      toasts: state.toasts.filter((toast) => toast.id !== id),
     }));
   },
 

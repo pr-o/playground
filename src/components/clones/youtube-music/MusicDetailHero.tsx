@@ -6,9 +6,20 @@ import { Button } from '@/components/ui/button';
 type MusicDetailHeroProps = {
   hero: AlbumHeroData;
   variant?: 'album' | 'playlist';
+  onPlayAll?: () => void;
+  onShuffle?: () => void;
+  onAddToLibrary?: () => void;
+  onDownload?: () => void;
 };
 
-export function MusicDetailHero({ hero, variant = 'album' }: MusicDetailHeroProps) {
+export function MusicDetailHero({
+  hero,
+  variant = 'album',
+  onPlayAll,
+  onShuffle,
+  onAddToLibrary,
+  onDownload,
+}: MusicDetailHeroProps) {
   const gradientColor = hero.dominantColor ?? 'rgba(94, 114, 228, 0.6)';
   const primaryActionLabel = variant === 'playlist' ? 'Play Playlist' : 'Play';
   const secondaryActionLabel = variant === 'playlist' ? 'Shuffle Playlist' : 'Shuffle';
@@ -71,6 +82,7 @@ export function MusicDetailHero({ hero, variant = 'album' }: MusicDetailHeroProp
           <div className="flex flex-wrap items-center gap-3">
             <Button
               type="button"
+              onClick={onPlayAll}
               className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-2 text-sm font-semibold text-black shadow hover:bg-white/90"
             >
               <Play className="h-4 w-4" />
@@ -79,6 +91,7 @@ export function MusicDetailHero({ hero, variant = 'album' }: MusicDetailHeroProp
             <Button
               type="button"
               variant="outline"
+              onClick={onShuffle}
               className="inline-flex items-center gap-2 rounded-full border-white/40 bg-white/10 px-5 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-music-primary hover:bg-white/20"
             >
               <Shuffle className="h-4 w-4" />
@@ -86,6 +99,7 @@ export function MusicDetailHero({ hero, variant = 'album' }: MusicDetailHeroProp
             </Button>
             <button
               type="button"
+              onClick={onAddToLibrary}
               className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-music-primary transition hover:bg-white/20"
             >
               <Plus className="h-4 w-4" />
@@ -93,6 +107,7 @@ export function MusicDetailHero({ hero, variant = 'album' }: MusicDetailHeroProp
             </button>
             <button
               type="button"
+              onClick={onDownload}
               className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-music-primary transition hover:bg-white/20"
             >
               <Download className="h-4 w-4" />
