@@ -47,7 +47,7 @@ function buildSpotifyUrl(path: string, searchParams?: Record<string, Primitive>)
 }
 
 async function resolveSpotifyAccessToken(): Promise<string | null> {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const cookieToken = cookieStore.get(ACCESS_TOKEN_COOKIE)?.value ?? null;
   const expiresAtValue = cookieStore.get(EXPIRES_AT_COOKIE)?.value ?? null;
   const expiresAt = expiresAtValue ? Number.parseInt(expiresAtValue, 10) : null;

@@ -692,7 +692,7 @@ function buildLibraryDataFromMock(): MusicLibraryData {
       release.tracklist
         ?.filter((track) => track.type_ === 'track')
         .slice(0, 1)
-        .map((track) => mapTrackToRow(track, release)),
+        .map((track) => mapTrackToRow(track, release as unknown as DiscogsRelease)),
     )
     .filter(Boolean) as TrackRowData[];
 
@@ -704,7 +704,9 @@ function buildLibraryDataFromMock(): MusicLibraryData {
       },
       {
         kind: 'albums',
-        items: discogsHomeMock.newReleases.map(mapReleaseToCard),
+        items: discogsHomeMock.newReleases.map((release) =>
+          mapReleaseToCard(release as unknown as DiscogsRelease),
+        ),
       },
       {
         kind: 'tracks',
@@ -882,12 +884,16 @@ function buildHomeDataFromMock(): MusicHomeData {
       {
         kind: 'new-releases',
         title: 'Latest releases',
-        items: discogsHomeMock.newReleases.map(mapReleaseToCard),
+        items: discogsHomeMock.newReleases.map((release) =>
+          mapReleaseToCard(release as unknown as DiscogsRelease),
+        ),
       },
       {
         kind: 'quick-picks',
         title: 'Quick picks for you',
-        items: discogsHomeMock.newReleases.slice(0, 6).map(mapReleaseToCard),
+        items: discogsHomeMock.newReleases
+          .slice(0, 6)
+          .map((release) => mapReleaseToCard(release as unknown as DiscogsRelease)),
       },
       {
         kind: 'mixes',

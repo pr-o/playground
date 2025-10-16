@@ -11,7 +11,7 @@ import {
 import { MusicTrackRow } from '@/components/clones/youtube-music/MusicTrackRow';
 import { ContentSection } from '@/components/clones/youtube-music/ContentSection';
 import { HorizontalScroller } from '@/components/clones/youtube-music/HorizontalScroller';
-import type { MusicSearchResult, MusicSearchGroup } from '@/types/music';
+import type { MusicSearchResult, MusicSearchGroup, MusicTopResult } from '@/types/music';
 import { cn } from '@/lib/utils';
 
 type MusicSearchResultsProps = {
@@ -26,15 +26,26 @@ const FILTER_LABELS: Record<MusicSearchGroup['kind'], string> = {
   artists: 'Artists',
 };
 
+const TOP_RESULT_KIND_TO_FILTER: Record<
+  MusicTopResult['kind'],
+  MusicSearchGroup['kind']
+> = {
+  album: 'albums',
+  playlist: 'playlists',
+  artist: 'artists',
+  song: 'songs',
+};
+
 export function MusicSearchResults({ result, activeFilter }: MusicSearchResultsProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const query = searchParams.get('q') ?? '';
 
-  const availableFilters = useMemo(
-    () => result.groups.map((group) => group.kind),
-    [result.groups],
-  );
+  const availableFilters = useMemo(() => {
+    const kinds = new Set<MusicSearchGroup['kind']>();
+    result.groups.forEach((group) => kinds.add(group.kind));
+    return Array.from(kinds);
+  }, [result.groups]);
 
   const visibleGroups = useMemo(() => {
     if (!activeFilter) return result.groups;
@@ -55,7 +66,8 @@ export function MusicSearchResults({ result, activeFilter }: MusicSearchResultsP
     <div className="space-y-10">
       <div className="space-y-6">
         {result.topResult &&
-          (!activeFilter || result.topResult.kind === activeFilter) && (
+          (!activeFilter ||
+            TOP_RESULT_KIND_TO_FILTER[result.topResult.kind] === activeFilter) && (
             <ContentSection
               title="Top result"
               description="Fastest match based on Discogs relevance."

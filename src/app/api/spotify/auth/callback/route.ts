@@ -14,20 +14,20 @@ export async function GET(request: Request) {
   const error = redirectUrl.searchParams.get('error');
 
   if (error) {
-    clearSpotifyTokens();
+    await clearSpotifyTokens();
     return NextResponse.redirect(
       `${MUSIC_BASE_PATH}?auth_error=${encodeURIComponent(error)}`,
     );
   }
 
   if (!code || !state) {
-    clearSpotifyTokens();
+    await clearSpotifyTokens();
     return NextResponse.redirect(`${MUSIC_BASE_PATH}?auth_error=missing_code_state`);
   }
 
-  const stored = readCodeVerifier();
+  const stored = await readCodeVerifier();
   if (!stored.state || !stored.verifier || stored.state !== state) {
-    clearSpotifyTokens();
+    await clearSpotifyTokens();
     return NextResponse.redirect(`${MUSIC_BASE_PATH}?auth_error=invalid_state`);
   }
 
@@ -35,10 +35,10 @@ export async function GET(request: Request) {
     await exchangeCodeForToken({
       code,
       codeVerifier: stored.verifier,
-      redirectUri: getSpotifyRedirectUri(request),
+      redirectUri: await getSpotifyRedirectUri(request),
     });
   } catch {
-    clearSpotifyTokens();
+    await clearSpotifyTokens();
     return NextResponse.redirect(
       `${MUSIC_BASE_PATH}?auth_error=${encodeURIComponent('token_exchange_failed')}`,
     );

@@ -14,9 +14,9 @@ export async function GET(request: Request) {
   const state = generateStateToken();
   const codeVerifier = generateCodeVerifier();
   const codeChallenge = await generateCodeChallenge(codeVerifier);
-  const redirectUri = getSpotifyRedirectUri(request);
+  const redirectUri = await getSpotifyRedirectUri(request);
 
-  storeCodeVerifier(state, codeVerifier);
+  await storeCodeVerifier(state, codeVerifier);
 
   const authorizeUrl = new URL(AUTHORIZE_ENDPOINT);
   authorizeUrl.searchParams.set('client_id', getSpotifyClientId());

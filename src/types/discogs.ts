@@ -59,6 +59,7 @@ export type DiscogsRelease = {
     title: string;
     description?: string;
   }>;
+  master_id?: number;
 };
 
 export type DiscogsMasterRelease = DiscogsRelease & {

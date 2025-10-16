@@ -19,6 +19,17 @@ export type MusicPrimaryNavItem = {
   icon: 'home' | 'compass' | 'library' | 'search';
 };
 
+export type MusicSidebarLibraryLink = {
+  label: string;
+  href: string;
+  badge?: string;
+};
+
+export type MusicSidebarLibrarySection = {
+  heading: string;
+  links: MusicSidebarLibraryLink[];
+};
+
 export const MUSIC_PRIMARY_NAV: MusicPrimaryNavItem[] = [
   {
     key: 'home',
@@ -46,7 +57,7 @@ export const MUSIC_PRIMARY_NAV: MusicPrimaryNavItem[] = [
   },
 ] satisfies MusicPrimaryNavItem[];
 
-export const MUSIC_SIDEBAR_LIBRARY_SECTIONS = [
+export const MUSIC_SIDEBAR_LIBRARY_SECTIONS: MusicSidebarLibrarySection[] = [
   {
     heading: 'Library',
     links: [
@@ -59,7 +70,7 @@ export const MUSIC_SIDEBAR_LIBRARY_SECTIONS = [
       { label: 'Episodes for later', href: '#episodes', badge: 'Auto playlist' },
     ],
   },
-] as const;
+] satisfies MusicSidebarLibrarySection[];
 
 export const MUSIC_FILTER_PRESETS = [
   'Podcasts',

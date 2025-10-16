@@ -15,7 +15,7 @@ import {
   Diamond,
   LineChart,
 } from 'lucide-react';
-import { shallow } from 'zustand/shallow';
+import { shallow } from '@/lib/zustand/shallow';
 
 import { useElementsStore } from '@/store/excalidraw/elements-store';
 import { ToolMode } from '@/types/excalidraw/elements';

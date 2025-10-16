@@ -16,7 +16,7 @@ import {
 import type { KonvaEventObject, Node as KonvaNode } from 'konva/lib/Node';
 import type { Stage as KonvaStage } from 'konva/lib/Stage';
 import type { Transformer as KonvaTransformer } from 'konva/lib/shapes/Transformer';
-import { shallow } from 'zustand/shallow';
+import { shallow } from '@/lib/zustand/shallow';
 
 import {
   createElementForTool,

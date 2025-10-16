@@ -12,8 +12,16 @@ export function getSpotifyClientSecret() {
   return process.env.SPOTIFY_API_CLIENT_SECRET ?? '';
 }
 
-export function getSpotifyRedirectUri(request?: Request) {
+export async function getSpotifyRedirectUri(request?: Request): Promise<string> {
   const envValue = process.env.SPOTIFY_API_REDIRECT_URI;
+  const headerStore = request ? null : await headers();
+  const getHeaderValue = (key: string) => {
+    if (request) {
+      return request.headers.get(key);
+    }
+    return headerStore?.get(key) ?? null;
+  };
+
   if (envValue) {
     const candidates = envValue
       .split(',')
@@ -21,7 +29,7 @@ export function getSpotifyRedirectUri(request?: Request) {
       .filter(Boolean);
     const requestedHost = request
       ? new URL(request.url).host
-      : (headers().get('x-forwarded-host') ?? headers().get('host'));
+      : (getHeaderValue('x-forwarded-host') ?? getHeaderValue('host'));
 
     if (requestedHost) {
       const matchingCandidate = candidates.find((candidate) => {
@@ -41,13 +49,12 @@ export function getSpotifyRedirectUri(request?: Request) {
     }
   }
 
-  const incomingHeaders = headers();
-  const host = incomingHeaders.get('x-forwarded-host') ?? incomingHeaders.get('host');
+  const host = getHeaderValue('x-forwarded-host') ?? getHeaderValue('host');
   if (!host) {
     throw new Error('Unable to determine host for Spotify redirect URI');
   }
   const protocol =
-    incomingHeaders.get('x-forwarded-proto') ??
+    getHeaderValue('x-forwarded-proto') ??
     (host.includes('localhost') ? 'http' : 'https');
   return `${protocol}://${host}/api/spotify/auth/callback`;
 }

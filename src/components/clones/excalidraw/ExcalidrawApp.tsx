@@ -2,7 +2,7 @@
 
 import clsx from 'clsx';
 import { useEffect, useState } from 'react';
-import { shallow } from 'zustand/shallow';
+import { shallow } from '@/lib/zustand/shallow';
 
 import { CanvasStage } from '@/components/clones/excalidraw/CanvasStage';
 import { StylePanel } from '@/components/clones/excalidraw/StylePanel';

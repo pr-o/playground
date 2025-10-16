@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { Suspense } from 'react';
 import { MusicBottomPlayer } from '@/components/clones/youtube-music/MusicBottomPlayer';
 import { MusicMobileNav } from '@/components/clones/youtube-music/MusicMobileNav';
 import { MusicQueueDrawer } from '@/components/clones/youtube-music/MusicQueueDrawer';
@@ -21,7 +22,9 @@ export function MusicShell({ children }: MusicShellProps) {
 
   return (
     <div className="flex min-h-screen flex-col bg-music-hero text-music-primary transition-colors">
-      <MusicTopBar />
+      <Suspense fallback={<div className="h-20 w-full bg-music-hero/80" />}>
+        <MusicTopBar />
+      </Suspense>
       <div className="flex flex-1 overflow-hidden">
         <MusicSidebar />
         <main className="relative flex-1 overflow-y-auto pb-32 lg:pb-28">

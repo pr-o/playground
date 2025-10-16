@@ -15,13 +15,30 @@ import type {
   DiscogsTrack,
 } from '@/types/discogs';
 
-function pickReleaseImage(release?: DiscogsRelease | DiscogsMasterRelease | null) {
+function pickReleaseImage(
+  release?: DiscogsRelease | DiscogsMasterRelease | null,
+): string | undefined {
   if (!release) return undefined;
-  if (release.images?.length) {
-    return release.images[0]?.uri ?? release.images[0]?.uri150;
+
+  const primaryImage = release.images?.[0];
+  if (primaryImage) {
+    if (typeof primaryImage.uri === 'string' && primaryImage.uri.length > 0) {
+      return primaryImage.uri;
+    }
+    if (typeof primaryImage.uri150 === 'string' && primaryImage.uri150.length > 0) {
+      return primaryImage.uri150;
+    }
   }
-  if ('cover_image' in release && release.cover_image) return release.cover_image;
-  if ('thumb' in release && release.thumb) return release.thumb;
+
+  const coverImage = (release as { cover_image?: unknown }).cover_image;
+  if (typeof coverImage === 'string' && coverImage.length > 0) {
+    return coverImage;
+  }
+
+  if (typeof release.thumb === 'string' && release.thumb.length > 0) {
+    return release.thumb;
+  }
+
   return undefined;
 }
 
@@ -132,15 +149,18 @@ export function mapReleaseToHero(
   const releaseDate = release.released
     ? formatRelativeDate(release.released)
     : ensureReleaseYear(release);
+  const descriptionParts = [
+    release.genres ? release.genres.slice(0, 3).join(' • ') : undefined,
+    release.styles ? release.styles.slice(0, 2).join(' • ') : undefined,
+    formatCommunityStats(release) ?? undefined,
+  ].filter((part): part is string => typeof part === 'string' && part.length > 0);
+
   const description =
-    release.notes ??
-    [
-      release.genres?.slice(0, 3).join(' • '),
-      release.styles?.slice(0, 2).join(' • '),
-      formatCommunityStats(release),
-    ]
-      .filter(Boolean)
-      .join(' • ');
+    typeof release.notes === 'string' && release.notes.trim().length > 0
+      ? release.notes
+      : descriptionParts.length
+        ? descriptionParts.join(' • ')
+        : undefined;
 
   return {
     id: String(release.id),

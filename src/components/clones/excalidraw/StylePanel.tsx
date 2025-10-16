@@ -2,7 +2,7 @@
 
 import clsx from 'clsx';
 import { type ChangeEvent, useMemo } from 'react';
-import { shallow } from 'zustand/shallow';
+import { shallow } from '@/lib/zustand/shallow';
 
 import { useElementsStore } from '@/store/excalidraw/elements-store';
 import type { ArrowheadStyle, StrokeStyle } from '@/types/excalidraw/elements';

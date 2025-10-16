@@ -3,8 +3,7 @@
 import { useCallback, useRef } from 'react';
 import { Draft, produce } from 'immer';
 import { v4 as uuid } from 'uuid';
-import { useStore } from 'zustand';
-import { createStore } from 'zustand/vanilla';
+import { createStore, useStore } from 'zustand';
 
 import {
   ArrowheadStyle,
@@ -608,13 +607,13 @@ const createElementsStore = () =>
             draft.canvasBackground = color;
           }),
         ),
-      bringToFront: (ids) =>
-        set(() => {
-          if (!ids.length) {
-            return null;
-          }
-          const snapshot = createSnapshot(get());
-          return produce<ElementsStoreState>((draft) => {
+      bringToFront: (ids) => {
+        if (!ids.length) {
+          return;
+        }
+        const snapshot = createSnapshot(get());
+        set(
+          produce<ElementsStoreState>((draft) => {
             pushHistoryDraft(draft, snapshot);
             const selectedSet = new Set(ids);
             const front: ExcalidrawElement[] = [];
@@ -626,15 +625,16 @@ const createElementsStore = () =>
               return true;
             });
             draft.elements.push(...front);
-          });
-        }),
-      sendToBack: (ids) =>
-        set(() => {
-          if (!ids.length) {
-            return null;
-          }
-          const snapshot = createSnapshot(get());
-          return produce<ElementsStoreState>((draft) => {
+          }),
+        );
+      },
+      sendToBack: (ids) => {
+        if (!ids.length) {
+          return;
+        }
+        const snapshot = createSnapshot(get());
+        set(
+          produce<ElementsStoreState>((draft) => {
             pushHistoryDraft(draft, snapshot);
             const selectedSet = new Set(ids);
             const back: ExcalidrawElement[] = [];
@@ -646,8 +646,9 @@ const createElementsStore = () =>
               return true;
             });
             draft.elements.unshift(...back);
-          });
-        }),
+          }),
+        );
+      },
       undo: () => {
         const { past } = get().history;
         if (!past.length) {
@@ -728,7 +729,7 @@ export const useElementsStore = <T>(
     return next;
   }, []);
 
-  return useStore(elementsStore, memoizedSelector, equality);
+  return useStore(elementsStore, memoizedSelector);
 };
 
 export const useElementsStoreState = () => useElementsStore((state) => state);

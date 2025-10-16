@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import Link from 'next/link';
 import { searchMusicCatalog } from '@/lib/music';
 import { ContentSection } from '@/components/clones/youtube-music/ContentSection';
@@ -62,7 +63,15 @@ export default async function YoutubeMusicSearchPage({
         </ContentSection>
       ) : result.ok ? (
         result.data.groups.length ? (
-          <MusicSearchResults result={result.data} activeFilter={activeFilter} />
+          <Suspense
+            fallback={
+              <div className="flex flex-col gap-4 rounded-3xl border border-white/10 bg-white/5 p-10 text-center text-sm text-music-muted">
+                Loading search results…
+              </div>
+            }
+          >
+            <MusicSearchResults result={result.data} activeFilter={activeFilter} />
+          </Suspense>
         ) : (
           <div className="flex flex-col items-center gap-4 rounded-3xl border border-white/10 bg-white/5 p-10 text-center">
             <p className="text-lg font-semibold text-music-primary">No matches yet</p>

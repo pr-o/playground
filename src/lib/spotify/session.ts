@@ -21,14 +21,18 @@ function getCookieOptions(maxAgeSeconds: number) {
   };
 }
 
-export function storeCodeVerifier(state: string, verifier: string) {
-  const cookieStore = cookies();
+async function getCookieStore() {
+  return await cookies();
+}
+
+export async function storeCodeVerifier(state: string, verifier: string) {
+  const cookieStore = await getCookieStore();
   cookieStore.set(STATE_COOKIE, state, getCookieOptions(600));
   cookieStore.set(CODE_VERIFIER_COOKIE, verifier, getCookieOptions(600));
 }
 
-export function readCodeVerifier() {
-  const cookieStore = cookies();
+export async function readCodeVerifier() {
+  const cookieStore = await getCookieStore();
   const state = cookieStore.get(STATE_COOKIE)?.value ?? null;
   const verifier = cookieStore.get(CODE_VERIFIER_COOKIE)?.value ?? null;
   if (state) cookieStore.delete(STATE_COOKIE);
@@ -36,12 +40,12 @@ export function readCodeVerifier() {
   return { state, verifier };
 }
 
-export function storeSpotifyTokens(params: {
+export async function storeSpotifyTokens(params: {
   accessToken: string;
   refreshToken?: string;
   expiresIn: number;
 }) {
-  const cookieStore = cookies();
+  const cookieStore = await getCookieStore();
   const expiresAt = Date.now() + params.expiresIn * 1000;
   cookieStore.set(
     ACCESS_TOKEN_COOKIE,
@@ -62,27 +66,28 @@ export function storeSpotifyTokens(params: {
   );
 }
 
-export function clearSpotifyTokens() {
-  const cookieStore = cookies();
+export async function clearSpotifyTokens() {
+  const cookieStore = await getCookieStore();
   [ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE, EXPIRES_AT_COOKIE].forEach((name) => {
     cookieStore.delete(name);
   });
 }
 
-export function getStoredAccessToken() {
-  const cookieStore = cookies();
+export async function getStoredAccessToken() {
+  const cookieStore = await getCookieStore();
   const accessToken = cookieStore.get(ACCESS_TOKEN_COOKIE)?.value ?? null;
   const expiresAtValue = cookieStore.get(EXPIRES_AT_COOKIE)?.value ?? null;
   const expiresAt = expiresAtValue ? Number.parseInt(expiresAtValue, 10) : null;
   return { accessToken, expiresAt };
 }
 
-export function getStoredRefreshToken() {
-  return cookies().get(REFRESH_TOKEN_COOKIE)?.value ?? null;
+export async function getStoredRefreshToken() {
+  const cookieStore = await getCookieStore();
+  return cookieStore.get(REFRESH_TOKEN_COOKIE)?.value ?? null;
 }
 
 export async function refreshSpotifyAccessToken() {
-  const refreshToken = getStoredRefreshToken();
+  const refreshToken = await getStoredRefreshToken();
   if (!refreshToken) {
     throw new Error('Missing Spotify refresh token');
   }
@@ -123,7 +128,7 @@ export async function refreshSpotifyAccessToken() {
     refresh_token?: string;
   };
 
-  storeSpotifyTokens({
+  await storeSpotifyTokens({
     accessToken: payload.access_token,
     refreshToken: payload.refresh_token ?? refreshToken,
     expiresIn: payload.expires_in,
@@ -133,7 +138,7 @@ export async function refreshSpotifyAccessToken() {
 }
 
 export async function getValidSpotifyAccessToken() {
-  const { accessToken, expiresAt } = getStoredAccessToken();
+  const { accessToken, expiresAt } = await getStoredAccessToken();
 
   if (accessToken && expiresAt && Date.now() + ACCESS_TOKEN_BUFFER_MS < expiresAt) {
     return accessToken;
@@ -142,7 +147,7 @@ export async function getValidSpotifyAccessToken() {
   try {
     return await refreshSpotifyAccessToken();
   } catch (error) {
-    clearSpotifyTokens();
+    await clearSpotifyTokens();
     throw error;
   }
 }
@@ -190,7 +195,7 @@ export async function exchangeCodeForToken(params: {
     refresh_token?: string;
   };
 
-  storeSpotifyTokens({
+  await storeSpotifyTokens({
     accessToken: payload.access_token,
     refreshToken: payload.refresh_token,
     expiresIn: payload.expires_in,
