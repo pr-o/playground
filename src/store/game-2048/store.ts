@@ -16,6 +16,7 @@ import {
   spawnRandomTile,
 } from '@/lib/game-2048';
 import type {
+  Achievement,
   GameMetrics,
   GameSnapshot,
   GameState,
@@ -63,6 +64,30 @@ export type Game2048Store = GameState &
   Game2048Selectors &
   Game2048Actions;
 
+const sortAchievements = (achievements: Achievement[]): Achievement[] => {
+  const incomplete: Achievement[] = [];
+  const complete: Achievement[] = [];
+
+  achievements.forEach((achievement) => {
+    if (achievement.unlockedAt) {
+      complete.push(achievement);
+    } else {
+      incomplete.push(achievement);
+    }
+  });
+
+  const byProgressRatioDesc = (a: Achievement, b: Achievement) => {
+    const ratioA = a.target > 0 ? a.progress / a.target : 0;
+    const ratioB = b.target > 0 ? b.progress / b.target : 0;
+    return ratioB - ratioA;
+  };
+
+  incomplete.sort(byProgressRatioDesc);
+  complete.sort(byProgressRatioDesc);
+
+  return [...incomplete, ...complete];
+};
+
 const createBaselineState = (): GameState => ({
   grid: createEmptyGrid(),
   score: 0,
@@ -71,7 +96,7 @@ const createBaselineState = (): GameState => ({
   isOver: false,
   moveCount: 0,
   metrics: { ...DEFAULT_GAME_METRICS },
-  achievements: createInitialAchievements(),
+  achievements: sortAchievements(createInitialAchievements()),
   history: [],
   maxTile: 0,
   rngSeed: undefined,
@@ -126,9 +151,11 @@ const mergeState = (incoming?: Partial<GameState> | null): GameState => {
         grid: cloneGrid(snapshot.grid),
       }))
     : baseline.history;
-  const mergedAchievements = evaluateAchievements(
-    mergeAchievementsWithDefinitions(incoming.achievements),
-    mergedMetrics,
+  const mergedAchievements = sortAchievements(
+    evaluateAchievements(
+      mergeAchievementsWithDefinitions(incoming.achievements),
+      mergedMetrics,
+    ),
   );
 
   return {
@@ -177,7 +204,9 @@ export const useGame2048Store = create<Game2048Store>((set, get) => ({
       maxTile: Math.max(previous.metrics.maxTile, maxTile),
       undoUses: previous.metrics.undoUses,
     };
-    const nextAchievements = evaluateAchievements(previous.achievements, nextMetrics);
+    const nextAchievements = sortAchievements(
+      evaluateAchievements(previous.achievements, nextMetrics),
+    );
 
     set(() => ({
       ...previous,
@@ -222,7 +251,9 @@ export const useGame2048Store = create<Game2048Store>((set, get) => ({
       maxTile: Math.max(current.metrics.maxTile, maxTile),
       undoUses: current.metrics.undoUses,
     };
-    const nextAchievements = evaluateAchievements(current.achievements, nextMetrics);
+    const nextAchievements = sortAchievements(
+      evaluateAchievements(current.achievements, nextMetrics),
+    );
 
     set(() => ({
       ...current,
@@ -255,7 +286,9 @@ export const useGame2048Store = create<Game2048Store>((set, get) => ({
       ...current.metrics,
       undoUses: current.metrics.undoUses + 1,
     };
-    const nextAchievements = evaluateAchievements(current.achievements, metricsWithUndo);
+    const nextAchievements = sortAchievements(
+      evaluateAchievements(current.achievements, metricsWithUndo),
+    );
 
     set(() => ({
       ...current,
@@ -280,7 +313,7 @@ export const useGame2048Store = create<Game2048Store>((set, get) => ({
       return {
         ...state,
         metrics,
-        achievements: createInitialAchievements(),
+        achievements: sortAchievements(createInitialAchievements()),
       };
     });
   },
