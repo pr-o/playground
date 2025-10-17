@@ -26,4 +26,5 @@ export const DEFAULT_GAME_METRICS: GameMetrics = {
   totalFours: 0,
   gamesStarted: 0,
   maxTile: 0,
+  undoUses: 0,
 };

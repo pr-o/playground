@@ -13,6 +13,7 @@ export interface GameMetrics {
   totalFours: number;
   gamesStarted: number;
   maxTile: number;
+  undoUses: number;
 }
 
 export interface Achievement {

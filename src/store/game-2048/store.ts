@@ -175,6 +175,7 @@ export const useGame2048Store = create<Game2048Store>((set, get) => ({
       totalFours: previous.metrics.totalFours + spawnedFours,
       gamesStarted: previous.metrics.gamesStarted + 1,
       maxTile: Math.max(previous.metrics.maxTile, maxTile),
+      undoUses: previous.metrics.undoUses,
     };
     const nextAchievements = evaluateAchievements(previous.achievements, nextMetrics);
 
@@ -219,6 +220,7 @@ export const useGame2048Store = create<Game2048Store>((set, get) => ({
       totalFours: current.metrics.totalFours + (spawnedTile?.value === 4 ? 1 : 0),
       gamesStarted: current.metrics.gamesStarted,
       maxTile: Math.max(current.metrics.maxTile, maxTile),
+      undoUses: current.metrics.undoUses,
     };
     const nextAchievements = evaluateAchievements(current.achievements, nextMetrics);
 
@@ -249,6 +251,11 @@ export const useGame2048Store = create<Game2048Store>((set, get) => ({
     const restoredGrid = cloneGrid(previousSnapshot.grid);
     const hasMoves = !isGameOver(restoredGrid);
     const maxTile = Math.max(previousSnapshot.maxTile, getMaxTileValue(restoredGrid));
+    const metricsWithUndo: GameMetrics = {
+      ...current.metrics,
+      undoUses: current.metrics.undoUses + 1,
+    };
+    const nextAchievements = evaluateAchievements(current.achievements, metricsWithUndo);
 
     set(() => ({
       ...current,
@@ -260,6 +267,8 @@ export const useGame2048Store = create<Game2048Store>((set, get) => ({
       isOver: false,
       maxTile,
       hasMoves,
+      metrics: metricsWithUndo,
+      achievements: nextAchievements,
     }));
 
     return true;

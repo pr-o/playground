@@ -2,7 +2,18 @@
 
 import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Award, Crown, Gem, Sparkles, Sprout, Star, type LucideIcon } from 'lucide-react';
+import {
+  Award,
+  Crown,
+  Gem,
+  Medal,
+  Sparkles,
+  Sprout,
+  Star,
+  Trophy,
+  Undo2,
+  type LucideIcon,
+} from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 import { AchievementShelf } from '@/components/game-2048/AchievementShelf';
 import { BOARD_SIZE } from '@/lib/game-2048';
@@ -33,6 +44,10 @@ const achievementIconMap: Record<string, LucideIcon> = {
   sprout: Sprout,
   crown: Crown,
   gem: Gem,
+  medal: Medal,
+  trophy: Trophy,
+  undo: Undo2,
+  award: Award,
 };
 
 const ACHIEVEMENT_TOAST_FALLBACK = 'Achievement unlocked — keep the streak going!';

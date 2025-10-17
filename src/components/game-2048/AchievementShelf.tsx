@@ -1,7 +1,18 @@
 import type { LucideIcon } from 'lucide-react';
-import { Award, Crown, Gem, Sparkles, Sprout, Star } from 'lucide-react';
+import {
+  Award,
+  Crown,
+  Gem,
+  Medal,
+  Sparkles,
+  Sprout,
+  Star,
+  Trophy,
+  Undo2,
+} from 'lucide-react';
 import type { Achievement } from '@/lib/game-2048';
 import { cn } from '@/lib/utils';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
 const iconMap: Record<string, LucideIcon> = {
   star: Star,
@@ -9,6 +20,10 @@ const iconMap: Record<string, LucideIcon> = {
   sprout: Sprout,
   crown: Crown,
   gem: Gem,
+  medal: Medal,
+  trophy: Trophy,
+  undo: Undo2,
+  award: Award,
 };
 
 const numberFormatter = new Intl.NumberFormat('en-US', {
@@ -40,7 +55,7 @@ function AchievementBadge({ achievement }: { achievement: Achievement }) {
   return (
     <div
       className={cn(
-        'flex min-h-[164px] flex-col gap-3 rounded-2xl border px-4 py-4 transition',
+        'flex h-[188px] w-[208px] flex-col gap-3 rounded-2xl border px-4 py-4 transition',
         isUnlocked
           ? 'border-emerald-400/50 bg-emerald-500/10 shadow-[0_8px_30px_-12px_rgb(16_185_129/0.45)]'
           : 'border-border/60 bg-background/60 backdrop-blur',
@@ -71,7 +86,9 @@ function AchievementBadge({ achievement }: { achievement: Achievement }) {
       <div className="flex flex-col gap-1">
         <h4 className="text-sm font-semibold text-foreground">{achievement.label}</h4>
         {achievement.description ? (
-          <p className="text-xs text-muted-foreground">{achievement.description}</p>
+          <p className="text-xs text-muted-foreground truncate whitespace-nowrap">
+            {achievement.description}
+          </p>
         ) : null}
       </div>
       <div className="mt-auto">
@@ -99,13 +116,21 @@ type AchievementShelfProps = {
 };
 
 export function AchievementShelf({ achievements, onReset }: AchievementShelfProps) {
+  const totalAchievements = achievements.length;
+  const unlockedCount = achievements.filter(
+    (achievement) => achievement.unlockedAt,
+  ).length;
+
   return (
     <div className="rounded-3xl border border-border/60 bg-card/60 p-5 shadow-sm backdrop-blur">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="text-lg uppercase tracking-[0.1em] font-bold text-foreground">
+        <div className="flex items-center gap-3">
+          <p className="text-lg font-bold uppercase tracking-[0.1em] text-foreground">
             Achievements
           </p>
+          <span className="text-xs font-semibold uppercase tracking-[0.32em] text-muted-foreground">
+            {unlockedCount}/{totalAchievements}
+          </span>
         </div>
         {onReset ? (
           <button
@@ -117,11 +142,14 @@ export function AchievementShelf({ achievements, onReset }: AchievementShelfProp
           </button>
         ) : null}
       </div>
-      <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        {achievements.map((achievement) => (
-          <AchievementBadge key={achievement.id} achievement={achievement} />
-        ))}
-      </div>
+      <ScrollArea className="mt-5 w-full">
+        <div className="flex min-w-max gap-4 pb-4">
+          {achievements.map((achievement) => (
+            <AchievementBadge key={achievement.id} achievement={achievement} />
+          ))}
+        </div>
+        <ScrollBar orientation="horizontal" />
+      </ScrollArea>
     </div>
   );
 }
