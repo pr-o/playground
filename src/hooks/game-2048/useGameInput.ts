@@ -21,32 +21,20 @@ const SWIPE_THRESHOLD = 30;
 const MOVE_THROTTLE_MS = 120;
 
 export function useGameInput(boardRef: RefObject<HTMLElement | null>) {
-  const moveRef = useRef(useGame2048Store.getState().move);
-  const isOverRef = useRef(useGame2048Store.getState().isOver);
-  const isHydratedRef = useRef(useGame2048Store.getState().isHydrated);
+  const lastMoveAtRef = useRef(0);
 
   useEffect(() => {
-    const unsubscribe = useGame2048Store.subscribe((state) => {
-      moveRef.current = state.move;
-      isOverRef.current = state.isOver;
-      isHydratedRef.current = state.isHydrated;
-    });
-    return () => {
-      unsubscribe();
-    };
-  }, []);
-
-  useEffect(() => {
-    const lastMoveAtRef = { current: 0 };
-
     const queueMove = (direction: MoveDirection) => {
-      if (!isHydratedRef.current || isOverRef.current) return;
+      const state = useGame2048Store.getState();
+      if (!state.isHydrated || state.isOver) {
+        return;
+      }
       const now = Date.now();
       if (now - lastMoveAtRef.current < MOVE_THROTTLE_MS) {
         return;
       }
       lastMoveAtRef.current = now;
-      moveRef.current(direction);
+      state.move(direction);
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {

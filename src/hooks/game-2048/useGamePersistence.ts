@@ -47,11 +47,13 @@ export function useGamePersistence() {
     const persistedBestScore = loadPersistedBestScore();
     const persistedAchievements = loadPersistedAchievements();
 
-    hydrate({
-      ...persistedState,
+    const snapshot = {
+      ...(persistedState ?? {}),
       bestScore: persistedBestScore ?? state.bestScore,
       achievements: persistedAchievements ?? state.achievements,
-    });
+    };
+
+    hydrate(snapshot);
   }, [hydrate]);
 
   useEffect(() => {
