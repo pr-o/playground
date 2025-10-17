@@ -13,7 +13,16 @@ const integerFormatter = new Intl.NumberFormat('en-US', {
   maximumFractionDigits: 0,
 });
 
-const SPAWN_DELAY_MS = 160;
+/**
+ * Animation timings to stage: slide → merge pop → new tile spawn.
+ */
+const TILE_MOVE_DURATION_MS = 140;
+const MERGE_BOUNCE_DURATION_MS = 220;
+const NEW_TILE_DELAY_MS = 260;
+const NEW_TILE_POP_DURATION_MS = 220;
+
+const MOVE_EASE = [0.22, 1, 0.36, 1] as const;
+const POP_EASE = [0.16, 1, 0.3, 1] as const;
 
 const ScoreCard = ({ label, value }: { label: string; value: number }) => (
   <div className="flex w-full min-w-[120px] flex-col rounded-2xl bg-gradient-to-br from-muted to-muted/60 px-4 py-3 text-left shadow-sm">
@@ -210,19 +219,32 @@ export function Game2048() {
       return () => undefined;
     }
 
-    const freshIds: string[] = [];
-    tiles.forEach((tile) => {
-      if (!previousIds.has(tile.id)) {
-        freshIds.push(tile.id);
-      }
-    });
+    const freshTiles = tiles.filter((tile) => !previousIds.has(tile.id));
+    const hadExistingTiles = previousIds.size > 0;
 
-    if (freshIds.length) {
-      freshIds.forEach((id) => {
-        const timer = window.setTimeout(() => {
-          setSpawnReadyIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
-          setActiveSpawnIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
-        }, SPAWN_DELAY_MS);
+    if (freshTiles.length) {
+      freshTiles.forEach((tile) => {
+        const isSpawnedTile = hadExistingTiles && !tile.mergedFrom;
+        const delay = isSpawnedTile ? NEW_TILE_DELAY_MS : 0;
+
+        // Delay newly spawned tiles so merge animations finish before they appear.
+        const scheduleActivation = () => {
+          setSpawnReadyIds((prev) =>
+            prev.includes(tile.id) ? prev : [...prev, tile.id],
+          );
+          if (isSpawnedTile) {
+            setActiveSpawnIds((prev) =>
+              prev.includes(tile.id) ? prev : [...prev, tile.id],
+            );
+          }
+        };
+
+        if (delay <= 0) {
+          scheduleActivation();
+          return;
+        }
+
+        const timer = window.setTimeout(scheduleActivation, delay);
         spawnTimersRef.current.push(timer);
       });
     }
@@ -336,26 +358,35 @@ export function Game2048() {
                       layoutId={tile.id}
                       initial={
                         isMerged
-                          ? { scale: 1.1, opacity: 0.95 }
+                          ? { scale: 1.18, opacity: 0.92 }
                           : isNew
-                            ? { scale: 0.4, opacity: 0 }
-                            : { scale: 0.7, opacity: 0.6 }
+                            ? { scale: 0.25, opacity: 0 }
+                            : { scale: 0.94, opacity: 0.85 }
                       }
                       animate={{ scale: 1, opacity: 1 }}
                       exit={{ scale: 0.5, opacity: 0 }}
                       transition={{
+                        layout: {
+                          duration: TILE_MOVE_DURATION_MS / 1000,
+                          ease: MOVE_EASE,
+                        },
                         scale: isMerged
-                          ? { type: 'spring', stiffness: 720, damping: 22 }
-                          : {
-                              type: 'spring',
-                              stiffness: isNew ? 640 : 520,
-                              damping: isNew ? 18 : 26,
-                              mass: 0.4,
-                              delay: isNew ? 0.04 : 0,
-                            },
+                          ? {
+                              duration: MERGE_BOUNCE_DURATION_MS / 1000,
+                              ease: POP_EASE,
+                            }
+                          : isNew
+                            ? {
+                                duration: NEW_TILE_POP_DURATION_MS / 1000,
+                                ease: POP_EASE,
+                              }
+                            : {
+                                duration: TILE_MOVE_DURATION_MS / 1000,
+                                ease: MOVE_EASE,
+                              },
                         opacity: {
-                          duration: isNew ? 0.08 : 0.06,
-                          delay: isNew ? 0.04 : 0,
+                          duration: 0.14,
+                          ease: 'easeOut',
                         },
                       }}
                       onAnimationComplete={() => {
