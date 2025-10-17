@@ -9,7 +9,7 @@ export function SonnerToaster(props: ToasterProps) {
       closeButton
       expand
       duration={4000}
-      toasterOptions={{
+      toastOptions={{
         classNames: {
           toast:
             'rounded-2xl border border-border/60 bg-card/95 text-foreground shadow-[0_16px_40px_-24px_rgba(15,23,42,0.65)] backdrop-blur',
