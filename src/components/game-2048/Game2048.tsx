@@ -2,6 +2,8 @@
 
 import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Award, Crown, Gem, Sparkles, Sprout, Star, type LucideIcon } from 'lucide-react';
+import { toast } from '@/components/ui/sonner';
 import { AchievementShelf } from '@/components/game-2048/AchievementShelf';
 import { BOARD_SIZE } from '@/lib/game-2048';
 import type { MoveDirection } from '@/lib/game-2048';
@@ -24,6 +26,16 @@ const NEW_TILE_POP_DURATION_MS = 200;
 
 const MOVE_EASE = [0.22, 1, 0.36, 1] as const;
 const POP_EASE = [0.16, 1, 0.3, 1] as const;
+
+const achievementIconMap: Record<string, LucideIcon> = {
+  star: Star,
+  sparkles: Sparkles,
+  sprout: Sprout,
+  crown: Crown,
+  gem: Gem,
+};
+
+const ACHIEVEMENT_TOAST_FALLBACK = 'Achievement unlocked — keep the streak going!';
 
 const ScoreCard = ({ label, value }: { label: string; value: number }) => (
   <div className="flex w-full min-w-[120px] flex-col rounded-2xl bg-gradient-to-br from-muted to-muted/60 px-4 py-3 text-left shadow-sm">
@@ -163,7 +175,6 @@ export function Game2048() {
   const score = useGame2048Store((state) => state.score);
   const bestScore = useGame2048Store((state) => state.bestScore);
   const moveCount = useGame2048Store((state) => state.moveCount);
-  const hasMoves = useGame2048Store((state) => state.hasMoves);
   const hasWon = useGame2048Store((state) => state.hasWon);
   const isOver = useGame2048Store((state) => state.isOver);
   const historyLength = useGame2048Store((state) => state.history.length);
@@ -180,6 +191,8 @@ export function Game2048() {
   );
 
   const previousTileIdsRef = useRef<Set<string>>(new Set());
+  const unlockedAchievementIdsRef = useRef<Set<string>>(new Set());
+  const hasInitializedAchievementUnlocksRef = useRef(false);
 
   const tiles: TileView[] = useMemo(() => {
     const items: TileView[] = [];
@@ -267,6 +280,45 @@ export function Game2048() {
       newGame();
     }
   }, [isHydrated, hasTiles, newGame]);
+
+  useEffect(() => {
+    if (!isHydrated) {
+      return;
+    }
+
+    const unlockedNow = achievements.filter((achievement) =>
+      Boolean(achievement.unlockedAt),
+    );
+    const unlockedIds = new Set(unlockedNow.map((achievement) => achievement.id));
+
+    if (!hasInitializedAchievementUnlocksRef.current) {
+      unlockedAchievementIdsRef.current = unlockedIds;
+      hasInitializedAchievementUnlocksRef.current = true;
+      return;
+    }
+
+    if (!unlockedNow.length) {
+      unlockedAchievementIdsRef.current.clear();
+      return;
+    }
+
+    const newlyUnlocked = unlockedNow.filter(
+      (achievement) => !unlockedAchievementIdsRef.current.has(achievement.id),
+    );
+
+    if (!newlyUnlocked.length) {
+      return;
+    }
+
+    newlyUnlocked.forEach((achievement) => {
+      const Icon = achievementIconMap[achievement.icon] ?? Award;
+      toast.success(achievement.label, {
+        description: achievement.description ?? ACHIEVEMENT_TOAST_FALLBACK,
+        icon: <Icon className="h-5 w-5" />,
+      });
+      unlockedAchievementIdsRef.current.add(achievement.id);
+    });
+  }, [achievements, isHydrated]);
 
   const canUndo = historyLength > 0;
   const overlayState = {

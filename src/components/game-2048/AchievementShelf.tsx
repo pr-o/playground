@@ -59,7 +59,7 @@ function AchievementBadge({ achievement }: { achievement: Achievement }) {
         </div>
         <span
           className={cn(
-            'rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.32em]',
+            'rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em]',
             isUnlocked
               ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-200'
               : 'bg-muted text-muted-foreground',

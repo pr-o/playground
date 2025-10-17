@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import { Game2048 } from '@/components/game-2048/Game2048';
+import { SonnerToaster } from '@/components/ui/sonner';
 
 export default function Game2048Page() {
   return (
@@ -20,6 +21,7 @@ export default function Game2048Page() {
         {/* Client component renders the interactive game */}
         <Game2048 />
       </Suspense>
+      <SonnerToaster position="top-center" />
     </div>
   );
 }
