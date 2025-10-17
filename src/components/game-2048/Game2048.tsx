@@ -17,9 +17,9 @@ const integerFormatter = new Intl.NumberFormat('en-US', {
  * Animation timings to stage: slide → merge pop → new tile spawn.
  */
 const TILE_MOVE_DURATION_MS = 140;
-const MERGE_BOUNCE_DURATION_MS = 220;
+const MERGE_BOUNCE_DURATION_MS = 440;
 const NEW_TILE_DELAY_MS = 260;
-const NEW_TILE_POP_DURATION_MS = 220;
+const NEW_TILE_POP_DURATION_MS = 200;
 
 const MOVE_EASE = [0.22, 1, 0.36, 1] as const;
 const POP_EASE = [0.16, 1, 0.3, 1] as const;
