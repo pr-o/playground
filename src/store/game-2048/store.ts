@@ -1,24 +1,27 @@
 import { create } from 'zustand';
-import { WINNING_VALUE } from '@/lib/game-2048/constants';
+import {
+  DEFAULT_GAME_METRICS,
+  WINNING_VALUE,
+  applyMove,
+  canMove,
+  cloneGrid,
+  createEmptyGrid,
+  createInitialAchievements,
+  evaluateAchievements,
+  getMaxTileValue,
+  hasReachedWinningTile,
+  isGameOver,
+  mergeAchievementsWithDefinitions,
+  seedInitialTiles,
+  spawnRandomTile,
+} from '@/lib/game-2048';
 import type {
-  Achievement,
   GameMetrics,
   GameSnapshot,
   GameState,
   Grid,
   MoveDirection,
-} from '@/lib/game-2048/types';
-import {
-  applyMove,
-  canMove,
-  cloneGrid,
-  createEmptyGrid,
-  getMaxTileValue,
-  hasReachedWinningTile,
-  isGameOver,
-  seedInitialTiles,
-  spawnRandomTile,
-} from '@/lib/game-2048/logic';
+} from '@/lib/game-2048';
 
 const MAX_HISTORY_LENGTH = 16;
 
@@ -60,13 +63,6 @@ export type Game2048Store = GameState &
   Game2048Selectors &
   Game2048Actions;
 
-const DEFAULT_METRICS: GameMetrics = {
-  totalMoves: 0,
-  totalFours: 0,
-  gamesStarted: 0,
-  maxTile: 0,
-};
-
 const createBaselineState = (): GameState => ({
   grid: createEmptyGrid(),
   score: 0,
@@ -74,8 +70,8 @@ const createBaselineState = (): GameState => ({
   hasWon: false,
   isOver: false,
   moveCount: 0,
-  metrics: { ...DEFAULT_METRICS },
-  achievements: [],
+  metrics: { ...DEFAULT_GAME_METRICS },
+  achievements: createInitialAchievements(),
   history: [],
   maxTile: 0,
   rngSeed: undefined,
@@ -114,35 +110,33 @@ const extractTiles = (grid: Grid): TileView[] => {
   return tiles;
 };
 
-const resetAchievementProgress = (achievements: Achievement[]): Achievement[] =>
-  achievements.map((achievement) => ({
-    ...achievement,
-    progress: 0,
-    unlockedAt: null,
-  }));
-
 const mergeState = (incoming?: Partial<GameState> | null): GameState => {
   const baseline = createBaselineState();
   if (!incoming) {
     return baseline;
   }
 
+  const mergedGrid = incoming.grid ? cloneGrid(incoming.grid) : baseline.grid;
+  const mergedMetrics = incoming.metrics
+    ? { ...baseline.metrics, ...incoming.metrics }
+    : baseline.metrics;
+  const mergedHistory = Array.isArray(incoming.history)
+    ? incoming.history.map((snapshot) => ({
+        ...snapshot,
+        grid: cloneGrid(snapshot.grid),
+      }))
+    : baseline.history;
+  const mergedAchievements = evaluateAchievements(
+    mergeAchievementsWithDefinitions(incoming.achievements),
+    mergedMetrics,
+  );
+
   return {
     ...baseline,
-    ...incoming,
-    grid: incoming.grid ? cloneGrid(incoming.grid) : baseline.grid,
-    metrics: incoming.metrics
-      ? { ...baseline.metrics, ...incoming.metrics }
-      : baseline.metrics,
-    achievements: Array.isArray(incoming.achievements)
-      ? incoming.achievements.map((achievement) => ({ ...achievement }))
-      : baseline.achievements,
-    history: Array.isArray(incoming.history)
-      ? incoming.history.map((snapshot) => ({
-          ...snapshot,
-          grid: cloneGrid(snapshot.grid),
-        }))
-      : baseline.history,
+    grid: mergedGrid,
+    metrics: mergedMetrics,
+    achievements: mergedAchievements,
+    history: mergedHistory,
     maxTile: incoming.maxTile ?? baseline.maxTile,
     score: incoming.score ?? baseline.score,
     bestScore: incoming.bestScore ?? baseline.bestScore,
@@ -176,6 +170,13 @@ export const useGame2048Store = create<Game2048Store>((set, get) => ({
     const spawnedFours = tiles.filter((tile) => tile.value === 4).length;
     const maxTile = getMaxTileValue(seededGrid);
     const hasMoves = canMove(seededGrid);
+    const nextMetrics: GameMetrics = {
+      totalMoves: previous.metrics.totalMoves,
+      totalFours: previous.metrics.totalFours + spawnedFours,
+      gamesStarted: previous.metrics.gamesStarted + 1,
+      maxTile: Math.max(previous.metrics.maxTile, maxTile),
+    };
+    const nextAchievements = evaluateAchievements(previous.achievements, nextMetrics);
 
     set(() => ({
       ...previous,
@@ -186,12 +187,8 @@ export const useGame2048Store = create<Game2048Store>((set, get) => ({
       moveCount: 0,
       history: [],
       maxTile,
-      metrics: {
-        totalMoves: previous.metrics.totalMoves,
-        totalFours: previous.metrics.totalFours + spawnedFours,
-        gamesStarted: previous.metrics.gamesStarted + 1,
-        maxTile: Math.max(previous.metrics.maxTile, maxTile),
-      },
+      metrics: nextMetrics,
+      achievements: nextAchievements,
       hasMoves,
       rngSeed,
     }));
@@ -217,6 +214,13 @@ export const useGame2048Store = create<Game2048Store>((set, get) => ({
     const maxTile = Math.max(current.maxTile, getMaxTileValue(gridWithSpawn));
     const hasWon = current.hasWon || hasReachedWinningTile(gridWithSpawn);
     const hasMoves = !isGameOver(gridWithSpawn);
+    const nextMetrics: GameMetrics = {
+      totalMoves: current.metrics.totalMoves + 1,
+      totalFours: current.metrics.totalFours + (spawnedTile?.value === 4 ? 1 : 0),
+      gamesStarted: current.metrics.gamesStarted,
+      maxTile: Math.max(current.metrics.maxTile, maxTile),
+    };
+    const nextAchievements = evaluateAchievements(current.achievements, nextMetrics);
 
     set(() => ({
       ...current,
@@ -227,12 +231,8 @@ export const useGame2048Store = create<Game2048Store>((set, get) => ({
       hasWon,
       isOver: !hasMoves,
       maxTile,
-      metrics: {
-        totalMoves: current.metrics.totalMoves + 1,
-        totalFours: current.metrics.totalFours + (spawnedTile?.value === 4 ? 1 : 0),
-        gamesStarted: current.metrics.gamesStarted,
-        maxTile: Math.max(current.metrics.maxTile, maxTile),
-      },
+      metrics: nextMetrics,
+      achievements: nextAchievements,
       history: pushHistory(current.history, snapshot),
       hasMoves,
     }));
@@ -266,10 +266,14 @@ export const useGame2048Store = create<Game2048Store>((set, get) => ({
   },
 
   resetAchievements: () => {
-    set((state) => ({
-      ...state,
-      achievements: resetAchievementProgress(state.achievements),
-    }));
+    set((state) => {
+      const metrics = { ...DEFAULT_GAME_METRICS };
+      return {
+        ...state,
+        metrics,
+        achievements: createInitialAchievements(),
+      };
+    });
   },
 
   hydrate: (snapshot) => {

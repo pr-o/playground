@@ -3,3 +3,4 @@ export * from './ids';
 export * from './types';
 export * from './logic';
 export * from './storage';
+export * from './achievements';

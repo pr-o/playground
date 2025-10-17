@@ -1,4 +1,4 @@
-import type { MoveDirection } from './types';
+import type { GameMetrics, MoveDirection } from './types';
 
 export const BOARD_SIZE = 4;
 export const INITIAL_TILE_COUNT = 2;
@@ -20,3 +20,10 @@ export const STORAGE_KEYS = {
   BEST_SCORE: '2048_clone/best_score',
   ACHIEVEMENTS: '2048_clone/achievements',
 } as const;
+
+export const DEFAULT_GAME_METRICS: GameMetrics = {
+  totalMoves: 0,
+  totalFours: 0,
+  gamesStarted: 0,
+  maxTile: 0,
+};

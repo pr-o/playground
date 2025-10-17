@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { AchievementShelf } from '@/components/game-2048/AchievementShelf';
 import { BOARD_SIZE } from '@/lib/game-2048';
 import type { MoveDirection } from '@/lib/game-2048';
 import { useGame2048Store } from '@/store/game-2048';
@@ -156,6 +157,8 @@ export function Game2048() {
   const undo = useGame2048Store((state) => state.undo);
   const isHydrated = useGame2048Store((state) => state.isHydrated);
   const move = useGame2048Store((state) => state.move);
+  const achievements = useGame2048Store((state) => state.achievements);
+  const resetAchievements = useGame2048Store((state) => state.resetAchievements);
 
   const hasTiles = useMemo(
     () => grid.some((row) => row.some((cell) => cell !== null)),
@@ -286,6 +289,8 @@ export function Game2048() {
         </div>
       </div>
 
+      <AchievementShelf achievements={achievements} onReset={resetAchievements} />
+
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_260px]">
         <div className="relative mx-auto w-full max-w-xl">
           <div
@@ -411,7 +416,7 @@ export function Game2048() {
             </p>
             <ul className="mt-2 space-y-1">
               <li>• Particle effects for merges and spawns</li>
-              <li>• Detailed achievement shelf with unlock toasts</li>
+              <li>• Achievement unlock toasts and celebrations</li>
               <li>• Session insights and challenge modes</li>
             </ul>
           </div>
