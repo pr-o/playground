@@ -54,7 +54,8 @@ export function useGameInput(boardRef: RefObject<HTMLElement | null>) {
       const touchStart = { x: 0, y: 0, active: false };
 
       const onTouchStart = (event: TouchEvent) => {
-        if (!isHydratedRef.current || isOverRef.current) return;
+        const state = useGame2048Store.getState();
+        if (!state.isHydrated || state.isOver) return;
         const touch = event.touches[0];
         if (!touch) return;
         touchStart.x = touch.clientX;
