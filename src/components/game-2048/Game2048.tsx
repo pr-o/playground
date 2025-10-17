@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { AchievementShelf } from '@/components/game-2048/AchievementShelf';
 import { BOARD_SIZE } from '@/lib/game-2048';
 import type { MoveDirection } from '@/lib/game-2048';
+import { cn } from '@/lib/utils';
 import { useGame2048Store } from '@/store/game-2048';
 import { useGamePersistence } from '@/hooks/game-2048/useGamePersistence';
 import { useGameInput } from '@/hooks/game-2048/useGameInput';
@@ -18,7 +19,7 @@ const integerFormatter = new Intl.NumberFormat('en-US', {
  */
 const TILE_MOVE_DURATION_MS = 140;
 const MERGE_BOUNCE_DURATION_MS = 440;
-const NEW_TILE_DELAY_MS = 260;
+const NEW_TILE_DELAY_MS = 220;
 const NEW_TILE_POP_DURATION_MS = 200;
 
 const MOVE_EASE = [0.22, 1, 0.36, 1] as const;
@@ -56,7 +57,7 @@ const ControlButton = ({
   variant?: 'default' | 'ghost';
 }) => {
   const base =
-    'min-w-[120px] rounded-full px-5 py-2 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2';
+    'min-w-[120px] rounded-full px-4 py-6 text-md font-semibold transition cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2';
   const styles =
     variant === 'ghost'
       ? 'border border-border bg-background/40 text-foreground hover:bg-background/70 disabled:text-muted-foreground'
@@ -83,12 +84,14 @@ const directionLabels: Record<MoveDirection, string> = {
 function DirectionPad({
   onMove,
   disabled,
+  className,
 }: {
   onMove: (direction: MoveDirection) => void;
   disabled: boolean;
+  className?: string;
 }) {
   const padButtonClasses =
-    'flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-card text-lg font-semibold text-foreground transition hover:bg-card/80 disabled:cursor-not-allowed disabled:text-muted-foreground';
+    'flex h-12 w-12 items-center justify-center rounded-xl cursor-pointer border border-border/80 bg-gradient-to-br from-background via-card to-muted text-xl font-semibold text-foreground shadow-[inset_0_2px_2px_rgba(255,255,255,0.35),0_6px_12px_-4px_rgba(15,23,42,0.45)] transition hover:translate-y-[-1px] hover:shadow-[inset_0_2px_3px_rgba(255,255,255,0.45),0_14px_22px_-12px_rgba(15,23,42,0.55)] active:translate-y-[1px] active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.35),0_6px_10px_-6px_rgba(15,23,42,0.6)] disabled:cursor-not-allowed disabled:opacity-60';
 
   const renderButton = (direction: MoveDirection) => (
     <button
@@ -104,17 +107,19 @@ function DirectionPad({
   );
 
   return (
-    <div className="mt-6 flex justify-center">
-      <div className="grid grid-cols-3 gap-2">
-        <span aria-hidden />
-        {renderButton('up')}
-        <span aria-hidden />
-        {renderButton('left')}
-        <span aria-hidden />
-        {renderButton('right')}
-        <span aria-hidden />
-        {renderButton('down')}
-        <span aria-hidden />
+    <div className={cn('flex justify-center', className)}>
+      <div className="rounded-[28px] border border-border/60 bg-gradient-to-br from-muted/70 via-card to-background p-4 shadow-[0_20px_45px_-25px_rgba(15,23,42,0.6)]">
+        <div className="grid grid-cols-3 gap-3">
+          <span aria-hidden />
+          {renderButton('up')}
+          <span aria-hidden />
+          {renderButton('left')}
+          <span aria-hidden />
+          {renderButton('right')}
+          <span aria-hidden />
+          {renderButton('down')}
+          <span aria-hidden />
+        </div>
       </div>
     </div>
   );
@@ -263,19 +268,6 @@ export function Game2048() {
     }
   }, [isHydrated, hasTiles, newGame]);
 
-  const statusMessage = useMemo(() => {
-    if (isOver && !hasWon) {
-      return "No moves left — tap 'New Game' to try again.";
-    }
-    if (hasWon && !isOver) {
-      return 'You reached 2048! Keep going for a higher score.';
-    }
-    if (!hasMoves && !isOver) {
-      return 'Moves unavailable. Try a different direction.';
-    }
-    return 'Merge tiles with arrow keys, WASD, on-screen controls, or touch swipes.';
-  }, [hasWon, isOver, hasMoves]);
-
   const canUndo = historyLength > 0;
   const overlayState = {
     hasWon,
@@ -291,12 +283,6 @@ export function Game2048() {
     <section className="flex w-full max-w-5xl flex-col items-stretch gap-8">
       <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex flex-1 flex-col gap-4">
-          <div>
-            <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-              Merge the tiles
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">{statusMessage}</p>
-          </div>
           <div className="grid w-full gap-3 sm:grid-cols-3">
             <ScoreCard label="Score" value={score} />
             <ScoreCard label="Best" value={bestScore} />
@@ -313,8 +299,8 @@ export function Game2048() {
 
       <AchievementShelf achievements={achievements} onReset={resetAchievements} />
 
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_260px]">
-        <div className="relative mx-auto w-full max-w-xl">
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="relative w-full max-w-xl lg:mx-auto">
           <div
             ref={boardRef}
             className="relative aspect-square w-full touch-pan-y rounded-[32px] bg-gradient-to-br from-muted/80 via-muted to-muted/60 p-5 shadow-xl"
@@ -425,43 +411,48 @@ export function Game2048() {
           </div>
         </div>
 
-        <aside className="flex flex-col gap-4 rounded-3xl border border-border/60 bg-card/50 p-6 shadow-sm backdrop-blur">
-          <h3 className="text-lg font-semibold text-foreground">How to play</h3>
-          <ol className="space-y-2 text-sm text-muted-foreground">
-            <li>
-              <strong className="text-foreground">1.</strong> Combine matching tiles to
-              double their value.
-            </li>
-            <li>
-              <strong className="text-foreground">2.</strong> Every move spawns a new
-              tile— plan ahead to avoid filling the board.
-            </li>
-            <li>
-              <strong className="text-foreground">3.</strong> Reach the 2048 tile to win,
-              then keep going to push your best score.
-            </li>
-          </ol>
-          <div className="rounded-2xl bg-muted/30 p-4 text-xs text-muted-foreground">
-            <p className="font-semibold uppercase tracking-[0.3em] text-muted-foreground/80">
-              Coming soon
-            </p>
-            <ul className="mt-2 space-y-1">
-              <li>• Particle effects for merges and spawns</li>
-              <li>• Achievement unlock toasts and celebrations</li>
-              <li>• Session insights and challenge modes</li>
-            </ul>
+        <aside className="flex flex-col gap-6 rounded-3xl border border-border/60 bg-card/50 p-6 shadow-sm backdrop-blur">
+          <div className="flex flex-col gap-4">
+            <div>
+              <h3 className="text-lg font-semibold text-foreground">How to play</h3>
+              <ol className="mt-3 space-y-2 text-sm text-muted-foreground">
+                <li>
+                  <strong className="text-foreground">1.</strong> Merge tiles with arrow
+                  keys, WASD, on-screen controls, or touch swipes to double their value.
+                </li>
+                <li>
+                  <strong className="text-foreground">2.</strong> Every move spawns a new
+                  tile— plan ahead to avoid filling the board.
+                </li>
+                <li>
+                  <strong className="text-foreground">3.</strong> Reach the 2048 tile to
+                  win, then keep going to push your best score.
+                </li>
+              </ol>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-semibold text-foreground">Controls</h3>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Use arrow keys or WASD on desktop. On touch devices, swipe directly on the
+                board.
+              </p>
+              <DirectionPad
+                className="mt-4"
+                onMove={(direction) => {
+                  if (canInteract) {
+                    move(direction);
+                  }
+                }}
+                disabled={!canInteract}
+              />
+              <p className="mt-8 text-xs text-muted-foreground">
+                * Moves are throttled slightly to keep animations smooth and readable.
+              </p>
+            </div>
           </div>
         </aside>
       </div>
-
-      <DirectionPad
-        onMove={(direction) => {
-          if (canInteract) {
-            move(direction);
-          }
-        }}
-        disabled={!canInteract}
-      />
     </section>
   );
 }

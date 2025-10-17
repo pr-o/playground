@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { Award, Crown, Gem, Sparkles, Sprout, Star } from 'lucide-react';
 import type { Achievement } from '@/lib/game-2048';
@@ -100,21 +99,13 @@ type AchievementShelfProps = {
 };
 
 export function AchievementShelf({ achievements, onReset }: AchievementShelfProps) {
-  const hasUnlocked = useMemo(
-    () => achievements.some((achievement) => Boolean(achievement.unlockedAt)),
-    [achievements],
-  );
-
   return (
     <div className="rounded-3xl border border-border/60 bg-card/60 p-5 shadow-sm backdrop-blur">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-[0.42em] text-muted-foreground/80">
+          <p className="text-lg uppercase tracking-[0.1em] font-bold text-foreground">
             Achievements
           </p>
-          <h3 className="mt-1 text-lg font-semibold text-foreground">
-            {hasUnlocked ? 'Keep the streak going' : 'Unlock your first badge'}
-          </h3>
         </div>
         {onReset ? (
           <button
