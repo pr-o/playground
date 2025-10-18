@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+
 import {
   Award,
   Crown,
@@ -19,7 +20,21 @@ import { AchievementShelf } from '@/components/game-2048/AchievementShelf';
 import { BOARD_SIZE } from '@/lib/game-2048';
 import type { MoveDirection } from '@/lib/game-2048';
 import { cn } from '@/lib/utils';
-import { useGame2048Store } from '@/store/game-2048';
+import { useGame2048Store, type Game2048Store } from '@/store/game-2048';
+
+const selectGrid = (state: Game2048Store) => state.grid;
+const selectScore = (state: Game2048Store) => state.score;
+const selectBestScore = (state: Game2048Store) => state.bestScore;
+const selectMoveCount = (state: Game2048Store) => state.moveCount;
+const selectHasWon = (state: Game2048Store) => state.hasWon;
+const selectIsOver = (state: Game2048Store) => state.isOver;
+const selectHistoryLength = (state: Game2048Store) => state.history.length;
+const selectNewGame = (state: Game2048Store) => state.newGame;
+const selectUndo = (state: Game2048Store) => state.undo;
+const selectIsHydrated = (state: Game2048Store) => state.isHydrated;
+const selectMove = (state: Game2048Store) => state.move;
+const selectAchievements = (state: Game2048Store) => state.achievements;
+const selectResetAchievements = (state: Game2048Store) => state.resetAchievements;
 import { useGamePersistence } from '@/hooks/game-2048/useGamePersistence';
 import { useGameInput } from '@/hooks/game-2048/useGameInput';
 
@@ -193,19 +208,19 @@ const getTileFontSize = (value: number) => {
 export function Game2048() {
   useGamePersistence();
 
-  const grid = useGame2048Store((state) => state.grid);
-  const score = useGame2048Store((state) => state.score);
-  const bestScore = useGame2048Store((state) => state.bestScore);
-  const moveCount = useGame2048Store((state) => state.moveCount);
-  const hasWon = useGame2048Store((state) => state.hasWon);
-  const isOver = useGame2048Store((state) => state.isOver);
-  const historyLength = useGame2048Store((state) => state.history.length);
-  const newGame = useGame2048Store((state) => state.newGame);
-  const undo = useGame2048Store((state) => state.undo);
-  const isHydrated = useGame2048Store((state) => state.isHydrated);
-  const move = useGame2048Store((state) => state.move);
-  const achievements = useGame2048Store((state) => state.achievements);
-  const resetAchievements = useGame2048Store((state) => state.resetAchievements);
+  const grid = useGame2048Store(selectGrid);
+  const score = useGame2048Store(selectScore);
+  const bestScore = useGame2048Store(selectBestScore);
+  const moveCount = useGame2048Store(selectMoveCount);
+  const hasWon = useGame2048Store(selectHasWon);
+  const isOver = useGame2048Store(selectIsOver);
+  const historyLength = useGame2048Store(selectHistoryLength);
+  const newGame = useGame2048Store(selectNewGame);
+  const undo = useGame2048Store(selectUndo);
+  const isHydrated = useGame2048Store(selectIsHydrated);
+  const move = useGame2048Store(selectMove);
+  const achievements = useGame2048Store(selectAchievements);
+  const resetAchievements = useGame2048Store(selectResetAchievements);
 
   const hasTiles = useMemo(
     () => grid.some((row) => row.some((cell) => cell !== null)),
