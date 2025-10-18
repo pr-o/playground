@@ -365,7 +365,12 @@ export function Game2048() {
         </div>
         <div className="flex flex-shrink-0 gap-3 self-start sm:self-auto">
           <ControlButton onClick={() => newGame()}>New Game</ControlButton>
-          <ControlButton onClick={() => undo()} disabled={!canUndo} variant="ghost">
+          <ControlButton
+            onClick={() => undo()}
+            disabled={!canUndo}
+            variant="ghost"
+            data-testid="undo-button"
+          >
             Undo
           </ControlButton>
         </div>
@@ -378,6 +383,7 @@ export function Game2048() {
           <div
             ref={boardRef}
             data-testid="board"
+            data-game-hydrated={isHydrated ? 'true' : 'false'}
             className="relative aspect-square w-full touch-pan-y rounded-[32px] bg-gradient-to-br from-muted/80 via-muted to-muted/60 p-5 shadow-xl"
           >
             <div

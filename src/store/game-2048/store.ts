@@ -330,3 +330,13 @@ export const useGame2048Store = create<Game2048Store>((set, get) => ({
 }));
 
 export type { TileView, OverlayState };
+
+declare global {
+  interface Window {
+    __game2048Store?: typeof useGame2048Store;
+  }
+}
+
+if (typeof window !== 'undefined') {
+  window.__game2048Store = useGame2048Store;
+}

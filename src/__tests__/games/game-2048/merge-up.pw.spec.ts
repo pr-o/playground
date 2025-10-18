@@ -59,10 +59,10 @@ test.describe('2048 merge move', () => {
     );
 
     await page.goto('/2048');
-    await page.waitForLoadState('networkidle');
 
     const board = page.getByTestId('board');
     await board.waitFor({ state: 'visible' });
+    await expect(board).toHaveAttribute('data-game-hydrated', 'true');
 
     await page.keyboard.press('ArrowUp');
     await page.waitForTimeout(600);

@@ -6,36 +6,21 @@ const STORAGE_KEYS = {
   achievements: '2048_clone/achievements',
 } as const;
 
-const gameOverFixture = {
+const undoFixture = {
   grid: [
     [
       { id: 'tile-a', value: 2, mergedFrom: null },
-      { id: 'tile-b', value: 4, mergedFrom: null },
-      { id: 'tile-c', value: 8, mergedFrom: null },
-      { id: 'tile-d', value: 16, mergedFrom: null },
+      { id: 'tile-b', value: 2, mergedFrom: null },
+      null,
+      null,
     ],
-    [
-      { id: 'tile-e', value: 2, mergedFrom: null },
-      { id: 'tile-f', value: 32, mergedFrom: null },
-      { id: 'tile-g', value: 64, mergedFrom: null },
-      { id: 'tile-h', value: 128, mergedFrom: null },
-    ],
-    [
-      { id: 'tile-i', value: 8, mergedFrom: null },
-      { id: 'tile-j', value: 16, mergedFrom: null },
-      { id: 'tile-k', value: 32, mergedFrom: null },
-      { id: 'tile-l', value: 64, mergedFrom: null },
-    ],
-    [
-      { id: 'tile-m', value: 16, mergedFrom: null },
-      { id: 'tile-n', value: 128, mergedFrom: null },
-      { id: 'tile-o', value: 256, mergedFrom: null },
-      { id: 'tile-p', value: 512, mergedFrom: null },
-    ],
+    [{ id: 'tile-c', value: 4, mergedFrom: null }, null, null, null],
+    [null, null, null, null],
+    [null, null, null, null],
   ],
   score: 0,
   moveCount: 0,
-  maxTile: 512,
+  maxTile: 4,
   hasWon: false,
   isOver: false,
   history: [],
@@ -43,15 +28,15 @@ const gameOverFixture = {
     totalMoves: 0,
     totalFours: 0,
     gamesStarted: 1,
-    maxTile: 512,
+    maxTile: 4,
     undoUses: 0,
   },
-  rngSeed: 1357,
+  rngSeed: 2468,
   savedAt: 0,
 };
 
-test.describe('2048 game over overlay', () => {
-  test('surfaces modal when no moves remain', async ({ page }) => {
+test.describe('2048 undo interactions', () => {
+  test('restores board and metrics after undo', async ({ page }) => {
     await page.addInitScript(
       ({ state, keys, rngValues }) => {
         window.localStorage.clear();
@@ -72,9 +57,9 @@ test.describe('2048 game over overlay', () => {
         };
       },
       {
-        state: { persisted: gameOverFixture, bestScore: 0 },
+        state: { persisted: undoFixture, bestScore: 0 },
         keys: STORAGE_KEYS,
-        rngValues: [0, 0.1],
+        rngValues: [0.25, 0.3],
       },
     );
 
@@ -86,21 +71,31 @@ test.describe('2048 game over overlay', () => {
 
     await page.waitForFunction(() => Boolean(window.__game2048Store));
 
+    await page.waitForFunction(() => Boolean(window.__game2048Store));
+
     await page.evaluate(() => {
-      const store = window.__game2048Store;
-      if (!store) return;
-      store.setState((state) => ({
-        ...state,
-        isOver: true,
-        hasWon: false,
-        hasMoves: false,
-      }));
+      window.__game2048Store?.getState().move('right');
     });
 
-    const overlay = page.getByTestId('game-over-overlay');
-    await overlay.waitFor({ state: 'visible' });
+    await page.waitForFunction(() => {
+      const state = window.__game2048Store?.getState();
+      return state?.score === 4 && state.grid[0]?.[3]?.value === 4;
+    });
 
-    await expect(overlay).toHaveText(/Game over/i);
-    await expect(overlay).toHaveScreenshot('game-2048/game-over.png');
+    const scoreValue = page.getByTestId('score-card-score-value').last();
+    await expect(scoreValue).toHaveText('4');
+
+    await page.evaluate(() => {
+      window.__game2048Store?.getState().undo();
+    });
+
+    await page.waitForFunction(() => {
+      const state = window.__game2048Store?.getState();
+      return state?.score === 0 && state.grid[0]?.[0]?.value === 2;
+    });
+
+    await expect(scoreValue).toHaveText('0');
+
+    await expect(board).toHaveScreenshot('game-2048/undo.png');
   });
 });

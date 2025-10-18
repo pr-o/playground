@@ -7,10 +7,10 @@ test.describe('2048 initial board render', () => {
     });
 
     await page.goto('/2048');
-    await page.waitForLoadState('networkidle');
 
     const board = page.getByTestId('board');
     await board.waitFor({ state: 'visible' });
+    await expect(board).toHaveAttribute('data-game-hydrated', 'true');
     await page.waitForTimeout(400);
 
     await expect(page).toHaveScreenshot('game-2048/initial.png', {
