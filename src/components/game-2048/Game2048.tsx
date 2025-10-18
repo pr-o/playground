@@ -370,6 +370,7 @@ export function Game2048() {
         <div className="relative w-full max-w-xl lg:mx-auto">
           <div
             ref={boardRef}
+            data-testid="board"
             className="relative aspect-square w-full touch-pan-y rounded-[32px] bg-gradient-to-br from-muted/80 via-muted to-muted/60 p-5 shadow-xl"
           >
             <div
