@@ -1,6 +1,27 @@
+import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { Game2048 } from '@/components/games/game-2048/Game2048';
 import { SonnerToaster } from '@/components/ui/sonner';
+
+const title = '2048 Remix - Playground';
+
+export const metadata: Metadata = {
+  title,
+  description:
+    'Browse the curated Playground projects, including interactive apps and games built with Next.js and modern UI patterns.',
+  openGraph: {
+    title,
+    description:
+      'Discover interactive apps and games crafted in the Playground with polished Next.js experiences.',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title,
+    description:
+      'Discover interactive apps and games crafted in the Playground with polished Next.js experiences.',
+  },
+};
 
 export default function Game2048Page() {
   return (

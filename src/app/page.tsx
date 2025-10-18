@@ -1,5 +1,26 @@
+import type { Metadata } from 'next';
 import { ProjectCard } from '@/components/ProjectCard';
 import { ProjectEntries } from '@/lib/project-entries';
+
+const title = 'Playground – Things in Playground';
+
+export const metadata: Metadata = {
+  title,
+  description:
+    'Browse the curated Playground projects, including interactive apps and games built with Next.js and modern UI patterns.',
+  openGraph: {
+    title,
+    description:
+      'Discover interactive apps and games crafted in the Playground with polished Next.js experiences.',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title,
+    description:
+      'Explore interactive Playground projects featuring immersive apps and games built with Next.js.',
+  },
+};
 
 const uniqueKinds = [...new Set(ProjectEntries.map(({ kind }) => kind))];
 
