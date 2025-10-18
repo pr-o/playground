@@ -471,7 +471,10 @@ export function Game2048() {
             </motion.div>
 
             {overlayState.isOver && (
-              <div className="absolute inset-5 z-10 flex flex-col items-center justify-center gap-4 rounded-[28px] bg-background/90 text-center shadow-xl">
+              <div
+                className="absolute inset-5 z-10 flex flex-col items-center justify-center gap-4 rounded-[28px] bg-background/90 text-center shadow-xl"
+                data-testid="game-over-overlay"
+              >
                 <h3 className="text-3xl font-bold">
                   {overlayState.hasWon ? 'You did it!' : 'Game over'}
                 </h3>
