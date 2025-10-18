@@ -3,6 +3,7 @@ import { defineConfig } from '@playwright/test';
 export default defineConfig({
   testDir: './src/__tests__',
   testMatch: /.*\.pw\.spec\.(js|ts)/,
+  snapshotPathTemplate: '{testDir}/__screenshots__/{testFilePath}/{arg}{ext}',
   timeout: 30_000,
   expect: {
     timeout: 5_000,

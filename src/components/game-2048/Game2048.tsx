@@ -52,25 +52,32 @@ const achievementIconMap: Record<string, LucideIcon> = {
 
 const ACHIEVEMENT_TOAST_FALLBACK = 'Achievement unlocked — keep the streak going!';
 
-const ScoreCard = ({ label, value }: { label: string; value: number }) => (
-  <div className="flex w-full min-w-[120px] flex-col rounded-2xl bg-gradient-to-br from-muted to-muted/60 px-4 py-3 text-left shadow-sm">
-    <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-      {label}
-    </span>
-    <AnimatePresence mode="popLayout" initial={false}>
-      <motion.span
-        key={value}
-        initial={{ y: 8, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        exit={{ y: -8, opacity: 0 }}
-        transition={{ duration: 0.12 }}
-        className="mt-1 text-2xl font-semibold text-foreground tabular-nums"
-      >
-        {integerFormatter.format(value)}
-      </motion.span>
-    </AnimatePresence>
-  </div>
-);
+const ScoreCard = ({ label, value }: { label: string; value: number }) => {
+  const slug = label.toLowerCase().replace(/\s+/g, '-');
+  return (
+    <div
+      className="flex w-full min-w-[120px] flex-col rounded-2xl bg-gradient-to-br from-muted to-muted/60 px-4 py-3 text-left shadow-sm"
+      data-testid={`score-card-${slug}`}
+    >
+      <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+        {label}
+      </span>
+      <AnimatePresence mode="popLayout" initial={false}>
+        <motion.span
+          key={value}
+          initial={{ y: 8, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: -8, opacity: 0 }}
+          transition={{ duration: 0.12 }}
+          className="mt-1 text-2xl font-semibold text-foreground tabular-nums"
+          data-testid={`score-card-${slug}-value`}
+        >
+          {integerFormatter.format(value)}
+        </motion.span>
+      </AnimatePresence>
+    </div>
+  );
+};
 
 const ControlButton = ({
   onClick,

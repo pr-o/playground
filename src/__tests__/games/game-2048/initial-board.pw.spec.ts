@@ -13,7 +13,7 @@ test.describe('2048 initial board render', () => {
     await board.waitFor({ state: 'visible' });
     await page.waitForTimeout(400);
 
-    await expect(page).toHaveScreenshot('initial-board.png', {
+    await expect(page).toHaveScreenshot('game-2048/initial.png', {
       fullPage: true,
     });
   });
