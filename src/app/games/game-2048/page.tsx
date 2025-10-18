@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { Game2048 } from '@/components/game-2048/Game2048';
+import { Game2048 } from '@/components/games/game-2048/Game2048';
 import { SonnerToaster } from '@/components/ui/sonner';
 
 export default function Game2048Page() {

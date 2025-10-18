@@ -16,7 +16,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
-import { AchievementShelf } from '@/components/game-2048/AchievementShelf';
+import { AchievementShelf } from '@/components/games/game-2048/AchievementShelf';
 import { BOARD_SIZE } from '@/lib/game-2048';
 import type { MoveDirection } from '@/lib/game-2048';
 import { cn } from '@/lib/utils';

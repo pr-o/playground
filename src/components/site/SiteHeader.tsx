@@ -5,13 +5,19 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from './ThemeToggle';
+import { ProjectKind } from '@/lib/project-entries';
 
 const navItems = [
   { href: '/', label: 'Home', match: (pathname: string) => pathname === '/' },
   {
-    href: '/clones',
-    label: 'Clones',
-    match: (pathname: string) => pathname.startsWith('/clones'),
+    href: '/apps',
+    label: ProjectKind.App,
+    match: (pathname: string) => pathname.startsWith('/apps'),
+  },
+  {
+    href: '/games',
+    label: ProjectKind.Game,
+    match: (pathname: string) => pathname.startsWith('/games'),
   },
 ];
 
@@ -20,7 +26,7 @@ export function SiteHeader() {
   const [isHidden, setIsHidden] = useState(false);
 
   useEffect(() => {
-    setIsHidden(pathname.startsWith('/clones/netflix'));
+    setIsHidden(pathname.startsWith('/apps/netflix'));
   }, [pathname]);
 
   if (isHidden) {

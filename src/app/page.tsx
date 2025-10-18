@@ -1,35 +1,38 @@
-import Link from 'next/link';
-import { cloneEntries } from '@/lib/clones';
+import { ProjectCard } from '@/components/ProjectCard';
+import { ProjectEntries } from '@/lib/project-entries';
+
+const uniqueKinds = [...new Set(ProjectEntries.map(({ kind }) => kind))];
 
 export default function Home() {
   return (
     <main className="mx-auto flex max-w-2xl flex-col gap-6 p-6">
       <header className="space-y-2">
-        <h1 className="text-2xl font-semibold">Available Pages</h1>
-        <p className="text-sm text-muted-foreground">
-          Choose one of the available clones to explore.
+        <h1 className="text-3xl font-semibold">Pages</h1>
+        <p className="text-md text-muted-foreground">
+          Choose one of the available projects to explore.
         </p>
       </header>
-      <nav>
-        <ul className="space-y-3">
-          {cloneEntries.map((clone) => (
-            <li key={clone.href}>
-              <Link
-                href={clone.href}
-                className="group block rounded-md border border-border bg-card px-4 py-3 transition-colors hover:bg-card/80"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">{clone.title}</span>
-                  <span className="text-xs uppercase tracking-wide text-muted-foreground group-hover:text-foreground">
-                    {clone.href}
-                  </span>
-                </div>
-                <p className="mt-2 text-xs text-muted-foreground">{clone.description}</p>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </nav>
+
+      <section className="mt-2">
+        {uniqueKinds.map((kind) => {
+          const filtered = ProjectEntries.filter((item) => item.kind === kind);
+          return (
+            <div key={kind} className="space-y-3 mb-6">
+              <h1 className="text-2xl font-semibold">{kind}</h1>
+              {filtered.map(({ href, title, tag, description }) => (
+                <ProjectCard
+                  key={href}
+                  href={href}
+                  title={title}
+                  meta={tag}
+                  description={description}
+                  className="rounded-md px-4 py-3"
+                />
+              ))}
+            </div>
+          );
+        })}
+      </section>
     </main>
   );
 }
