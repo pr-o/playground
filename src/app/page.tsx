@@ -7,7 +7,7 @@ export default function Home() {
   return (
     <main className="mx-auto flex max-w-2xl flex-col gap-6 p-6">
       <header className="space-y-2">
-        <h1 className="text-3xl font-semibold">Pages</h1>
+        <h1 className="text-3xl font-semibold">Things in Playground</h1>
         <p className="text-md text-muted-foreground">
           Choose one of the available projects to explore.
         </p>

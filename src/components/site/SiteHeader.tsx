@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { ThemeToggle } from './ThemeToggle';
+import { ThemeToggle } from '@/components/site/ThemeToggle';
 import { ProjectKind } from '@/lib/project-entries';
+import { LinkedInIcon } from '@/components/icons/LinkedInIcon';
 
 const navItems = [
   { href: '/', label: 'Home', match: (pathname: string) => pathname === '/' },
@@ -59,6 +60,15 @@ export function SiteHeader() {
           })}
         </nav>
         <div className="ml-auto flex items-center gap-2">
+          <Link
+            href="https://www.linkedin.com/in/sunghahhwang/"
+            aria-label="Visit LinkedIn"
+            className="shrink-0 rounded-full p-1 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-ring"
+            target="_blank"
+            rel="noreferrer"
+          >
+            <LinkedInIcon width={28} height={28} />
+          </Link>
           <ThemeToggle />
         </div>
       </div>
