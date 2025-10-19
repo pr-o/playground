@@ -5,7 +5,7 @@ export const BEJEWELED_CONFIG = {
   cols: 8,
   tileSize: 64,
   boardPadding: 16,
-  tileSpacing: 4,
+  tileSpacing: 2,
   swapDuration: 0.25,
   fallDuration: 0.35,
   minimumMatch: 3,

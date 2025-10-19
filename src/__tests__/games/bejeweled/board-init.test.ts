@@ -58,6 +58,14 @@ jest.mock('pixi.js', () => {
         this.position.y = point.y;
       },
     };
+    width = 64;
+    height = 64;
+    scale = {
+      set: (_valueX: number, _valueY?: number) => {
+        void _valueX;
+        void _valueY;
+      },
+    };
     visible = true;
     eventMode: string | undefined;
     cursor: string | undefined;
@@ -76,7 +84,7 @@ jest.mock('pixi.js', () => {
   }
 
   const Texture = {
-    from: () => ({ width: 64, height: 64 }),
+    from: () => ({ width: 64, height: 64, baseTexture: { valid: true } }),
   };
 
   const Assets = {

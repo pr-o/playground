@@ -19,7 +19,6 @@ export class Board {
   readonly container: Container;
   readonly fieldsContainer: Container;
   readonly tilesContainer: Container;
-  readonly highlightSprite: Sprite;
 
   readonly fields: Field[][] = [];
   readonly tiles: Tile[] = [];
@@ -44,10 +43,6 @@ export class Board {
     this.tilesContainer = new Container();
     this.tilesContainer.name = 'TilesLayer';
 
-    this.highlightSprite = new Sprite(getSelectedFieldTexture());
-    this.highlightSprite.anchor.set(0.5);
-    this.highlightSprite.visible = false;
-
     this.debugLayer = new Container();
     this.debugLayer.name = 'DebugMatchesLayer';
     this.debugLayer.visible = false;
@@ -56,7 +51,6 @@ export class Board {
     this.container.addChild(this.fieldsContainer);
     this.container.addChild(this.tilesContainer);
     this.container.addChild(this.debugLayer);
-    this.container.addChild(this.highlightSprite);
 
     options.stage.addChild(this.container);
     this.ticker = options.ticker;
@@ -76,12 +70,12 @@ export class Board {
   }
 
   destroy() {
+    this.setSelectedTile(null);
     this.tiles.forEach((tile) => tile.destroy());
     this.tileHandlers.forEach((handler, tile) => {
       tile.sprite.off('pointerdown', handler);
     });
     this.tileHandlers.clear();
-    this.selectedTile = null;
     this.container.destroy({ children: true });
     this.fields.length = 0;
     this.tiles.length = 0;
@@ -350,6 +344,7 @@ export class Board {
   private attachTileToField(tile: Tile, field: Field) {
     field.setTile(tile);
     this.registerTile(tile);
+    tile.sprite.zIndex = 1;
   }
 
   private registerTile(tile: Tile) {
@@ -388,13 +383,14 @@ export class Board {
   }
 
   private setSelectedTile(tile: Tile | null) {
+    if (this.selectedTile?.field) {
+      this.selectedTile.field.setSelected(false);
+    }
+
     this.selectedTile = tile;
 
     if (tile && tile.field) {
-      this.highlightSprite.visible = true;
-      this.highlightSprite.position.copyFrom(tile.field.sprite.position);
-    } else {
-      this.highlightSprite.visible = false;
+      tile.field.setSelected(true);
     }
   }
 

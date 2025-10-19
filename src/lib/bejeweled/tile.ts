@@ -17,6 +17,8 @@ export class Tile {
     this._id = id;
     this.sprite = new Sprite(getTileTexture(id));
     this.sprite.anchor.set(0.5);
+    this.sprite.scale.set(0.9, 0.9);
+
     this.sprite.eventMode = 'static';
     this.sprite.cursor = 'pointer';
   }

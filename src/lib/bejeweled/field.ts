@@ -1,6 +1,7 @@
 import { Sprite } from 'pixi.js';
 import { boardToWorld } from './board-geometry';
-import { getFieldTexture } from './resources';
+import { BEJEWELED_CONFIG } from './config';
+import { getFieldTexture, getSelectedFieldTexture } from './resources';
 import type { Tile } from './tile';
 
 type SetTileOptions = {
@@ -12,12 +13,14 @@ export class Field {
   readonly col: number;
   readonly sprite: Sprite;
   tile: Tile | null = null;
+  private selected = false;
 
   constructor(row: number, col: number) {
     this.row = row;
     this.col = col;
     this.sprite = new Sprite(getFieldTexture());
     this.sprite.anchor.set(0.5);
+    this.applyTexture(getFieldTexture());
     this.updateSpritePosition();
   }
 
@@ -46,8 +49,23 @@ export class Field {
     }
   }
 
+  setSelected(selected: boolean) {
+    if (this.selected === selected) {
+      return;
+    }
+    this.selected = selected;
+    this.applyTexture(selected ? getSelectedFieldTexture() : getFieldTexture());
+  }
+
   updateSpritePosition() {
     const { x, y } = this.position;
     this.sprite.position.set(x, y);
+  }
+
+  private applyTexture(texture: ReturnType<typeof getFieldTexture>) {
+    this.sprite.texture = texture;
+    const targetSize = BEJEWELED_CONFIG.tileSize - BEJEWELED_CONFIG.tileSpacing;
+    const scale = targetSize / texture.width;
+    this.sprite.scale.set(scale);
   }
 }
