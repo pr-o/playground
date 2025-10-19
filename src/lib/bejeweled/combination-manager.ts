@@ -1,7 +1,7 @@
 import type { Board } from './board';
 import type { Field } from './field';
 import type { Tile } from './tile';
-import { BEJEWELED_CONFIG, type BejeweledRuleOffset } from './config';
+import { BEJEWELED_CONFIG } from './config';
 
 export type MatchCluster = {
   tiles: Tile[];
@@ -34,18 +34,8 @@ export class CombinationManager {
           continue;
         }
 
-        const horizontal = this.collectMatch(
-          field,
-          tile,
-          BEJEWELED_CONFIG.combinationRules[0],
-          'row',
-        );
-        const vertical = this.collectMatch(
-          field,
-          tile,
-          BEJEWELED_CONFIG.combinationRules[1],
-          'col',
-        );
+        const horizontal = this.collectLineMatch(field, tile, 'row');
+        const vertical = this.collectLineMatch(field, tile, 'col');
 
         if (horizontal) {
           horizontal.tiles.forEach((matchedTile) => visited.add(matchedTile));
@@ -63,25 +53,40 @@ export class CombinationManager {
     return merged;
   }
 
-  // Collects matching tiles in the given direction if they share the same id.
-  private collectMatch(
+  private collectLineMatch(
     origin: Field,
     tile: Tile,
-    offsets: readonly BejeweledRuleOffset[],
-    direction: RawCluster['direction'],
+    axis: 'row' | 'col',
   ): RawCluster | null {
     const matchedTiles: Tile[] = [tile];
+    const id = tile.id;
 
-    for (const offset of offsets) {
-      const neighborField = this.board.getField(
-        origin.row + offset.row,
-        origin.col + offset.col,
-      );
-      if (!neighborField || !neighborField.tile || neighborField.tile.id !== tile.id) {
-        return null;
+    const step =
+      axis === 'row'
+        ? { forward: { row: 0, col: 1 }, backward: { row: 0, col: -1 } }
+        : { forward: { row: 1, col: 0 }, backward: { row: -1, col: 0 } };
+
+    const explore = (dir: { row: number; col: number }, pushFront: boolean) => {
+      let row = origin.row + dir.row;
+      let col = origin.col + dir.col;
+
+      while (true) {
+        const neighbor = this.board.getField(row, col);
+        if (!neighbor || !neighbor.tile || neighbor.tile.id !== id) {
+          break;
+        }
+        if (pushFront) {
+          matchedTiles.unshift(neighbor.tile);
+        } else {
+          matchedTiles.push(neighbor.tile);
+        }
+        row += dir.row;
+        col += dir.col;
       }
-      matchedTiles.push(neighborField.tile);
-    }
+    };
+
+    explore(step.backward, true);
+    explore(step.forward, false);
 
     if (matchedTiles.length < BEJEWELED_CONFIG.minimumMatch) {
       return null;
@@ -90,7 +95,7 @@ export class CombinationManager {
     return {
       tiles: matchedTiles,
       origin,
-      direction,
+      direction: axis,
     };
   }
 
