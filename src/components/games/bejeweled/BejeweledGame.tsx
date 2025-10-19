@@ -4,6 +4,15 @@ import { useEffect, useRef, useState } from 'react';
 import { Board } from '@/lib/bejeweled/board';
 import { initBejeweledPixi, type BejeweledPixiContext } from '@/lib/bejeweled/pixi';
 
+type DebugGetter = () => { rows: number; cols: number; tileCount: number };
+
+const assignDebugGetter = (getter: DebugGetter | undefined) => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+  (window as Window & { __BEJEWELED_DEBUG__?: DebugGetter }).__BEJEWELED_DEBUG__ = getter;
+};
+
 type InitStatus = 'loading' | 'ready' | 'error';
 
 export function BejeweledGame() {
@@ -39,6 +48,14 @@ export function BejeweledGame() {
           ticker: app.ticker,
         });
 
+        const updateDebugState = () => {
+          assignDebugGetter(() => ({
+            rows: board.fields.length,
+            cols: board.fields[0]?.length ?? 0,
+            tileCount: board.tiles.length,
+          }));
+        };
+
         const resize = () => {
           const targetWidth = host.clientWidth || app.renderer.width;
           const targetHeight = host.clientHeight || app.renderer.height;
@@ -50,6 +67,16 @@ export function BejeweledGame() {
         resize();
         window.addEventListener('resize', resize);
         removeResizeListener = () => window.removeEventListener('resize', resize);
+        updateDebugState();
+
+        board.onSwapRequest = (from, to) => {
+          void board.swapTiles(from, to);
+        };
+
+        board.onSwapComplete = () => {
+          updateDebugState();
+          // Phase 3+ will hook combo detection here.
+        };
 
         pixiContextRef.current = context;
         boardRef.current = board;
@@ -83,13 +110,17 @@ export function BejeweledGame() {
         pixiContextRef.current.app.destroy(true, { children: true });
         pixiContextRef.current = null;
       }
+      assignDebugGetter(undefined);
       host.replaceChildren();
     };
   }, []);
 
   return (
-    <div className="relative flex h-[480px] w-[480px] items-center justify-center overflow-hidden rounded-3xl border border-border/60 bg-background/60 shadow-lg">
-      <div ref={hostRef} className="h-full w-full" />
+    <div
+      data-testid="bejeweled-wrapper"
+      className="relative flex h-[480px] w-[480px] items-center justify-center overflow-hidden rounded-3xl border border-border/60 bg-background/60 shadow-lg"
+    >
+      <div ref={hostRef} data-testid="bejeweled-host" className="h-full w-full" />
       {status !== 'ready' && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-background/80 text-sm text-muted-foreground">
           {status === 'loading' ? 'Loading board…' : 'Unable to load assets'}

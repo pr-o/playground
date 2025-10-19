@@ -22,6 +22,7 @@ export class Board {
   readonly fields: Field[][] = [];
   readonly tiles: Tile[] = [];
 
+  onSwapRequest?: (from: Tile, to: Tile) => void;
   onSwapComplete?: (from: Tile, to: Tile, context: { reverse: boolean }) => void;
 
   private selectedTile: Tile | null = null;
@@ -136,7 +137,11 @@ export class Board {
     if (this.selectedTile.isNeighbor(tile)) {
       const from = this.selectedTile;
       this.setSelectedTile(null);
-      void this.swapTiles(from, tile);
+      if (this.onSwapRequest) {
+        this.onSwapRequest(from, tile);
+      } else {
+        void this.swapTiles(from, tile);
+      }
       return;
     }
 
