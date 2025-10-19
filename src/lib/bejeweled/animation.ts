@@ -8,8 +8,14 @@ export type TweenOptions = {
   ticker?: Ticker;
 };
 
+type TweenTarget = {
+  x?: number;
+  y?: number;
+  alpha?: number;
+};
+
 export function tweenTo(
-  target: Record<string, number>,
+  target: TweenTarget,
   props: TweenableProps,
   options: TweenOptions,
 ) {
@@ -23,7 +29,7 @@ export function tweenTo(
     if (value === undefined) {
       return;
     }
-    const current = target[key];
+    const current = (target as Record<string, number | undefined>)[key];
     if (typeof current !== 'number') {
       throw new Error(
         `Cannot tween property "${key}" because it is not numeric on target.`,
@@ -43,7 +49,7 @@ export function tweenTo(
       const eased = ease(progress);
 
       Object.entries(deltas).forEach(([key, delta]) => {
-        target[key] = startValues[key]! + delta * eased;
+        (target as Record<string, number>)[key] = startValues[key]! + delta * eased;
       });
 
       if (progress >= 1) {

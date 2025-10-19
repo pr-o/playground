@@ -3,6 +3,10 @@ import { boardToWorld } from './board-geometry';
 import { getFieldTexture } from './resources';
 import type { Tile } from './tile';
 
+type SetTileOptions = {
+  snap?: boolean;
+};
+
 export class Field {
   readonly row: number;
   readonly col: number;
@@ -21,20 +25,24 @@ export class Field {
     return boardToWorld({ row: this.row, col: this.col });
   }
 
-  setTile(tile: Tile | null) {
+  setTile(tile: Tile | null, options: SetTileOptions = {}) {
+    const { snap = true } = options;
+
     if (this.tile === tile) {
+      if (tile) {
+        tile.setField(this, { snap });
+      }
       return;
     }
 
-    const previous = this.tile;
-    if (previous) {
-      previous.setField(null);
+    if (this.tile) {
+      this.tile.setField(null);
     }
 
     this.tile = tile;
 
     if (tile) {
-      tile.setField(this);
+      tile.setField(this, { snap });
     }
   }
 

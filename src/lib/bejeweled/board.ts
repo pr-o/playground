@@ -1,14 +1,16 @@
-import { Container, Sprite } from 'pixi.js';
+import { Container, Sprite, Ticker } from 'pixi.js';
 import { BEJEWELED_CONFIG } from './config';
 import { getBoardDimensions } from './board-geometry';
 import { Field } from './field';
 import { Tile } from './tile';
 import { getSelectedFieldTexture } from './resources';
+import { tweenTo } from './animation';
 
 export type BoardOptions = {
   stage: Container;
   viewportWidth: number;
   viewportHeight: number;
+  ticker: Ticker;
 };
 
 export class Board {
@@ -20,11 +22,12 @@ export class Board {
   readonly fields: Field[][] = [];
   readonly tiles: Tile[] = [];
 
-  onValidSwap?: (from: Tile, to: Tile) => void;
+  onSwapComplete?: (from: Tile, to: Tile, context: { reverse: boolean }) => void;
 
   private selectedTile: Tile | null = null;
   private readonly tileHandlers = new Map<Tile, () => void>();
   private inputEnabled = true;
+  private readonly ticker: Ticker;
 
   constructor(options: BoardOptions) {
     this.container = new Container();
@@ -45,6 +48,7 @@ export class Board {
     this.container.addChild(this.tilesContainer);
 
     options.stage.addChild(this.container);
+    this.ticker = options.ticker;
 
     this.createFields();
     this.populateTiles();
@@ -132,7 +136,7 @@ export class Board {
     if (this.selectedTile.isNeighbor(tile)) {
       const from = this.selectedTile;
       this.setSelectedTile(null);
-      this.onValidSwap?.(from, tile);
+      void this.swapTiles(from, tile);
       return;
     }
 
@@ -147,6 +151,53 @@ export class Board {
       this.highlightSprite.position.copyFrom(tile.field.sprite.position);
     } else {
       this.highlightSprite.visible = false;
+    }
+  }
+
+  async swapTiles(
+    tileA: Tile,
+    tileB: Tile,
+    options: { animate?: boolean; reverse?: boolean } = {},
+  ) {
+    if (!tileA.field || !tileB.field) {
+      return;
+    }
+
+    const { animate = true, reverse = false } = options;
+    const fieldA = tileA.field;
+    const fieldB = tileB.field;
+    const targetPosA = fieldB.position;
+    const targetPosB = fieldA.position;
+
+    this.inputEnabled = false;
+    this.setSelectedTile(null);
+
+    fieldA.setTile(tileB, { snap: !animate });
+    fieldB.setTile(tileA, { snap: !animate });
+
+    try {
+      if (animate) {
+        const duration = BEJEWELED_CONFIG.swapDuration;
+        await Promise.all([
+          tweenTo(
+            tileA.sprite,
+            { x: targetPosA.x, y: targetPosA.y },
+            { duration, ticker: this.ticker },
+          ),
+          tweenTo(
+            tileB.sprite,
+            { x: targetPosB.x, y: targetPosB.y },
+            { duration, ticker: this.ticker },
+          ),
+        ]);
+      }
+
+      tileA.sprite.position.set(targetPosA.x, targetPosA.y);
+      tileB.sprite.position.set(targetPosB.x, targetPosB.y);
+
+      this.onSwapComplete?.(tileA, tileB, { reverse });
+    } finally {
+      this.inputEnabled = true;
     }
   }
 }

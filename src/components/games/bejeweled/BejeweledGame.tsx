@@ -36,6 +36,7 @@ export function BejeweledGame() {
           stage: app.stage,
           viewportWidth: app.renderer.width,
           viewportHeight: app.renderer.height,
+          ticker: app.ticker,
         });
 
         const resize = () => {
