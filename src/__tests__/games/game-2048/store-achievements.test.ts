@@ -1,28 +1,7 @@
-import { ACHIEVEMENT_DEFINITIONS } from '@/lib/game-2048/achievements';
 import { DEFAULT_GAME_METRICS } from '@/lib/game-2048/constants';
 import { createEmptyGrid } from '@/lib/game-2048/logic';
-import type { Achievement, GameSnapshot } from '@/lib/game-2048/types';
+import type { GameSnapshot } from '@/lib/game-2048/types';
 import { useGame2048Store } from '@/store/game-2048';
-
-const definitionById = Object.fromEntries(
-  ACHIEVEMENT_DEFINITIONS.map((definition) => [definition.id, definition]),
-);
-
-const buildAchievement = (
-  id: Achievement['id'],
-  progress: number,
-  unlocked: boolean = false,
-): Achievement => {
-  const base = definitionById[id];
-  if (!base) {
-    throw new Error(`Unknown achievement id: ${id}`);
-  }
-  return {
-    ...base,
-    progress,
-    unlockedAt: unlocked ? Date.now() : null,
-  };
-};
 
 const resetStore = () => {
   useGame2048Store.getState().hydrate(null);
