@@ -7,6 +7,7 @@ export const BEJEWELED_CONFIG = {
   boardPadding: 16,
   swapDuration: 0.25,
   fallDuration: 0.35,
+  minimumMatch: 3,
   textures: {
     background: `${BEJEWELED_ASSET_BASE_PATH}/bg.png`,
     field: `${BEJEWELED_ASSET_BASE_PATH}/field.png`,
@@ -33,3 +34,8 @@ export const BEJEWELED_CONFIG = {
 } as const;
 
 export type BejeweledTileId = (typeof BEJEWELED_CONFIG.tileTypes)[number]['id'];
+
+export type BejeweledRuleOffset = {
+  col: number;
+  row: number;
+};
