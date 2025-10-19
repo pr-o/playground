@@ -1,13 +1,13 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { initMatch3Pixi, type Match3PixiContext } from '@/lib/match3/pixi';
+import { initBejeweledPixi, type BejeweledPixiContext } from '@/lib/bejeweled/pixi';
 
 type InitStatus = 'loading' | 'ready' | 'error';
 
 export function BejeweledGame() {
   const hostRef = useRef<HTMLDivElement | null>(null);
-  const pixiContextRef = useRef<Match3PixiContext | null>(null);
+  const pixiContextRef = useRef<BejeweledPixiContext | null>(null);
   const [status, setStatus] = useState<InitStatus>('loading');
 
   useEffect(() => {
@@ -21,7 +21,7 @@ export function BejeweledGame() {
     const boot = async () => {
       setStatus('loading');
       try {
-        const context = await initMatch3Pixi(host);
+        const context = await initBejeweledPixi(host);
 
         if (disposed) {
           context.app.destroy(true, { children: true });

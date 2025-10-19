@@ -2,23 +2,23 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { BejeweledGame } from '@/components/games/bejeweled/BejeweledGame';
 
-const title = 'Bejeweled Match-3 - Playground';
+const title = 'Bejeweled - Playground';
 
 export const metadata: Metadata = {
   title,
   description:
-    'Play a handcrafted Match-3 experience powered by PixiJS and modern Next.js patterns.',
+    'Play a handcrafted Bejeweled experience powered by PixiJS and modern Next.js patterns.',
   openGraph: {
     title,
     description:
-      'Slide gems, clear combos, and enjoy the polished Match-3 playground built with PixiJS.',
+      'Slide gems, clear combos, and enjoy the polished Bejeweled playground built with PixiJS.',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
     title,
     description:
-      'Slide gems, clear combos, and enjoy the polished Match-3 playground built with PixiJS.',
+      'Slide gems, clear combos, and enjoy the polished Bejeweled playground built with PixiJS.',
   },
 };
 
@@ -27,7 +27,7 @@ export default function BejeweledPage() {
     <div className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center gap-10 px-4 py-12 sm:py-16">
       <header className="flex flex-col items-center gap-2 text-center">
         <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
-          Bejeweled Match-3
+          Bejeweled
         </h1>
       </header>
 
