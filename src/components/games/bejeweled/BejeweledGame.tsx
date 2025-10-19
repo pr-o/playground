@@ -144,7 +144,7 @@ export function BejeweledGame() {
           resolvingRef.current = true;
           try {
             await board.swapTiles(from, to);
-            const clusters = combinationManager.findMatches();
+            let clusters = combinationManager.findMatches();
             if (clusters.length === 0) {
               await board.swapTiles(from, to, { reverse: true });
               combinationManager.findMatches();
@@ -152,10 +152,13 @@ export function BejeweledGame() {
               return;
             }
 
-            board.removeMatches(clusters);
-            await board.dropTiles();
-            await board.spawnNewTiles();
-            combinationManager.findMatches();
+            while (clusters.length > 0) {
+              board.removeMatches(clusters);
+              await board.dropTiles();
+              await board.spawnNewTiles();
+              clusters = combinationManager.findMatches();
+            }
+
             updateDebugApis();
           } finally {
             resolvingRef.current = false;
