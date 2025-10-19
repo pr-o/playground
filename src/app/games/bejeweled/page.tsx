@@ -26,9 +26,7 @@ export default function BejeweledPage() {
   return (
     <div className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center gap-10 px-4 py-12 sm:py-16">
       <header className="flex flex-col items-center gap-2 text-center">
-        <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
-          Bejeweled
-        </h1>
+        <h1 className="text-4xl font-bold tracking-tight text-foreground">Bejeweled</h1>
       </header>
 
       <Suspense

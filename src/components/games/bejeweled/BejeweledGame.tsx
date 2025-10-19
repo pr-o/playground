@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Board } from '@/lib/bejeweled/board';
 import { CombinationManager } from '@/lib/bejeweled/combination-manager';
-import type { BejeweledTileId } from '@/lib/bejeweled/config';
+import { BEJEWELED_CONFIG, type BejeweledTileId } from '@/lib/bejeweled/config';
 import { initBejeweledPixi, type BejeweledPixiContext } from '@/lib/bejeweled/pixi';
 
 type DebugSummary = { rows: number; cols: number; tileCount: number };
@@ -186,7 +186,17 @@ export function BejeweledGame() {
   return (
     <div
       data-testid="bejeweled-wrapper"
-      className="relative flex h-[480px] w-[480px] items-center justify-center overflow-hidden rounded-3xl border border-border/60 bg-background/60 shadow-lg"
+      className="relative flex items-center justify-center overflow-hidden rounded-xl border border-border/60 bg-background/60 shadow-lg"
+      style={{
+        width:
+          BEJEWELED_CONFIG.cols * BEJEWELED_CONFIG.tileSize +
+          (BEJEWELED_CONFIG.cols - 1) * BEJEWELED_CONFIG.tileSpacing +
+          BEJEWELED_CONFIG.boardPadding * 2,
+        height:
+          BEJEWELED_CONFIG.rows * BEJEWELED_CONFIG.tileSize +
+          (BEJEWELED_CONFIG.rows - 1) * BEJEWELED_CONFIG.tileSpacing +
+          BEJEWELED_CONFIG.boardPadding * 2,
+      }}
     >
       <div ref={hostRef} data-testid="bejeweled-host" className="h-full w-full" />
       {status !== 'ready' && (
