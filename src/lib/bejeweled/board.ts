@@ -452,10 +452,6 @@ export class Board {
       return;
     }
 
-    affected.forEach((tile) => {
-      tile.sprite.alpha = 0.4;
-    });
-
     if (this.feedbackTimeout) {
       clearTimeout(this.feedbackTimeout);
     }
@@ -463,28 +459,37 @@ export class Board {
     const flashes = 3;
     const interval = 120;
     let count = 0;
+    const amplitude = Math.max(2, Math.floor(BEJEWELED_CONFIG.tileSpacing / 2));
 
-    const restore = () => {
-      affected.forEach((tile) => {
-        tile.sprite.alpha = 1;
-      });
-    };
+    const originals = affected.map((tile) => ({
+      tile,
+      x: tile.sprite.position.x,
+      y: tile.sprite.position.y,
+    }));
 
-    const pulse = () => {
-      const dim = count % 2 === 0;
-      affected.forEach((tile) => {
-        tile.sprite.alpha = dim ? 0.35 : 1;
+    const apply = () => {
+      const isDim = count % 2 === 0;
+      const direction = count % 2 === 0 ? 1 : -1;
+
+      affected.forEach((tile, index) => {
+        tile.sprite.alpha = isDim ? 0.35 : 1;
+        const origin = originals[index];
+        tile.sprite.position.set(origin.x + direction * amplitude, origin.y);
       });
+
       count += 1;
 
       if (count <= flashes * 2) {
-        this.feedbackTimeout = setTimeout(pulse, interval);
+        this.feedbackTimeout = setTimeout(apply, interval);
       } else {
-        restore();
+        originals.forEach(({ tile, x, y }) => {
+          tile.sprite.alpha = 1;
+          tile.sprite.position.set(x, y);
+        });
         this.feedbackTimeout = null;
       }
     };
 
-    pulse();
+    apply();
   }
 }
