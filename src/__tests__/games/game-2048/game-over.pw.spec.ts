@@ -78,7 +78,7 @@ test.describe('2048 game over overlay', () => {
       },
     );
 
-    await page.goto('/2048');
+    await page.goto('/games/game-2048');
 
     const board = page.getByTestId('board');
     await board.waitFor({ state: 'visible' });
