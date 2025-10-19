@@ -24,6 +24,11 @@ export async function initBejeweledPixi(
   });
 
   container.replaceChildren(app.canvas);
+  Object.assign(app.canvas.style, {
+    width: '100%',
+    height: '100%',
+    display: 'block',
+  });
 
   await loadBejeweledAssets();
 
