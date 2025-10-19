@@ -76,11 +76,6 @@ export function BejeweledGame() {
         board.setDebugOverlay(debugOverlayDefault);
 
         const combinationManager = new CombinationManager(board);
-        const matches = combinationManager.findMatches();
-        if (matches.length === 0) {
-          board.clearDebugMatches();
-        }
-
         const formatClusters = (
           clusters: ReturnType<CombinationManager['findMatches']>,
         ) =>
@@ -124,6 +119,17 @@ export function BejeweledGame() {
           });
         };
 
+        const bootstrapInitialBoard = async () => {
+          let clusters = combinationManager.findMatches();
+          while (clusters.length > 0) {
+            board.removeMatches(clusters);
+            await board.dropTiles({ animate: false });
+            await board.spawnNewTiles({ animate: false });
+            clusters = combinationManager.findMatches();
+          }
+          updateDebugApis();
+        };
+
         const resize = () => {
           const targetWidth = host.clientWidth || app.renderer.width;
           const targetHeight = host.clientHeight || app.renderer.height;
@@ -135,7 +141,7 @@ export function BejeweledGame() {
         resize();
         window.addEventListener('resize', resize);
         removeResizeListener = () => window.removeEventListener('resize', resize);
-        updateDebugApis();
+        await bootstrapInitialBoard();
 
         const resolveSwap = async (from: Tile, to: Tile) => {
           if (resolvingRef.current) {

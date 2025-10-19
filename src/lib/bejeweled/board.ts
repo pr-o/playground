@@ -166,7 +166,8 @@ export class Board {
     this.debugLayer.visible = false;
   }
 
-  async dropTiles(): Promise<void> {
+  async dropTiles(options: { animate?: boolean } = {}): Promise<void> {
+    const { animate = true } = options;
     const animations: Promise<void>[] = [];
 
     for (let col = 0; col < BEJEWELED_CONFIG.cols; col += 1) {
@@ -189,30 +190,35 @@ export class Board {
           targetField.setTile(tile, { snap: false });
 
           const { x, y } = targetField.position;
-          animations.push(
-            tweenTo(
-              tile.sprite,
-              { x, y },
-              {
-                duration: BEJEWELED_CONFIG.fallDuration,
-                ticker: this.ticker,
-              },
-            ).then(() => {
-              tile.sprite.position.set(x, y);
-            }),
-          );
+          if (animate) {
+            animations.push(
+              tweenTo(
+                tile.sprite,
+                { x, y },
+                {
+                  duration: BEJEWELED_CONFIG.fallDuration,
+                  ticker: this.ticker,
+                },
+              ).then(() => {
+                tile.sprite.position.set(x, y);
+              }),
+            );
+          } else {
+            tile.sprite.position.set(x, y);
+          }
         }
 
         targetRow -= 1;
       }
     }
 
-    if (animations.length > 0) {
+    if (animate && animations.length > 0) {
       await Promise.all(animations);
     }
   }
 
-  async spawnNewTiles(): Promise<Tile[]> {
+  async spawnNewTiles(options: { animate?: boolean } = {}): Promise<Tile[]> {
+    const { animate = true } = options;
     const created: Tile[] = [];
     const animations: Promise<void>[] = [];
 
@@ -241,24 +247,28 @@ export class Board {
         const startY = y - strideY * (index + 1);
         tile.sprite.position.set(x, startY);
 
-        animations.push(
-          tweenTo(
-            tile.sprite,
-            { x, y },
-            {
-              duration: BEJEWELED_CONFIG.fallDuration,
-              ticker: this.ticker,
-            },
-          ).then(() => {
-            tile.sprite.position.set(x, y);
-          }),
-        );
+        if (animate) {
+          animations.push(
+            tweenTo(
+              tile.sprite,
+              { x, y },
+              {
+                duration: BEJEWELED_CONFIG.fallDuration,
+                ticker: this.ticker,
+              },
+            ).then(() => {
+              tile.sprite.position.set(x, y);
+            }),
+          );
+        } else {
+          tile.sprite.position.set(x, y);
+        }
 
         created.push(tile);
       });
     }
 
-    if (animations.length > 0) {
+    if (animate && animations.length > 0) {
       await Promise.all(animations);
     }
 
