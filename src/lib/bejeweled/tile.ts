@@ -12,19 +12,36 @@ export class Tile {
     this.id = id;
     this.sprite = new Sprite(getTileTexture(id));
     this.sprite.anchor.set(0.5);
+    this.sprite.eventMode = 'static';
+    this.sprite.cursor = 'pointer';
   }
 
   setField(field: Field | null) {
+    if (this.field && this.field !== field && this.field.tile === this) {
+      this.field.tile = null;
+    }
+
     this.field = field;
+
     if (field) {
       const { x, y } = field.position;
       this.sprite.position.set(x, y);
-      field.tile = this;
     }
   }
 
+  isNeighbor(other: Tile): boolean {
+    if (!this.field || !other.field) {
+      return false;
+    }
+
+    const rowDiff = Math.abs(this.field.row - other.field.row);
+    const colDiff = Math.abs(this.field.col - other.field.col);
+
+    return (rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1);
+  }
+
   destroy() {
+    this.setField(null);
     this.sprite.destroy();
-    this.field = null;
   }
 }

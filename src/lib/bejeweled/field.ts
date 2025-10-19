@@ -22,7 +22,17 @@ export class Field {
   }
 
   setTile(tile: Tile | null) {
+    if (this.tile === tile) {
+      return;
+    }
+
+    const previous = this.tile;
+    if (previous) {
+      previous.setField(null);
+    }
+
     this.tile = tile;
+
     if (tile) {
       tile.setField(this);
     }
