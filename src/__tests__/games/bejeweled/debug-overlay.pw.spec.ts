@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
+import layouts from './debug-layouts.json';
 
 type TileId = 'red' | 'blue' | 'green' | 'yellow' | 'orange' | 'pink';
 type ClusterSummary = {
@@ -15,21 +16,8 @@ declare global {
   }
 }
 
-const baseRow: TileId[] = [
-  'red',
-  'blue',
-  'green',
-  'yellow',
-  'orange',
-  'pink',
-  'red',
-  'blue',
-];
-
-const makeBaseLayout = (): TileId[][] =>
-  Array.from({ length: 8 }, (_, row) =>
-    baseRow.map((_, col) => baseRow[(col + row) % baseRow.length]!),
-  );
+const cloneLayout = (layout: TileId[][]): TileId[][] =>
+  layout.map((row) => row.slice() as TileId[]);
 
 async function applyLayout(page: Page, layout: TileId[][]): Promise<ClusterSummary[]> {
   return page.evaluate((layout) => {
@@ -61,10 +49,7 @@ test.describe('Bejeweled debug overlay', () => {
     const wrapper = page.getByTestId('bejeweled-wrapper');
     await wrapper.waitFor({ state: 'visible' });
 
-    const layout = makeBaseLayout();
-    layout[3]![2] = 'red';
-    layout[3]![3] = 'red';
-    layout[3]![4] = 'red';
+    const layout = cloneLayout(layouts.horizontal as TileId[][]);
 
     const clusters = await applyLayout(page, layout);
 
@@ -85,10 +70,7 @@ test.describe('Bejeweled debug overlay', () => {
     const wrapper = page.getByTestId('bejeweled-wrapper');
     await wrapper.waitFor({ state: 'visible' });
 
-    const layout = makeBaseLayout();
-    layout[1]![4] = 'green';
-    layout[2]![4] = 'green';
-    layout[3]![4] = 'green';
+    const layout = cloneLayout(layouts.vertical as TileId[][]);
 
     const clusters = await applyLayout(page, layout);
 
@@ -109,14 +91,7 @@ test.describe('Bejeweled debug overlay', () => {
     const wrapper = page.getByTestId('bejeweled-wrapper');
     await wrapper.waitFor({ state: 'visible' });
 
-    const layout = makeBaseLayout();
-    layout[4]![1] = 'orange';
-    layout[4]![2] = 'orange';
-    layout[4]![3] = 'orange';
-
-    layout[1]![5] = 'green';
-    layout[2]![5] = 'green';
-    layout[3]![5] = 'green';
+    const layout = cloneLayout(layouts.cross as TileId[][]);
 
     const clusters = await applyLayout(page, layout);
     const directions = new Set(clusters.flatMap((cluster) => cluster.directions));
@@ -134,21 +109,7 @@ test.describe('Bejeweled debug overlay', () => {
     const wrapper = page.getByTestId('bejeweled-wrapper');
     await wrapper.waitFor({ state: 'visible' });
 
-    const layout = makeBaseLayout();
-
-    // T shape centered at (3,3)
-    layout[2]![3] = 'pink';
-    layout[3]![3] = 'pink';
-    layout[4]![3] = 'pink';
-    layout[3]![2] = 'pink';
-    layout[3]![4] = 'pink';
-
-    // L shape rooted at (6,5)
-    layout[5]![5] = 'yellow';
-    layout[6]![5] = 'yellow';
-    layout[7]![5] = 'yellow';
-    layout[7]![6] = 'yellow';
-    layout[7]![7] = 'yellow';
+    const layout = cloneLayout(layouts.lAndT as TileId[][]);
 
     const clusters = await applyLayout(page, layout);
 

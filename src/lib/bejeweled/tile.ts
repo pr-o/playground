@@ -11,6 +11,7 @@ export class Tile {
   private _id: BejeweledTileId;
   readonly sprite: Sprite;
   field: Field | null = null;
+  private destroyed = false;
 
   constructor(id: BejeweledTileId = getRandomTileId()) {
     this._id = id;
@@ -68,6 +69,10 @@ export class Tile {
   }
 
   destroy() {
+    if (this.destroyed) {
+      return;
+    }
+    this.destroyed = true;
     this.setField(null);
     this.sprite.destroy();
   }

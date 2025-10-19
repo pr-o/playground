@@ -157,12 +157,47 @@ export class Board {
       }
     }
 
-    this.debugLayer.visible = this.debugLayer.children.length > 0;
+    this.debugLayer.visible =
+      this.debugOverlayEnabled && this.debugLayer.children.length > 0;
   }
 
   clearDebugMatches() {
     this.debugLayer.removeChildren();
     this.debugLayer.visible = false;
+  }
+
+  removeMatches(clusters: MatchCluster[]): Tile[] {
+    if (clusters.length === 0) {
+      return [];
+    }
+
+    const uniqueTiles = new Set<Tile>();
+    clusters.forEach((cluster) => cluster.tiles.forEach((tile) => uniqueTiles.add(tile)));
+
+    const removed: Tile[] = [];
+    for (const tile of uniqueTiles) {
+      const handler = this.tileHandlers.get(tile);
+      if (handler) {
+        tile.sprite.off('pointerdown', handler);
+        this.tileHandlers.delete(tile);
+      }
+
+      const field = tile.field;
+      if (field) {
+        field.setTile(null);
+      }
+
+      const index = this.tiles.indexOf(tile);
+      if (index >= 0) {
+        this.tiles.splice(index, 1);
+      }
+
+      tile.destroy();
+      removed.push(tile);
+    }
+
+    this.clearDebugMatches();
+    return removed;
   }
 
   debugApplyLayout(layout: BejeweledTileId[][]) {

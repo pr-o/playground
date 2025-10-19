@@ -31,6 +31,12 @@ jest.mock('pixi.js', () => {
     destroy(): void {
       this.children = [];
     }
+
+    removeChildren(): unknown[] {
+      const removed = [...this.children];
+      this.children = [];
+      return removed;
+    }
   }
 
   class MockSprite extends MockContainer {
@@ -63,6 +69,10 @@ jest.mock('pixi.js', () => {
       void event;
       void handler;
     }
+
+    destroy(): void {
+      this.children = [];
+    }
   }
 
   const Texture = {
@@ -85,7 +95,8 @@ jest.mock('pixi.js', () => {
 
 import { Container, Ticker } from 'pixi.js';
 import { Board } from '@/lib/bejeweled/board';
-import { BEJEWELED_CONFIG } from '@/lib/bejeweled/config';
+import { BEJEWELED_CONFIG, type BejeweledTileId } from '@/lib/bejeweled/config';
+import { CombinationManager } from '@/lib/bejeweled/combination-manager';
 
 describe('Bejeweled board initialisation', () => {
   it('creates a full grid of fields and tiles', () => {
@@ -103,6 +114,49 @@ describe('Bejeweled board initialisation', () => {
     board.fields.forEach((row) => expect(row).toHaveLength(BEJEWELED_CONFIG.cols));
 
     expect(board.tiles).toHaveLength(BEJEWELED_CONFIG.rows * BEJEWELED_CONFIG.cols);
+
+    board.destroy();
+    ticker.destroy();
+  });
+
+  it('removeMatches clears matched tiles from the board', () => {
+    const stage = new Container();
+    const ticker = new Ticker();
+
+    const board = new Board({
+      stage,
+      viewportWidth: BEJEWELED_CONFIG.cols * BEJEWELED_CONFIG.tileSize,
+      viewportHeight: BEJEWELED_CONFIG.rows * BEJEWELED_CONFIG.tileSize,
+      ticker,
+    });
+
+    const layout: BejeweledTileId[][] = Array.from(
+      { length: BEJEWELED_CONFIG.rows },
+      (_, row) =>
+        Array.from(
+          { length: BEJEWELED_CONFIG.cols },
+          (_, col) =>
+            (['red', 'blue', 'green', 'yellow'][(row + col) % 4] ??
+              'red') as BejeweledTileId,
+        ),
+    );
+
+    layout[2]![1] = 'pink';
+    layout[2]![2] = 'pink';
+    layout[2]![3] = 'pink';
+
+    board.debugApplyLayout(layout);
+
+    const combinationManager = new CombinationManager(board);
+    const clusters = combinationManager.findMatches();
+    expect(clusters).toHaveLength(1);
+
+    const removed = board.removeMatches(clusters);
+    expect(removed).toHaveLength(3);
+    expect(board.tiles).toHaveLength(BEJEWELED_CONFIG.rows * BEJEWELED_CONFIG.cols - 3);
+    expect(board.fields[2]![1]!.tile).toBeNull();
+    expect(board.fields[2]![2]!.tile).toBeNull();
+    expect(board.fields[2]![3]!.tile).toBeNull();
 
     board.destroy();
     ticker.destroy();

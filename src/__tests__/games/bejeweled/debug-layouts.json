@@ -1,0 +1,42 @@
+{
+  "horizontal": [
+    ["red", "blue", "green", "yellow", "orange", "pink", "red", "blue"],
+    ["blue", "green", "yellow", "orange", "pink", "red", "blue", "green"],
+    ["green", "yellow", "orange", "pink", "red", "blue", "green", "yellow"],
+    ["pink", "yellow", "orange", "pink", "pink", "pink", "orange", "yellow"],
+    ["yellow", "orange", "pink", "red", "blue", "green", "yellow", "orange"],
+    ["orange", "pink", "red", "blue", "green", "yellow", "orange", "pink"],
+    ["pink", "red", "blue", "green", "yellow", "orange", "pink", "red"],
+    ["red", "blue", "green", "yellow", "orange", "pink", "red", "blue"]
+  ],
+  "vertical": [
+    ["red", "blue", "green", "yellow", "orange", "pink", "red", "blue"],
+    ["blue", "green", "yellow", "orange", "pink", "green", "blue", "green"],
+    ["green", "green", "yellow", "orange", "pink", "green", "green", "yellow"],
+    ["yellow", "green", "yellow", "orange", "pink", "green", "yellow", "yellow"],
+    ["orange", "pink", "red", "blue", "green", "yellow", "orange", "pink"],
+    ["pink", "red", "blue", "green", "yellow", "orange", "pink", "red"],
+    ["red", "blue", "green", "yellow", "orange", "pink", "red", "blue"],
+    ["blue", "green", "yellow", "orange", "pink", "red", "blue", "green"]
+  ],
+  "cross": [
+    ["red", "blue", "green", "yellow", "orange", "pink", "red", "blue"],
+    ["blue", "green", "yellow", "orange", "pink", "red", "blue", "green"],
+    ["green", "yellow", "orange", "orange", "orange", "blue", "green", "yellow"],
+    ["yellow", "orange", "orange", "orange", "orange", "green", "yellow", "orange"],
+    ["orange", "pink", "orange", "orange", "orange", "yellow", "orange", "pink"],
+    ["pink", "red", "blue", "green", "yellow", "orange", "pink", "red"],
+    ["red", "blue", "green", "yellow", "orange", "pink", "red", "blue"],
+    ["blue", "green", "yellow", "orange", "pink", "red", "blue", "green"]
+  ],
+  "lAndT": [
+    ["red", "blue", "green", "yellow", "orange", "pink", "red", "blue"],
+    ["blue", "green", "yellow", "pink", "pink", "red", "blue", "green"],
+    ["green", "yellow", "pink", "pink", "pink", "blue", "green", "yellow"],
+    ["yellow", "pink", "pink", "pink", "pink", "green", "pink", "orange"],
+    ["orange", "pink", "pink", "pink", "pink", "yellow", "orange", "pink"],
+    ["pink", "red", "blue", "green", "yellow", "yellow", "pink", "red"],
+    ["red", "blue", "green", "yellow", "orange", "yellow", "yellow", "yellow"],
+    ["blue", "green", "yellow", "orange", "pink", "yellow", "yellow", "yellow"]
+  ]
+}
