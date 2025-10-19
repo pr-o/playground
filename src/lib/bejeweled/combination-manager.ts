@@ -5,6 +5,12 @@ import { BEJEWELED_CONFIG, type BejeweledRuleOffset } from './config';
 
 export type MatchCluster = {
   tiles: Tile[];
+  origins: Field[];
+  directions: Array<'row' | 'col'>;
+};
+
+type RawCluster = {
+  tiles: Tile[];
   origin: Field;
   direction: 'row' | 'col';
 };
@@ -18,7 +24,7 @@ export class CombinationManager {
 
   // Returns all horizontal and vertical match clusters on the board.
   findMatches(): MatchCluster[] {
-    const matches: MatchCluster[] = [];
+    const matches: RawCluster[] = [];
     const visited = new Set<Tile>();
 
     for (const rowFields of this.board.fields) {
@@ -52,7 +58,7 @@ export class CombinationManager {
       }
     }
 
-    return matches;
+    return this.mergeClusters(matches);
   }
 
   // Collects matching tiles in the given direction if they share the same id.
@@ -60,8 +66,8 @@ export class CombinationManager {
     origin: Field,
     tile: Tile,
     offsets: readonly BejeweledRuleOffset[],
-    direction: MatchCluster['direction'],
-  ): MatchCluster | null {
+    direction: RawCluster['direction'],
+  ): RawCluster | null {
     const matchedTiles: Tile[] = [tile];
 
     for (const offset of offsets) {
@@ -84,5 +90,52 @@ export class CombinationManager {
       origin,
       direction,
     };
+  }
+
+  // Merges clusters that share tiles so each tile is processed exactly once.
+  private mergeClusters(clusters: RawCluster[]): MatchCluster[] {
+    const groups: Array<{
+      tiles: Set<Tile>;
+      origins: Set<Field>;
+      directions: Set<'row' | 'col'>;
+    }> = [];
+
+    for (const cluster of clusters) {
+      const intersecting = groups.filter((group) =>
+        cluster.tiles.some((tile) => group.tiles.has(tile)),
+      );
+
+      const target =
+        intersecting.shift() ??
+        (() => {
+          const fresh = {
+            tiles: new Set<Tile>(),
+            origins: new Set<Field>(),
+            directions: new Set<'row' | 'col'>(),
+          };
+          groups.push(fresh);
+          return fresh;
+        })();
+
+      cluster.tiles.forEach((tile) => target.tiles.add(tile));
+      target.origins.add(cluster.origin);
+      target.directions.add(cluster.direction);
+
+      for (const group of intersecting) {
+        group.tiles.forEach((tile) => target.tiles.add(tile));
+        group.origins.forEach((origin) => target.origins.add(origin));
+        group.directions.forEach((dir) => target.directions.add(dir));
+        const index = groups.indexOf(group);
+        if (index >= 0) {
+          groups.splice(index, 1);
+        }
+      }
+    }
+
+    return groups.map((group) => ({
+      tiles: Array.from(group.tiles),
+      origins: Array.from(group.origins),
+      directions: Array.from(group.directions),
+    }));
   }
 }
