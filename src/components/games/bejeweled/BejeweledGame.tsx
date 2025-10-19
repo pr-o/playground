@@ -155,6 +155,8 @@ export function BejeweledGame() {
               await board.swapTiles(from, to, { reverse: true });
               combinationManager.findMatches();
               updateDebugApis();
+              // Minimal feedback for invalid swap — future: sound/animation.
+              board.flashInvalidSwap([from, to]);
               return;
             }
 

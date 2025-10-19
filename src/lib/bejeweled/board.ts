@@ -25,6 +25,7 @@ export class Board {
 
   onSwapRequest?: (from: Tile, to: Tile) => void;
   onSwapComplete?: (from: Tile, to: Tile, context: { reverse: boolean }) => void;
+  onInvalidSwap?: (tiles: [Tile, Tile]) => void;
 
   private selectedTile: Tile | null = null;
   private readonly tileHandlers = new Map<Tile, () => void>();
@@ -32,6 +33,7 @@ export class Board {
   private readonly ticker: Ticker;
   private readonly debugLayer: Container;
   private debugOverlayEnabled: boolean;
+  private feedbackTimeout: ReturnType<typeof setTimeout> | null = null;
 
   constructor(options: BoardOptions) {
     this.container = new Container();
@@ -436,8 +438,53 @@ export class Board {
       tileB.sprite.position.set(targetPosB.x, targetPosB.y);
 
       this.onSwapComplete?.(tileA, tileB, { reverse });
+      if (reverse) {
+        this.onInvalidSwap?.([tileA, tileB]);
+      }
     } finally {
       this.inputEnabled = true;
     }
+  }
+
+  flashInvalidSwap(pair: [Tile, Tile]) {
+    const affected = pair.filter((tile) => tile && tile.sprite);
+    if (affected.length === 0) {
+      return;
+    }
+
+    affected.forEach((tile) => {
+      tile.sprite.alpha = 0.4;
+    });
+
+    if (this.feedbackTimeout) {
+      clearTimeout(this.feedbackTimeout);
+    }
+
+    const flashes = 3;
+    const interval = 120;
+    let count = 0;
+
+    const restore = () => {
+      affected.forEach((tile) => {
+        tile.sprite.alpha = 1;
+      });
+    };
+
+    const pulse = () => {
+      const dim = count % 2 === 0;
+      affected.forEach((tile) => {
+        tile.sprite.alpha = dim ? 0.35 : 1;
+      });
+      count += 1;
+
+      if (count <= flashes * 2) {
+        this.feedbackTimeout = setTimeout(pulse, interval);
+      } else {
+        restore();
+        this.feedbackTimeout = null;
+      }
+    };
+
+    pulse();
   }
 }
