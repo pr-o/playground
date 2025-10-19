@@ -261,19 +261,21 @@ export function StylePanel() {
     setOpacity(nextValue, { applyToSelection });
   };
 
+  if (!applyToSelection) {
+    return null;
+  }
+
   const panelClass = clsx(
-    'pointer-events-auto flex items-center gap-6 rounded-full border px-6 py-3 shadow-xl backdrop-blur transition-colors',
+    'pointer-events-auto w-72 space-y-6 rounded-3xl border p-5 shadow-2xl backdrop-blur-md transition-colors',
     isDark
-      ? 'border-slate-700 bg-slate-900/85 text-slate-100'
-      : 'border-border/70 bg-white/95',
+      ? 'border-slate-800/80 bg-slate-950/95 text-slate-100'
+      : 'border-border/70 bg-white/95 text-foreground',
   );
 
-  const labelClass = clsx(
+  const sectionTitleClass = clsx(
     'text-xs font-semibold uppercase tracking-wide',
     isDark ? 'text-slate-300' : 'text-muted-foreground',
   );
-
-  const dividerClass = clsx('h-10 w-px', isDark ? 'bg-slate-700/80' : 'bg-border/60');
 
   const subLabelClass = clsx(
     'text-[0.65rem] uppercase tracking-wide',
@@ -282,43 +284,43 @@ export function StylePanel() {
 
   return (
     <div className={panelClass}>
-      <div className="flex items-center gap-3">
-        <span className={labelClass}>Stroke</span>
-        <div className="flex items-center gap-2">{strokeSwatches}</div>
-      </div>
-      <div className={dividerClass} />
-      <div className="flex items-center gap-3">
-        <span className={labelClass}>Fill</span>
-        <div className="flex items-center gap-2">{fillSwatches}</div>
-      </div>
-      <div className={dividerClass} />
-      <div className="flex items-center gap-3">
-        <span className={labelClass}>Width</span>
-        <div className="flex items-center gap-2">{strokeWidthControls}</div>
-      </div>
-      <div className={dividerClass} />
-      <div className="flex items-center gap-3">
-        <span className={labelClass}>Style</span>
-        <div className="flex items-center gap-2">{strokeStyleControls}</div>
-      </div>
-      <div className={dividerClass} />
-      <div className="flex items-center gap-3">
-        <span className={labelClass}>Arrowheads</span>
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2">
-            <span className={clsx(subLabelClass, 'opacity-80')}>Start</span>
-            <div className="flex items-center gap-1">{arrowheadControls.start}</div>
+      <section>
+        <div className={sectionTitleClass}>Stroke</div>
+        <div className="mt-3 grid grid-cols-4 gap-2">{strokeSwatches}</div>
+      </section>
+
+      <section>
+        <div className={sectionTitleClass}>Fill</div>
+        <div className="mt-3 grid grid-cols-4 gap-2">{fillSwatches}</div>
+      </section>
+
+      <section>
+        <div className={sectionTitleClass}>Stroke width</div>
+        <div className="mt-3 grid grid-cols-3 gap-2">{strokeWidthControls}</div>
+      </section>
+
+      <section>
+        <div className={sectionTitleClass}>Stroke style</div>
+        <div className="mt-3 flex flex-wrap gap-2">{strokeStyleControls}</div>
+      </section>
+
+      <section>
+        <div className={sectionTitleClass}>Arrowheads</div>
+        <div className="mt-3 space-y-3">
+          <div>
+            <div className={clsx(subLabelClass, 'opacity-80')}>Start</div>
+            <div className="mt-2 flex flex-wrap gap-2">{arrowheadControls.start}</div>
           </div>
-          <div className="flex items-center gap-2">
-            <span className={clsx(subLabelClass, 'opacity-80')}>End</span>
-            <div className="flex items-center gap-1">{arrowheadControls.end}</div>
+          <div>
+            <div className={clsx(subLabelClass, 'opacity-80')}>End</div>
+            <div className="mt-2 flex flex-wrap gap-2">{arrowheadControls.end}</div>
           </div>
         </div>
-      </div>
-      <div className={dividerClass} />
-      <div className="flex items-center gap-3">
-        <span className={labelClass}>Opacity</span>
-        <div className="flex items-center gap-3">
+      </section>
+
+      <section>
+        <div className={sectionTitleClass}>Opacity</div>
+        <div className="mt-3 flex items-center gap-3">
           <input
             type="range"
             min={10}
@@ -326,7 +328,7 @@ export function StylePanel() {
             step={5}
             value={opacityPercent}
             onChange={handleOpacityChange}
-            className="h-1 w-32 accent-primary"
+            className="h-1 flex-1 accent-primary"
           />
           <span
             className={clsx(
@@ -337,7 +339,7 @@ export function StylePanel() {
             {opacityPercent}%
           </span>
         </div>
-      </div>
+      </section>
     </div>
   );
 }

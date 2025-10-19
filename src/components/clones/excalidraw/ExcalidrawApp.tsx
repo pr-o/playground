@@ -1,7 +1,8 @@
 'use client';
 
 import clsx from 'clsx';
-import { useEffect, useState } from 'react';
+import { Menu, Moon, Sun } from 'lucide-react';
+import { useEffect } from 'react';
 import { shallow } from '@/lib/zustand/shallow';
 
 import { CanvasStage } from '@/components/clones/excalidraw/CanvasStage';
@@ -13,15 +14,12 @@ import {
 } from '@/lib/excalidraw/clipboard';
 import { getElementsStore, useElementsStore } from '@/store/excalidraw/elements-store';
 import { ToolMode } from '@/types/excalidraw/elements';
-
-const commandItems: Array<{ label: string; shortcut?: string }> = [
-  { label: 'Open…', shortcut: '⌘O' },
-  { label: 'Save as…', shortcut: '⌘⇧S' },
-  { label: 'Export image', shortcut: '⌘E' },
-  { label: 'Live collaboration' },
-  { label: 'Command palette', shortcut: '⌘K' },
-  { label: 'Help & shortcuts', shortcut: '?' },
-];
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const backgroundSwatches = [
   '#FDFCF8',
@@ -32,10 +30,6 @@ const backgroundSwatches = [
   '#FDE68A',
   '#0F172A',
 ];
-
-const languageOptions = ['English', '한국어'];
-
-const topActions = ['Share', 'Library'];
 
 const toolLabels: Record<ToolMode, string> = {
   selection: 'Selection',
@@ -109,8 +103,6 @@ export function ExcalidrawApp() {
     shallow,
   );
 
-  const [language, setLanguage] = useState('English');
-
   const selectedCount = selectedIds.length;
   const isDark = theme === 'dark';
 
@@ -125,18 +117,6 @@ export function ExcalidrawApp() {
     isDark
       ? 'border-slate-800 bg-slate-950 text-slate-100'
       : 'border-border bg-[#FDFCF8] text-foreground',
-  );
-
-  const sidebarClass = clsx(
-    'flex w-72 flex-col border-r p-6 backdrop-blur transition-colors',
-    isDark ? 'border-slate-800 bg-slate-900/70' : 'border-border/60 bg-white/70',
-  );
-
-  const commandButtonClass = clsx(
-    'flex w-full items-center justify-between rounded-md border px-3 py-2 text-left text-sm font-medium transition',
-    isDark
-      ? 'border-slate-700/70 bg-slate-900/70 text-slate-200 hover:border-primary/50 hover:bg-slate-800/80'
-      : 'border-border/50 bg-white/80 text-foreground hover:border-primary/40 hover:bg-muted/60',
   );
 
   const surfaceClass = isDark
@@ -160,6 +140,25 @@ export function ExcalidrawApp() {
     isDark
       ? 'border-slate-600 bg-slate-800 text-slate-200 hover:border-primary/60 hover:bg-slate-700/60'
       : 'border-border bg-white text-muted-foreground hover:border-primary/60 hover:bg-muted',
+  );
+
+  const dropdownTriggerClass = clsx(
+    'pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full border text-sm shadow-sm transition',
+    isDark
+      ? 'border-slate-700 bg-slate-900/80 text-slate-200 hover:border-primary/50 hover:bg-slate-800'
+      : 'border-border bg-white/85 text-muted-foreground hover:border-primary/40 hover:bg-muted',
+  );
+
+  const dropdownContentClass = clsx(
+    'w-64 rounded-2xl border p-4 shadow-2xl backdrop-blur-md transition-colors',
+    isDark
+      ? 'border-slate-700/80 bg-slate-900/95 text-slate-100'
+      : 'border-border/70 bg-white/95 text-foreground',
+  );
+
+  const dropdownSectionLabelClass = clsx(
+    'text-xs font-semibold uppercase tracking-wide',
+    subtleTextClass,
   );
 
   const statusHeadline =
@@ -332,144 +331,89 @@ export function ExcalidrawApp() {
 
   return (
     <div className={rootClass} style={{ backgroundColor: canvasBackground }}>
-      <aside className={sidebarClass}>
-        <div className="mb-6 flex items-center justify-between">
-          <button
-            type="button"
-            className={clsx(
-              'flex h-9 w-9 items-center justify-center rounded-full border text-sm font-semibold transition',
-              isDark
-                ? 'border-slate-700 bg-slate-900/80 text-slate-200 hover:border-primary/50 hover:bg-slate-800'
-                : 'border-border bg-white text-muted-foreground hover:border-primary/40 hover:bg-muted',
-            )}
-            aria-label="Open command menu"
-          >
-            ☰
-          </button>
-          <h2
-            className={clsx(
-              'text-sm font-semibold uppercase tracking-wide',
-              subtleTextClass,
-            )}
-          >
-            Command Menu
-          </h2>
-        </div>
-        <nav className="space-y-2">
-          {commandItems.map(({ label, shortcut }) => (
-            <button key={label} type="button" className={commandButtonClass}>
-              <span>{label}</span>
-              {shortcut ? (
-                <span className={clsx('text-xs font-semibold', subtleTextClass)}>
-                  {shortcut}
-                </span>
-              ) : null}
-            </button>
-          ))}
-        </nav>
-        <div className="mt-6 space-y-6 text-sm">
-          <section>
-            <h3
-              className={clsx(
-                'text-xs font-semibold uppercase tracking-wide',
-                subtleTextClass,
-              )}
-            >
-              Theme &amp; Display
-            </h3>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => setTheme('light')}
-                className={pillClass(theme === 'light')}
-              >
-                Light
-              </button>
-              <button
-                type="button"
-                onClick={() => setTheme('dark')}
-                className={pillClass(theme === 'dark')}
-              >
-                Dark
-              </button>
-              <button type="button" onClick={toggleGrid} className={pillClass(showGrid)}>
-                Grid {showGrid ? 'On' : 'Off'}
-              </button>
-            </div>
-          </section>
-          <section>
-            <h3
-              className={clsx(
-                'text-xs font-semibold uppercase tracking-wide',
-                subtleTextClass,
-              )}
-            >
-              Language
-            </h3>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {languageOptions.map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  onClick={() => setLanguage(option)}
-                  className={pillClass(language === option)}
-                >
-                  {option}
-                </button>
-              ))}
-            </div>
-          </section>
-          <section>
-            <h3
-              className={clsx(
-                'text-xs font-semibold uppercase tracking-wide',
-                subtleTextClass,
-              )}
-            >
-              Canvas Background
-            </h3>
-            <div className="mt-3 grid grid-cols-4 gap-2">
-              {backgroundSwatches.map((color) => {
-                const isActive = canvasBackground === color;
-                return (
-                  <button
-                    key={color}
-                    type="button"
-                    onClick={() => setCanvasBackground(color)}
-                    aria-label={`Canvas background ${color}`}
-                    className={clsx(
-                      'flex h-10 w-10 items-center justify-center rounded-full border transition',
-                      isActive
-                        ? 'border-primary shadow-lg shadow-primary/20'
-                        : isDark
-                          ? 'border-slate-600 bg-slate-800 hover:border-primary/60'
-                          : 'border-border/60 bg-white hover:border-primary/60',
-                    )}
-                  >
-                    <span
-                      className="h-8 w-8 rounded-full border border-white/40"
-                      style={{ backgroundColor: color }}
-                    />
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-        </div>
-        <div
-          className={clsx(
-            'mt-auto rounded-xl border border-dashed p-4 text-xs transition-colors',
-            isDark
-              ? 'border-slate-700 bg-slate-900/70 text-slate-300'
-              : 'border-border/70 bg-muted/50 text-muted-foreground',
-          )}
-        >
-          Future live collaboration controls appear here.
-        </div>
-      </aside>
-
       <div className="relative flex flex-1 flex-col bg-transparent transition-colors">
         <CanvasStage />
+
+        <div className="pointer-events-none absolute left-6 top-6 z-20">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className={dropdownTriggerClass}
+                aria-label="Canvas settings"
+              >
+                <Menu className="h-4 w-4" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="start"
+              sideOffset={12}
+              className={dropdownContentClass}
+            >
+              <div className="space-y-4 text-sm">
+                <div>
+                  <div className={dropdownSectionLabelClass}>Theme</div>
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setTheme('light')}
+                      className={clsx(
+                        pillClass(theme === 'light'),
+                        'flex items-center gap-2',
+                      )}
+                    >
+                      <Sun className="h-4 w-4" />
+                      Light
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTheme('dark')}
+                      className={clsx(
+                        pillClass(theme === 'dark'),
+                        'flex items-center gap-2',
+                      )}
+                    >
+                      <Moon className="h-4 w-4" />
+                      Dark
+                    </button>
+                  </div>
+                </div>
+                <DropdownMenuSeparator
+                  className={clsx(isDark ? 'bg-slate-700/70' : 'bg-border/70')}
+                />
+                <div>
+                  <div className={dropdownSectionLabelClass}>Canvas background</div>
+                  <div className="mt-3 grid grid-cols-4 gap-2">
+                    {backgroundSwatches.map((color) => {
+                      const isActive = canvasBackground === color;
+                      return (
+                        <button
+                          key={color}
+                          type="button"
+                          onClick={() => setCanvasBackground(color)}
+                          aria-label={`Canvas background ${color}`}
+                          className={clsx(
+                            'flex h-10 w-10 items-center justify-center rounded-full border transition',
+                            isActive
+                              ? 'border-primary shadow-lg shadow-primary/20'
+                              : isDark
+                                ? 'border-slate-600 bg-slate-800 hover:border-primary/60'
+                                : 'border-border/60 bg-white hover:border-primary/60',
+                          )}
+                        >
+                          <span
+                            className="h-8 w-8 rounded-full border border-white/40"
+                            style={{ backgroundColor: color }}
+                          />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
 
         <div className="pointer-events-none absolute left-1/2 top-6 z-20 flex -translate-x-1/2">
           <div className="pointer-events-auto">
@@ -477,25 +421,8 @@ export function ExcalidrawApp() {
           </div>
         </div>
 
-        <div className="pointer-events-none absolute left-1/2 top-28 z-20 flex -translate-x-1/2">
+        <div className="pointer-events-none absolute left-6 top-24 z-20">
           <StylePanel />
-        </div>
-
-        <div className="pointer-events-none absolute right-6 top-6 z-20 flex gap-3">
-          {topActions.map((action) => (
-            <button
-              key={action}
-              type="button"
-              className={clsx(
-                'pointer-events-auto rounded-full border px-4 py-2 text-sm font-medium shadow-lg transition',
-                isDark
-                  ? 'border-slate-700 bg-slate-900/85 text-slate-200 hover:bg-slate-800'
-                  : 'border-border/70 bg-white/90 text-foreground hover:bg-white',
-              )}
-            >
-              {action}
-            </button>
-          ))}
         </div>
 
         <div className="pointer-events-none absolute bottom-6 left-6 z-20">
@@ -619,16 +546,6 @@ export function ExcalidrawApp() {
             >
               Pointer {pointerLabel}
             </div>
-          </div>
-          <div
-            className={clsx(
-              'pointer-events-none flex h-28 w-36 items-center justify-center rounded-xl border text-xs font-semibold uppercase tracking-wide transition',
-              isDark
-                ? 'border-slate-700 bg-slate-900/85 text-slate-400'
-                : 'border-border/70 bg-white/85 text-muted-foreground',
-            )}
-          >
-            Minimap (preview)
           </div>
         </div>
       </div>
