@@ -1,4 +1,5 @@
 import { Container, Sprite, Ticker } from 'pixi.js';
+import type { MatchCluster } from './combination-manager';
 import { BEJEWELED_CONFIG } from './config';
 import { getBoardDimensions } from './board-geometry';
 import { Field } from './field';
@@ -11,6 +12,7 @@ export type BoardOptions = {
   viewportWidth: number;
   viewportHeight: number;
   ticker: Ticker;
+  enableDebugOverlay?: boolean;
 };
 
 export class Board {
@@ -29,6 +31,8 @@ export class Board {
   private readonly tileHandlers = new Map<Tile, () => void>();
   private inputEnabled = true;
   private readonly ticker: Ticker;
+  private readonly debugLayer: Container;
+  private debugOverlayEnabled: boolean;
 
   constructor(options: BoardOptions) {
     this.container = new Container();
@@ -44,12 +48,19 @@ export class Board {
     this.highlightSprite.anchor.set(0.5);
     this.highlightSprite.visible = false;
 
+    this.debugLayer = new Container();
+    this.debugLayer.name = 'DebugMatchesLayer';
+    this.debugLayer.visible = false;
+    this.debugLayer.eventMode = 'none';
+
     this.container.addChild(this.fieldsContainer);
-    this.container.addChild(this.highlightSprite);
     this.container.addChild(this.tilesContainer);
+    this.container.addChild(this.debugLayer);
+    this.container.addChild(this.highlightSprite);
 
     options.stage.addChild(this.container);
     this.ticker = options.ticker;
+    this.debugOverlayEnabled = options.enableDebugOverlay ?? false;
 
     this.createFields();
     this.populateTiles();
@@ -106,6 +117,52 @@ export class Board {
     const offsetY = Math.max((viewportHeight - height) / 2, padding);
 
     this.container.position.set(offsetX, offsetY);
+  }
+
+  setDebugOverlay(enabled: boolean) {
+    this.debugOverlayEnabled = enabled;
+    if (!enabled) {
+      this.clearDebugMatches();
+    } else if (this.debugLayer.children.length > 0) {
+      this.debugLayer.visible = true;
+    }
+  }
+
+  setDebugMatches(clusters: MatchCluster[] | null) {
+    if (!this.debugOverlayEnabled) {
+      return;
+    }
+
+    this.debugLayer.removeChildren();
+
+    if (!clusters || clusters.length === 0) {
+      this.debugLayer.visible = false;
+      return;
+    }
+
+    const seen = new Set<Tile>();
+    for (const cluster of clusters) {
+      for (const tile of cluster.tiles) {
+        if (!tile.field || seen.has(tile)) {
+          continue;
+        }
+        seen.add(tile);
+        const marker = new Sprite(getSelectedFieldTexture());
+        marker.anchor.set(0.5);
+        marker.tint = 0xffc107;
+        marker.alpha = 0.4;
+        marker.eventMode = 'none';
+        marker.position.copyFrom(tile.field.sprite.position);
+        this.debugLayer.addChild(marker);
+      }
+    }
+
+    this.debugLayer.visible = this.debugLayer.children.length > 0;
+  }
+
+  clearDebugMatches() {
+    this.debugLayer.removeChildren();
+    this.debugLayer.visible = false;
   }
 
   private attachTileToField(tile: Tile, field: Field) {

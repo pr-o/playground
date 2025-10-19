@@ -58,7 +58,9 @@ export class CombinationManager {
       }
     }
 
-    return this.mergeClusters(matches);
+    const merged = this.mergeClusters(matches);
+    this.board.setDebugMatches(merged);
+    return merged;
   }
 
   // Collects matching tiles in the given direction if they share the same id.

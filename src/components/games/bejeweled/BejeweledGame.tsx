@@ -2,15 +2,32 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Board } from '@/lib/bejeweled/board';
+import { CombinationManager } from '@/lib/bejeweled/combination-manager';
 import { initBejeweledPixi, type BejeweledPixiContext } from '@/lib/bejeweled/pixi';
 
-type DebugGetter = () => { rows: number; cols: number; tileCount: number };
+type DebugSummary = { rows: number; cols: number; tileCount: number };
+type DebugMatchSummary = {
+  directions: Array<'row' | 'col'>;
+  tiles: Array<{ row: number; col: number }>;
+};
+type DebugWindow = Window & {
+  __BEJEWELED_DEBUG__?: () => DebugSummary;
+  __BEJEWELED_DEBUG_HIGHLIGHT__?: () => DebugMatchSummary[];
+  __BEJEWELED_DEBUG_CLEAR__?: () => void;
+};
 
-const assignDebugGetter = (getter: DebugGetter | undefined) => {
+const assignDebugApis = (handlers?: {
+  summary: () => DebugSummary;
+  highlight: () => DebugMatchSummary[];
+  clear: () => void;
+}) => {
   if (typeof window === 'undefined') {
     return;
   }
-  (window as Window & { __BEJEWELED_DEBUG__?: DebugGetter }).__BEJEWELED_DEBUG__ = getter;
+  const target = window as DebugWindow;
+  target.__BEJEWELED_DEBUG__ = handlers?.summary;
+  target.__BEJEWELED_DEBUG_HIGHLIGHT__ = handlers?.highlight;
+  target.__BEJEWELED_DEBUG_CLEAR__ = handlers?.clear;
 };
 
 type InitStatus = 'loading' | 'ready' | 'error';
@@ -41,19 +58,47 @@ export function BejeweledGame() {
           return;
         }
 
+        const debugOverlayDefault = process.env.NODE_ENV !== 'production';
         const board = new Board({
           stage: app.stage,
           viewportWidth: app.renderer.width,
           viewportHeight: app.renderer.height,
           ticker: app.ticker,
+          enableDebugOverlay: debugOverlayDefault,
         });
 
-        const updateDebugState = () => {
-          assignDebugGetter(() => ({
-            rows: board.fields.length,
-            cols: board.fields[0]?.length ?? 0,
-            tileCount: board.tiles.length,
-          }));
+        board.setDebugOverlay(debugOverlayDefault);
+
+        const combinationManager = new CombinationManager(board);
+        const matches = combinationManager.findMatches();
+        if (matches.length === 0) {
+          board.clearDebugMatches();
+        }
+
+        const updateDebugApis = () => {
+          assignDebugApis({
+            summary: () => ({
+              rows: board.fields.length,
+              cols: board.fields[0]?.length ?? 0,
+              tileCount: board.tiles.length,
+            }),
+            highlight: () => {
+              board.setDebugOverlay(true);
+              const clusters = combinationManager.findMatches();
+              return clusters.map((cluster) => ({
+                directions: cluster.directions,
+                tiles: cluster.tiles
+                  .map((matchTile) => {
+                    const field = matchTile.field;
+                    return field ? { row: field.row, col: field.col } : null;
+                  })
+                  .filter(
+                    (coords): coords is { row: number; col: number } => coords !== null,
+                  ),
+              }));
+            },
+            clear: () => board.clearDebugMatches(),
+          });
         };
 
         const resize = () => {
@@ -67,14 +112,15 @@ export function BejeweledGame() {
         resize();
         window.addEventListener('resize', resize);
         removeResizeListener = () => window.removeEventListener('resize', resize);
-        updateDebugState();
+        updateDebugApis();
 
         board.onSwapRequest = (from, to) => {
           void board.swapTiles(from, to);
         };
 
         board.onSwapComplete = () => {
-          updateDebugState();
+          combinationManager.findMatches();
+          updateDebugApis();
           // Phase 3+ will hook combo detection here.
         };
 
@@ -99,6 +145,7 @@ export function BejeweledGame() {
       disposed = true;
       const board = boardRef.current;
       if (board) {
+        board.clearDebugMatches();
         board.destroy();
         boardRef.current = null;
       }
@@ -110,7 +157,7 @@ export function BejeweledGame() {
         pixiContextRef.current.app.destroy(true, { children: true });
         pixiContextRef.current = null;
       }
-      assignDebugGetter(undefined);
+      assignDebugApis(undefined);
       host.replaceChildren();
     };
   }, []);
