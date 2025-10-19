@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Board } from '@/lib/bejeweled/board';
 import { CombinationManager } from '@/lib/bejeweled/combination-manager';
+import type { BejeweledTileId } from '@/lib/bejeweled/config';
 import { initBejeweledPixi, type BejeweledPixiContext } from '@/lib/bejeweled/pixi';
 
 type DebugSummary = { rows: number; cols: number; tileCount: number };
@@ -14,12 +15,14 @@ type DebugWindow = Window & {
   __BEJEWELED_DEBUG__?: () => DebugSummary;
   __BEJEWELED_DEBUG_HIGHLIGHT__?: () => DebugMatchSummary[];
   __BEJEWELED_DEBUG_CLEAR__?: () => void;
+  __BEJEWELED_DEBUG_SET_LAYOUT__?: (layout: string[][]) => DebugMatchSummary[];
 };
 
 const assignDebugApis = (handlers?: {
   summary: () => DebugSummary;
   highlight: () => DebugMatchSummary[];
   clear: () => void;
+  setLayout: (layout: string[][]) => DebugMatchSummary[];
 }) => {
   if (typeof window === 'undefined') {
     return;
@@ -28,6 +31,7 @@ const assignDebugApis = (handlers?: {
   target.__BEJEWELED_DEBUG__ = handlers?.summary;
   target.__BEJEWELED_DEBUG_HIGHLIGHT__ = handlers?.highlight;
   target.__BEJEWELED_DEBUG_CLEAR__ = handlers?.clear;
+  target.__BEJEWELED_DEBUG_SET_LAYOUT__ = handlers?.setLayout;
 };
 
 type InitStatus = 'loading' | 'ready' | 'error';
@@ -75,6 +79,21 @@ export function BejeweledGame() {
           board.clearDebugMatches();
         }
 
+        const formatClusters = (
+          clusters: ReturnType<CombinationManager['findMatches']>,
+        ) =>
+          clusters.map((cluster) => ({
+            directions: cluster.directions,
+            tiles: cluster.tiles
+              .map((matchTile) => {
+                const field = matchTile.field;
+                return field ? { row: field.row, col: field.col } : null;
+              })
+              .filter(
+                (coords): coords is { row: number; col: number } => coords !== null,
+              ),
+          }));
+
         const updateDebugApis = () => {
           assignDebugApis({
             summary: () => ({
@@ -85,19 +104,21 @@ export function BejeweledGame() {
             highlight: () => {
               board.setDebugOverlay(true);
               const clusters = combinationManager.findMatches();
-              return clusters.map((cluster) => ({
-                directions: cluster.directions,
-                tiles: cluster.tiles
-                  .map((matchTile) => {
-                    const field = matchTile.field;
-                    return field ? { row: field.row, col: field.col } : null;
-                  })
-                  .filter(
-                    (coords): coords is { row: number; col: number } => coords !== null,
-                  ),
-              }));
+              if (clusters.length === 0) {
+                board.clearDebugMatches();
+              }
+              return formatClusters(clusters);
             },
             clear: () => board.clearDebugMatches(),
+            setLayout: (layout) => {
+              board.setDebugOverlay(true);
+              board.debugApplyLayout(layout as BejeweledTileId[][]);
+              const clusters = combinationManager.findMatches();
+              if (clusters.length === 0) {
+                board.clearDebugMatches();
+              }
+              return formatClusters(clusters);
+            },
           });
         };
 

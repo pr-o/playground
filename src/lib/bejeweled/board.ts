@@ -1,6 +1,6 @@
 import { Container, Sprite, Ticker } from 'pixi.js';
 import type { MatchCluster } from './combination-manager';
-import { BEJEWELED_CONFIG } from './config';
+import { BEJEWELED_CONFIG, type BejeweledTileId } from './config';
 import { getBoardDimensions } from './board-geometry';
 import { Field } from './field';
 import { Tile } from './tile';
@@ -163,6 +163,44 @@ export class Board {
   clearDebugMatches() {
     this.debugLayer.removeChildren();
     this.debugLayer.visible = false;
+  }
+
+  debugApplyLayout(layout: BejeweledTileId[][]) {
+    if (
+      layout.length !== BEJEWELED_CONFIG.rows ||
+      layout.some((row) => row.length !== BEJEWELED_CONFIG.cols)
+    ) {
+      throw new Error('Invalid debug layout dimensions');
+    }
+
+    const nextTiles: Tile[] = [];
+
+    for (let row = 0; row < BEJEWELED_CONFIG.rows; row += 1) {
+      for (let col = 0; col < BEJEWELED_CONFIG.cols; col += 1) {
+        const field = this.fields[row]?.[col];
+        if (!field) {
+          continue;
+        }
+
+        const tileId = layout[row]![col]!;
+        let tile = field.tile;
+
+        if (!tile) {
+          tile = new Tile(tileId);
+          this.registerTile(tile);
+          this.tilesContainer.addChild(tile.sprite);
+        } else {
+          tile.setId(tileId);
+        }
+
+        field.setTile(tile);
+        tile.sprite.position.copyFrom(field.sprite.position);
+        nextTiles.push(tile);
+      }
+    }
+
+    this.tiles.length = 0;
+    this.tiles.push(...nextTiles);
   }
 
   private attachTileToField(tile: Tile, field: Field) {

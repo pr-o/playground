@@ -2,9 +2,17 @@ import { expect, test, type TestInfo } from '@playwright/test';
 import { promises as fs } from 'node:fs';
 import { dirname } from 'node:path';
 
+type DebugMatchSummary = {
+  directions: Array<'row' | 'col'>;
+  tiles: Array<{ row: number; col: number }>;
+};
+
 declare global {
   interface Window {
     __BEJEWELED_DEBUG__?: () => { rows: number; cols: number; tileCount: number };
+    __BEJEWELED_DEBUG_SET_LAYOUT__?: (layout: string[][]) => DebugMatchSummary[];
+    __BEJEWELED_DEBUG_CLEAR__?: () => void;
+    __BEJEWELED_DEBUG_HIGHLIGHT__?: () => DebugMatchSummary[];
   }
 }
 

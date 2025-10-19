@@ -8,16 +8,28 @@ type SetFieldOptions = {
 };
 
 export class Tile {
-  readonly id: BejeweledTileId;
+  private _id: BejeweledTileId;
   readonly sprite: Sprite;
   field: Field | null = null;
 
   constructor(id: BejeweledTileId = getRandomTileId()) {
-    this.id = id;
+    this._id = id;
     this.sprite = new Sprite(getTileTexture(id));
     this.sprite.anchor.set(0.5);
     this.sprite.eventMode = 'static';
     this.sprite.cursor = 'pointer';
+  }
+
+  get id(): BejeweledTileId {
+    return this._id;
+  }
+
+  setId(id: BejeweledTileId) {
+    if (this._id === id) {
+      return;
+    }
+    this._id = id;
+    this.sprite.texture = getTileTexture(id);
   }
 
   setField(field: Field | null, options: SetFieldOptions = {}) {
