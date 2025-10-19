@@ -93,10 +93,15 @@ jest.mock('pixi.js', () => {
   };
 });
 
+jest.mock('@/lib/bejeweled/animation', () => ({
+  tweenTo: jest.fn(() => Promise.resolve()),
+}));
+
 import { Container, Ticker } from 'pixi.js';
 import { Board } from '@/lib/bejeweled/board';
 import { BEJEWELED_CONFIG, type BejeweledTileId } from '@/lib/bejeweled/config';
 import { CombinationManager } from '@/lib/bejeweled/combination-manager';
+import type { Tile } from '@/lib/bejeweled/tile';
 
 describe('Bejeweled board initialisation', () => {
   it('creates a full grid of fields and tiles', () => {
@@ -157,6 +162,69 @@ describe('Bejeweled board initialisation', () => {
     expect(board.fields[2]![1]!.tile).toBeNull();
     expect(board.fields[2]![2]!.tile).toBeNull();
     expect(board.fields[2]![3]!.tile).toBeNull();
+
+    board.destroy();
+    ticker.destroy();
+  });
+
+  it('dropTiles cascades tiles downward', async () => {
+    const stage = new Container();
+    const ticker = new Ticker();
+
+    const board = new Board({
+      stage,
+      viewportWidth: BEJEWELED_CONFIG.cols * BEJEWELED_CONFIG.tileSize,
+      viewportHeight: BEJEWELED_CONFIG.rows * BEJEWELED_CONFIG.tileSize,
+      ticker,
+    });
+
+    const tileToDrop = board.fields[2]![0]!.tile!;
+    for (let row = 3; row < BEJEWELED_CONFIG.rows; row += 1) {
+      const field = board.fields[row]![0]!;
+      const tile = field.tile;
+      if (tile) {
+        field.setTile(null);
+        board.tiles.splice(board.tiles.indexOf(tile), 1);
+      }
+    }
+
+    await board.dropTiles();
+
+    expect(board.fields[7]![0]!.tile).toBe(tileToDrop);
+    expect(board.fields[2]![0]!.tile).toBeNull();
+
+    board.destroy();
+    ticker.destroy();
+  });
+
+  it('spawnNewTiles fills empty slots with new tiles', async () => {
+    const stage = new Container();
+    const ticker = new Ticker();
+
+    const board = new Board({
+      stage,
+      viewportWidth: BEJEWELED_CONFIG.cols * BEJEWELED_CONFIG.tileSize,
+      viewportHeight: BEJEWELED_CONFIG.rows * BEJEWELED_CONFIG.tileSize,
+      ticker,
+    });
+
+    const removed: Tile[] = [];
+    for (let row = 0; row < BEJEWELED_CONFIG.rows; row += 1) {
+      const field = board.fields[row]![3]!;
+      const tile = field.tile;
+      if (tile) {
+        field.setTile(null);
+        removed.push(tile);
+        board.tiles.splice(board.tiles.indexOf(tile), 1);
+      }
+    }
+
+    const created = await board.spawnNewTiles();
+
+    expect(created.length).toBe(removed.length);
+    for (let row = 0; row < BEJEWELED_CONFIG.rows; row += 1) {
+      expect(board.fields[row]![3]!.tile).not.toBeNull();
+    }
 
     board.destroy();
     ticker.destroy();

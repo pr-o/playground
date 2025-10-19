@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Board } from '@/lib/bejeweled/board';
 import { CombinationManager } from '@/lib/bejeweled/combination-manager';
 import { BEJEWELED_CONFIG, type BejeweledTileId } from '@/lib/bejeweled/config';
+import type { Tile } from '@/lib/bejeweled/tile';
 import { initBejeweledPixi, type BejeweledPixiContext } from '@/lib/bejeweled/pixi';
 
 type DebugSummary = { rows: number; cols: number; tileCount: number };
@@ -40,6 +41,7 @@ export function BejeweledGame() {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const pixiContextRef = useRef<BejeweledPixiContext | null>(null);
   const boardRef = useRef<Board | null>(null);
+  const resolvingRef = useRef(false);
   const [status, setStatus] = useState<InitStatus>('loading');
 
   useEffect(() => {
@@ -135,14 +137,33 @@ export function BejeweledGame() {
         removeResizeListener = () => window.removeEventListener('resize', resize);
         updateDebugApis();
 
-        board.onSwapRequest = (from, to) => {
-          void board.swapTiles(from, to);
+        const resolveSwap = async (from: Tile, to: Tile) => {
+          if (resolvingRef.current) {
+            return;
+          }
+          resolvingRef.current = true;
+          try {
+            await board.swapTiles(from, to);
+            const clusters = combinationManager.findMatches();
+            if (clusters.length === 0) {
+              await board.swapTiles(from, to, { reverse: true });
+              combinationManager.findMatches();
+              updateDebugApis();
+              return;
+            }
+
+            board.removeMatches(clusters);
+            await board.dropTiles();
+            await board.spawnNewTiles();
+            combinationManager.findMatches();
+            updateDebugApis();
+          } finally {
+            resolvingRef.current = false;
+          }
         };
 
-        board.onSwapComplete = () => {
-          combinationManager.findMatches();
-          updateDebugApis();
-          // Phase 3+ will hook combo detection here.
+        board.onSwapRequest = (from, to) => {
+          void resolveSwap(from, to);
         };
 
         pixiContextRef.current = context;

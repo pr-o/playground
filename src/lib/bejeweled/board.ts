@@ -166,6 +166,105 @@ export class Board {
     this.debugLayer.visible = false;
   }
 
+  async dropTiles(): Promise<void> {
+    const animations: Promise<void>[] = [];
+
+    for (let col = 0; col < BEJEWELED_CONFIG.cols; col += 1) {
+      let targetRow = BEJEWELED_CONFIG.rows - 1;
+
+      for (let row = BEJEWELED_CONFIG.rows - 1; row >= 0; row -= 1) {
+        const sourceField = this.fields[row]?.[col];
+        if (!sourceField) {
+          continue;
+        }
+
+        const tile = sourceField.tile;
+        if (!tile) {
+          continue;
+        }
+
+        const targetField = this.fields[targetRow]![col]!;
+        if (targetField !== sourceField) {
+          sourceField.setTile(null);
+          targetField.setTile(tile, { snap: false });
+
+          const { x, y } = targetField.position;
+          animations.push(
+            tweenTo(
+              tile.sprite,
+              { x, y },
+              {
+                duration: BEJEWELED_CONFIG.fallDuration,
+                ticker: this.ticker,
+              },
+            ).then(() => {
+              tile.sprite.position.set(x, y);
+            }),
+          );
+        }
+
+        targetRow -= 1;
+      }
+    }
+
+    if (animations.length > 0) {
+      await Promise.all(animations);
+    }
+  }
+
+  async spawnNewTiles(): Promise<Tile[]> {
+    const created: Tile[] = [];
+    const animations: Promise<void>[] = [];
+
+    const strideY = BEJEWELED_CONFIG.tileSize + BEJEWELED_CONFIG.tileSpacing;
+
+    for (let col = 0; col < BEJEWELED_CONFIG.cols; col += 1) {
+      const emptyFields: Field[] = [];
+      for (let row = BEJEWELED_CONFIG.rows - 1; row >= 0; row -= 1) {
+        const field = this.fields[row]?.[col];
+        if (field && !field.tile) {
+          emptyFields.push(field);
+        }
+      }
+
+      emptyFields.reverse();
+
+      emptyFields.forEach((field, index) => {
+        const tile = new Tile();
+        this.registerTile(tile);
+        this.tilesContainer.addChild(tile.sprite);
+        this.tiles.push(tile);
+
+        tile.setField(field, { snap: false });
+
+        const { x, y } = field.position;
+        const startY = y - strideY * (index + 1);
+        tile.sprite.position.set(x, startY);
+
+        animations.push(
+          tweenTo(
+            tile.sprite,
+            { x, y },
+            {
+              duration: BEJEWELED_CONFIG.fallDuration,
+              ticker: this.ticker,
+            },
+          ).then(() => {
+            tile.sprite.position.set(x, y);
+          }),
+        );
+
+        created.push(tile);
+      });
+    }
+
+    if (animations.length > 0) {
+      await Promise.all(animations);
+    }
+
+    return created;
+  }
+
   removeMatches(clusters: MatchCluster[]): Tile[] {
     if (clusters.length === 0) {
       return [];
