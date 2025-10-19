@@ -61,4 +61,12 @@ export const ProjectEntries: ProjectEntry[] = [
     description:
       'A modern take on 2048 with persistent state, upcoming animations, and achievement tracking.',
   },
+  {
+    title: 'Bejeweled',
+    href: '/games/bejeweled',
+    tag: 'bejeweled',
+    kind: ProjectKind.Game,
+    description:
+      'A PixiJS-powered Bejeweled game with cascading combos, animated swaps, and a responsive board.',
+  },
 ];
