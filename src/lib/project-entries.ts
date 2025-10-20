@@ -9,6 +9,9 @@ export type ProjectEntry = {
   tag: string;
   kind: ProjectKind;
   description: string;
+  thumbnail: string;
+  thumbnailAlt: string;
+  techStack: string[];
 };
 
 export const ProjectEntries: ProjectEntry[] = [
@@ -18,7 +21,10 @@ export const ProjectEntries: ProjectEntry[] = [
     tag: 'netflix',
     kind: ProjectKind.App,
     description:
-      'Browse trending films and series powered by the TMDB API, complete with hero banners, carousels, and a personal watch list.',
+      'Rebuild of the Netflix browsing experience with dynamic carousels, watch lists, and hero spotlights fed by live TMDB data.',
+    thumbnail: '/assets/clones/netflix-logo.svg',
+    thumbnailAlt: 'Preview of the Netflix clone.',
+    techStack: ['TMDB Open API'],
   },
   {
     title: 'Upbit Dashboard',
@@ -26,7 +32,10 @@ export const ProjectEntries: ProjectEntry[] = [
     tag: 'upbit',
     kind: ProjectKind.App,
     description:
-      'Real-time order book, chart, and trade insights powered by the Upbit Open API.',
+      'Live market dashboard for Upbit showing streaming order book depth, price movement charts, and market snapshots.',
+    thumbnail: '/assets/clones/upbit-logo.svg',
+    thumbnailAlt: 'Preview of the Upbit dashboard clone.',
+    techStack: ['React Query', 'Upbit Open API', 'WebSocket'],
   },
   {
     title: 'YouTube Music Clone',
@@ -34,7 +43,10 @@ export const ProjectEntries: ProjectEntry[] = [
     tag: 'youtube-music',
     kind: ProjectKind.App,
     description:
-      'Responsive recreation of the YouTube Music web app with Spotify-powered data, multi-tab navigation, and a rich playback experience.',
+      'Responsive recreation of the YouTube Music web app with Discogs API data, multi-tab navigation.',
+    thumbnail: '/assets/clones/youtube-music-logo.svg',
+    thumbnailAlt: 'Preview of the YouTube Music clone.',
+    techStack: ['React Query', 'Discogs Open API'],
   },
   {
     title: 'Excalidraw Clone',
@@ -43,15 +55,20 @@ export const ProjectEntries: ProjectEntry[] = [
     kind: ProjectKind.App,
     description:
       'Infinite canvas whiteboard with Excalidraw-inspired layout, tools, and drawing surface.',
+    thumbnail: '/assets/clones/excalidraw-logo.svg',
+    thumbnailAlt: 'Preview of the Excalidraw clone.',
+    techStack: ['Konva', 'Zustand', 'Immer'],
   },
   {
     title: 'Notion Clone',
     href: '/apps/notion',
     tag: 'notion',
-
     kind: ProjectKind.App,
     description:
       'A local-first documents workspace with block editing, inline formatting, and persistence in the browser.',
+    thumbnail: '/assets/clones/notion-logo.svg',
+    thumbnailAlt: 'Preview of the Notion clone.',
+    techStack: ['Discogs API', 'Blocks Editor', 'IndexedDB'],
   },
   {
     title: '2048 Remix',
@@ -60,13 +77,18 @@ export const ProjectEntries: ProjectEntry[] = [
     kind: ProjectKind.Game,
     description:
       'A modern take on 2048 with persistent state, upcoming animations, and achievement tracking.',
+    thumbnail: '/assets/games/2048-logo.svg',
+    thumbnailAlt: 'Preview of the 2048 game clone.',
+    techStack: ['Zustand', 'Motion'],
   },
   {
     title: 'Bejeweled',
     href: '/games/bejeweled',
     tag: 'bejeweled',
     kind: ProjectKind.Game,
-    description:
-      'A PixiJS-powered Bejeweled game with cascading combos, animated swaps, and a responsive board.',
+    description: 'A modern take on Bejeweled in a PixiJS-powered renderer.',
+    thumbnail: '/assets/games/bejeweled-logo.svg',
+    thumbnailAlt: 'Preview of the Bejeweled clone.',
+    techStack: ['PixiJS'],
   },
 ];
