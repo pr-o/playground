@@ -30,6 +30,17 @@ export type AlbumHeroData = {
   dominantColor?: string;
 };
 
+export type ArtistHeroData = {
+  id: string;
+  name: string;
+  realName?: string;
+  imageUrl?: string;
+  profile?: string;
+  memberNames?: string[];
+  urls?: string[];
+  genres?: string[];
+};
+
 export type TrackRowData = {
   id: string;
   title: string;
@@ -154,6 +165,19 @@ export type MusicAlbumDetail = {
 };
 
 export type MusicPlaylistDetail = {
+  hero: AlbumHeroData;
+  tracks: TrackRowData[];
+  related: PlaylistCardData[];
+};
+
+export type MusicArtistDetail = {
+  hero: ArtistHeroData;
+  topTracks: TrackRowData[];
+  popularReleases: AlbumCardData[];
+  relatedArtists: ArtistSummaryData[];
+};
+
+export type MusicMixDetail = {
   hero: AlbumHeroData;
   tracks: TrackRowData[];
   related: PlaylistCardData[];

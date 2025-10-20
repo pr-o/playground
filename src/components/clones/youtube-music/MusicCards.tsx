@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import type { AlbumCardData, ArtistSummaryData, PlaylistCardData } from '@/types/music';
 import { useMusicPlaybackStore, useMusicUIStore } from '@/store/music';
 import { albumCardToPlayback, playlistCardToPlayback } from '@/lib/music/playback';
+import { musicPath } from '@/lib/music/constants';
 
 const FALLBACK_ART =
   'https://images.unsplash.com/photo-1511379938547-c1f69419868d?auto=format&fit=crop&w=400&q=80';
@@ -92,7 +93,7 @@ function useCardPlaybackActions(
 }
 
 export function MusicReleaseCard({ release, href, className }: MusicReleaseCardProps) {
-  const targetHref = href ?? `/clones/youtube-music/album/${release.id}`;
+  const targetHref = href ?? musicPath('album', release.id);
   const playbackTrack = albumCardToPlayback(release);
   const { handlePlay, handlePlayNext, handleAddToQueue } = useCardPlaybackActions(
     release.name,
@@ -163,7 +164,7 @@ export function MusicReleaseCard({ release, href, className }: MusicReleaseCardP
 }
 
 export function MusicPlaylistCard({ playlist, href, className }: MusicPlaylistCardProps) {
-  const targetHref = href ?? `/clones/youtube-music/playlist/${playlist.id}`;
+  const targetHref = href ?? musicPath('playlist', playlist.id);
   const playbackTrack = playlistCardToPlayback(playlist);
   const { handlePlay, handlePlayNext, handleAddToQueue } = useCardPlaybackActions(
     playlist.name,
@@ -236,7 +237,7 @@ export function MusicPlaylistCard({ playlist, href, className }: MusicPlaylistCa
 }
 
 export function MusicMixCard({ playlist, href, className }: MusicMixCardProps) {
-  const targetHref = href ?? `/clones/youtube-music/playlist/${playlist.id}`;
+  const targetHref = href ?? musicPath('playlist', playlist.id);
   const playbackTrack = playlistCardToPlayback(playlist);
   const { handlePlay, handlePlayNext, handleAddToQueue } = useCardPlaybackActions(
     playlist.name,
@@ -311,7 +312,7 @@ export function MusicQuickPickCard({
   href,
   className,
 }: MusicQuickPickCardProps) {
-  const targetHref = href ?? `/clones/youtube-music/album/${release.id}`;
+  const targetHref = href ?? musicPath('album', release.id);
   const playbackTrack = albumCardToPlayback(release);
   const { handlePlay, handlePlayNext, handleAddToQueue } = useCardPlaybackActions(
     release.name,
@@ -380,7 +381,7 @@ export function MusicQuickPickCard({
 }
 
 export function MusicArtistCard({ artist, href, className }: MusicArtistCardProps) {
-  const targetHref = href ?? `/clones/youtube-music/artist/${artist.id}`;
+  const targetHref = href ?? musicPath('artist', artist.id);
 
   return (
     <Link

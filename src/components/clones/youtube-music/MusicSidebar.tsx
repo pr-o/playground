@@ -39,7 +39,7 @@ export function MusicSidebar() {
   return (
     <aside
       className={cn(
-        'hidden h-full flex-col border-r border-music/70 bg-music-card/40 text-music-secondary backdrop-blur md:flex',
+        'hidden h-full flex-col bg-music-card/40 text-music-secondary backdrop-blur md:flex',
         isCompact ? 'w-[4.75rem]' : 'w-64',
       )}
     >

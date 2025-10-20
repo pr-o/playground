@@ -13,6 +13,7 @@ import { ContentSection } from '@/components/clones/youtube-music/ContentSection
 import { HorizontalScroller } from '@/components/clones/youtube-music/HorizontalScroller';
 import type { MusicSearchResult, MusicSearchGroup, MusicTopResult } from '@/types/music';
 import { cn } from '@/lib/utils';
+import { musicPath } from '@/lib/music/constants';
 
 type MusicSearchResultsProps = {
   result: MusicSearchResult;
@@ -59,7 +60,7 @@ export function MusicSearchResults({ result, activeFilter }: MusicSearchResultsP
     } else {
       params.set('filter', kind);
     }
-    router.replace(`/clones/youtube-music/search?${params.toString()}`);
+    router.replace(`${musicPath('search')}?${params.toString()}`);
   };
 
   return (
@@ -117,7 +118,7 @@ export function MusicSearchResults({ result, activeFilter }: MusicSearchResultsP
           action={
             group.total > group.items.length ? (
               <Link
-                href={`/clones/youtube-music/search?q=${encodeURIComponent(query)}&filter=${group.kind}`}
+                href={`${musicPath('search')}?q=${encodeURIComponent(query)}&filter=${group.kind}`}
                 className="text-sm font-semibold text-music-primary transition hover:text-white"
               >
                 See all

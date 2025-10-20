@@ -27,7 +27,7 @@ export function MusicShell({ children }: MusicShellProps) {
       </Suspense>
       <div className="flex flex-1 overflow-hidden">
         <MusicSidebar />
-        <main className="relative flex-1 overflow-y-auto pb-32 lg:pb-28">
+        <main className="relative flex-1 border-l border-music/70 overflow-y-auto pb-32 lg:pb-28">
           <div className="mx-auto w-full max-w-6xl">{children}</div>
         </main>
         <MusicQueueDrawer isOpen={isQueueOpen} />

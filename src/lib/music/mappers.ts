@@ -2,6 +2,7 @@ import { formatNumber, formatRelativeDate } from '@/lib/format';
 import type {
   AlbumCardData,
   AlbumHeroData,
+  ArtistHeroData,
   ArtistSummaryData,
   PlaylistCardData,
   TrackRowData,
@@ -223,5 +224,30 @@ export function mapArtistSummary(
     imageUrl,
     followers: undefined,
     genres: undefined,
+  };
+}
+
+export function mapArtistToHero(
+  artist: DiscogsArtist,
+  options?: { genres?: string[] },
+): ArtistHeroData {
+  const primaryImage = artist.images?.[0];
+  const imageUrl =
+    primaryImage?.uri && primaryImage.uri.length > 0
+      ? primaryImage.uri
+      : primaryImage?.uri150 && primaryImage.uri150.length > 0
+        ? primaryImage.uri150
+        : undefined;
+  const profile = artist.profile?.trim() ? artist.profile.trim() : undefined;
+
+  return {
+    id: String(artist.id),
+    name: artist.name,
+    realName: artist.realname,
+    imageUrl,
+    profile,
+    memberNames: artist.members?.map((member) => member.name),
+    urls: artist.urls ?? [],
+    genres: options?.genres,
   };
 }
