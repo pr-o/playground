@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
-import { searchMusicCatalog } from '@/lib/music';
+import { searchMusicCatalog, musicPath } from '@/lib/music';
 import { ContentSection } from '@/components/clones/youtube-music/ContentSection';
 import { MusicSearchResults } from '@/components/clones/youtube-music/MusicSearchResults';
 
@@ -53,7 +53,7 @@ export default async function YoutubeMusicSearchPage({
             ].map((pill) => (
               <Link
                 key={pill}
-                href={`/clones/youtube-music/search?q=${encodeURIComponent(pill)}`}
+                href={`${musicPath('search')}?q=${encodeURIComponent(pill)}`}
                 className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm text-music-primary transition hover:border-white/40 hover:bg-white/10"
               >
                 {pill}

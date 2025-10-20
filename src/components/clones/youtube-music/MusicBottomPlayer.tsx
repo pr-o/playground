@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Pause,
   Play,
@@ -36,6 +37,17 @@ export function MusicBottomPlayer() {
   const setProgress = useMusicPlaybackStore((state) => state.setProgress);
   const setVolume = useMusicPlaybackStore((state) => state.setVolume);
   const durationMs = currentTrack?.durationMs ?? 0;
+  const [hasMounted, setHasMounted] = useState(false);
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
+
+  const progressValue = useMemo(
+    () => Math.min(progressMs, durationMs || 1),
+    [progressMs, durationMs],
+  );
+  const volumeValue = useMemo(() => (isMuted ? 0 : volume), [isMuted, volume]);
 
   const handleSeek = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = Number.parseInt(event.target.value, 10);
@@ -134,18 +146,22 @@ export function MusicBottomPlayer() {
             <span className="w-10 text-right">
               {currentTrack ? formatDurationMs(progressMs) : '0:00'}
             </span>
-            <input
-              type="range"
-              min={0}
-              max={durationMs || 1}
-              value={Math.min(progressMs, durationMs || 1)}
-              step={500}
-              onChange={(event) => {
-                handleSeek(event);
-                setProgress(Number.parseInt(event.target.value, 10));
-              }}
-              className="h-1 w-full cursor-pointer appearance-none rounded-full bg-white/10 transition hover:bg-white/20 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow"
-            />
+            {hasMounted ? (
+              <input
+                type="range"
+                min={0}
+                max={durationMs || 1}
+                value={progressValue}
+                step={500}
+                onChange={(event) => {
+                  handleSeek(event);
+                  setProgress(Number.parseInt(event.target.value, 10));
+                }}
+                className="h-1 w-full cursor-pointer appearance-none rounded-full bg-white/10 transition hover:bg-white/20 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow"
+              />
+            ) : (
+              <div className="h-1 w-full rounded-full bg-white/10" />
+            )}
             <span className="w-10">
               {currentTrack ? formatDurationMs(durationMs) : '0:00'}
             </span>
@@ -164,15 +180,19 @@ export function MusicBottomPlayer() {
               <Volume2 className="h-5 w-5" />
             )}
           </button>
-          <input
-            type="range"
-            min={0}
-            max={1}
-            step={0.01}
-            value={isMuted ? 0 : volume}
-            onChange={handleVolumeChange}
-            className="h-1 w-28 cursor-pointer appearance-none rounded-full bg-white/10 transition hover:bg-white/20 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow"
-          />
+          {hasMounted ? (
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.01}
+              value={volumeValue}
+              onChange={handleVolumeChange}
+              className="h-1 w-28 cursor-pointer appearance-none rounded-full bg-white/10 transition hover:bg-white/20 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow"
+            />
+          ) : (
+            <div className="h-1 w-28 rounded-full bg-white/10" />
+          )}
         </div>
       </div>
     </footer>

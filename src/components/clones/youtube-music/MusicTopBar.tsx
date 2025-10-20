@@ -1,7 +1,7 @@
 'use client';
 
 import type { FormEvent, KeyboardEvent } from 'react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -13,25 +13,16 @@ import {
   X,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import {
-  MUSIC_BASE_PATH,
-  MUSIC_FILTER_PRESETS,
-  MUSIC_PRIMARY_NAV,
-} from '@/lib/music/constants';
+import { MUSIC_BASE_PATH, MUSIC_PRIMARY_NAV } from '@/lib/music/constants';
 import { useMusicUIStore } from '@/store/music';
 import { useMusicSearchSuggestions } from '@/hooks/music/use-music-search-suggestions';
 import type { MusicSearchSuggestion } from '@/types/music';
-
-const MAX_PRESETS_DESKTOP = 10;
-const MAX_PRESETS_MOBILE = 5;
 
 export function MusicTopBar() {
   const isSearchFocused = useMusicUIStore((state) => state.isSearchFocused);
   const setSearchFocused = useMusicUIStore((state) => state.setSearchFocused);
   const activeRoute = useMusicUIStore((state) => state.activeRoute);
-  const sidebarDensity = useMusicUIStore((state) => state.sidebarDensity);
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -51,11 +42,6 @@ export function MusicTopBar() {
   useEffect(() => {
     setHighlightIndex(-1);
   }, [suggestions]);
-
-  const pills = useMemo(() => {
-    const limit = sidebarDensity === 'hidden' ? MAX_PRESETS_MOBILE : MAX_PRESETS_DESKTOP;
-    return MUSIC_FILTER_PRESETS.slice(0, limit);
-  }, [sidebarDensity]);
 
   const hasSuggestions = isSearchFocused && suggestions.length > 0;
 
@@ -217,15 +203,6 @@ export function MusicTopBar() {
             >
               <Bell className="h-5 w-5" />
             </button>
-            <form action="/api/spotify/auth/login" method="get">
-              <Button
-                type="submit"
-                variant="outline"
-                className="rounded-full border-white/40 bg-white/10 px-5 text-xs font-semibold uppercase tracking-[0.25em] text-music-primary hover:bg-white/20"
-              >
-                Connect Spotify
-              </Button>
-            </form>
             <button
               type="button"
               className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-music-secondary transition hover:bg-white/20"
@@ -233,18 +210,6 @@ export function MusicTopBar() {
               <MoreHorizontal className="h-5 w-5" />
             </button>
           </div>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          {pills.map((pill) => (
-            <button
-              key={pill}
-              type="button"
-              className="rounded-full border border-music/60 bg-white/5 px-4 py-1.5 text-sm text-music-secondary transition hover:bg-white/15 hover:text-music-primary"
-            >
-              {pill}
-            </button>
-          ))}
         </div>
 
         <div className="flex items-center gap-4 text-sm font-medium text-music-muted md:hidden">
@@ -268,16 +233,6 @@ export function MusicTopBar() {
           >
             Clone
           </Link>
-          <form action="/api/spotify/auth/login" method="get">
-            <Button
-              type="submit"
-              size="sm"
-              variant="outline"
-              className="rounded-full border-white/30 bg-white/10 text-[0.65rem] uppercase tracking-[0.25em] text-music-primary hover:bg-white/20"
-            >
-              Connect
-            </Button>
-          </form>
         </div>
       </div>
     </div>

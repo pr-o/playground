@@ -1,6 +1,19 @@
 import type { PrimaryMusicRoute } from '@/store/music';
 
-export const MUSIC_BASE_PATH = '/clones/youtube-music';
+export const MUSIC_BASE_PATH = '/apps/youtube-music';
+
+export function musicPath(...segments: Array<string | number | undefined | null>) {
+  const parts = segments
+    .filter(
+      (segment): segment is string | number => segment !== undefined && segment !== null,
+    )
+    .map((segment) => String(segment).replace(/^\/+|\/+$/g, ''))
+    .filter((segment) => segment.length > 0);
+  if (parts.length === 0) {
+    return MUSIC_BASE_PATH;
+  }
+  return `${MUSIC_BASE_PATH}/${parts.join('/')}`;
+}
 
 export const MUSIC_BREAKPOINTS = {
   xs: 0,
@@ -63,11 +76,9 @@ export const MUSIC_SIDEBAR_LIBRARY_SECTIONS: MusicSidebarLibrarySection[] = [
     links: [
       { label: 'Liked Music', href: '#liked', badge: 'Auto playlist' },
       { label: 'Study', href: '#study' },
+      { label: 'Pop', href: '#pop' },
       { label: 'Workout', href: '#workout' },
       { label: 'Classic for sleeping', href: '#classic-sleep' },
-      { label: 'J-POP', href: '#j-pop' },
-      { label: 'Pop', href: '#pop' },
-      { label: 'Episodes for later', href: '#episodes', badge: 'Auto playlist' },
     ],
   },
 ] satisfies MusicSidebarLibrarySection[];
