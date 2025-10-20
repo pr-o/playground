@@ -34,15 +34,8 @@ export default function ClonesIndexPage() {
         </p>
       </header>
       <section className="grid gap-4 md:grid-cols-2">
-        {apps.map(({ href, title, tag, description }) => (
-          <ProjectCard
-            key={href}
-            href={href}
-            title={title}
-            meta={tag}
-            description={description}
-            className="rounded-lg p-5"
-          />
+        {apps.map((entry) => (
+          <ProjectCard key={entry.href} project={entry} className="rounded-lg p-5" />
         ))}
       </section>
     </main>

@@ -40,13 +40,10 @@ export default function Home() {
           return (
             <div key={kind} className="space-y-3 mb-6">
               <h1 className="text-2xl font-semibold">{kind}</h1>
-              {filtered.map(({ href, title, tag, description }) => (
+              {filtered.map((entry) => (
                 <ProjectCard
-                  key={href}
-                  href={href}
-                  title={title}
-                  meta={tag}
-                  description={description}
+                  key={entry.href}
+                  project={entry}
                   className="rounded-md px-4 py-3"
                 />
               ))}
