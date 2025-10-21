@@ -12,7 +12,7 @@ import {
   Volume2,
   VolumeX,
 } from 'lucide-react';
-import { useMusicPlaybackStore } from '@/store/music';
+import { useMusicPlaybackStore, useMusicUIStore } from '@/store/music';
 import { formatDurationMs } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { useAudioPlayer } from '@/hooks/music/use-audio-player';
@@ -38,6 +38,7 @@ export function MusicBottomPlayer() {
   const setVolume = useMusicPlaybackStore((state) => state.setVolume);
   const durationMs = currentTrack?.durationMs ?? 0;
   const [hasMounted, setHasMounted] = useState(false);
+  const sidebarDensity = useMusicUIStore((state) => state.sidebarDensity);
 
   useEffect(() => {
     setHasMounted(true);
@@ -63,7 +64,12 @@ export function MusicBottomPlayer() {
   };
 
   return (
-    <footer className="fixed inset-x-0 bottom-0 z-30 border-t border-music/70 bg-music-card/80 backdrop-blur">
+    <footer
+      className={cn(
+        'fixed inset-x-0 z-30 border-t border-music/70 bg-music-card/80 backdrop-blur shadow-music-elevated',
+        sidebarDensity === 'hidden' ? 'bottom-16 md:bottom-0' : 'bottom-0',
+      )}
+    >
       <div className="mx-auto flex w-full max-w-6xl items-center gap-6 px-4 py-3 text-sm">
         <div className="flex min-w-0 flex-1 items-center gap-3">
           {currentTrack?.artworkUrl ? (

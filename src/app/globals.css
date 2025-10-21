@@ -4,6 +4,12 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  --breakpoint-xs: 0px;
+  --breakpoint-sm: 30rem;
+  --breakpoint-md: 48rem;
+  --breakpoint-lg: 64rem;
+  --breakpoint-xl: 90rem;
+  --breakpoint-2xl: 105rem;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
@@ -122,6 +128,23 @@
 
   .music-theme {
     color-scheme: dark;
+    --music-gradient-hero:
+      radial-gradient(120% 100% at 20% 20%, rgba(102, 76, 255, 0.32) 0%, transparent 65%),
+      radial-gradient(120% 100% at 80% 0%, rgba(255, 76, 96, 0.35) 0%, transparent 70%),
+      linear-gradient(
+        180deg,
+        rgba(15, 16, 32, 0.95) 0%,
+        rgba(5, 7, 20, 0.94) 70%,
+        rgba(4, 3, 11, 1) 100%
+      );
+    --music-gradient-queue: linear-gradient(
+      180deg,
+      rgba(25, 27, 44, 0.95) 0%,
+      rgba(15, 17, 30, 0.98) 60%,
+      rgba(8, 8, 17, 1) 100%
+    );
+    --music-surface-overlay: rgba(20, 22, 37, 0.72);
+    --music-surface-frost: rgba(17, 19, 34, 0.55);
     --music-surface-950: #04030b;
     --music-surface-900: #050714;
     --music-surface-850: #0c0f1f;
@@ -131,7 +154,7 @@
     --music-card-alt: #1a1d2c;
     --music-border: rgba(255, 255, 255, 0.08);
     --music-border-strong: rgba(255, 255, 255, 0.16);
-    --music-overlay-strong: rgba(20, 22, 37, 0.72);
+    --music-overlay-strong: var(--music-surface-overlay);
     --music-text-primary: #f8f9ff;
     --music-text-secondary: rgba(235, 238, 255, 0.68);
     --music-text-muted: rgba(235, 238, 255, 0.48);
@@ -187,30 +210,27 @@
   }
 
   .bg-music-hero {
-    background-image:
-      radial-gradient(120% 100% at 20% 20%, rgba(102, 76, 255, 0.32) 0%, transparent 65%),
-      radial-gradient(120% 100% at 80% 0%, rgba(255, 76, 96, 0.35) 0%, transparent 70%),
-      linear-gradient(
-        180deg,
-        rgba(15, 16, 32, 0.95) 0%,
-        rgba(5, 7, 20, 0.94) 70%,
-        rgba(4, 3, 11, 1) 100%
-      );
+    background-image: var(--music-gradient-hero);
   }
 
   .bg-music-queue {
-    background-image: linear-gradient(
-      180deg,
-      rgba(25, 27, 44, 0.95) 0%,
-      rgba(15, 17, 30, 0.98) 60%,
-      rgba(8, 8, 17, 1) 100%
-    );
+    background-image: var(--music-gradient-queue);
   }
 
   .music-card-glow {
     box-shadow:
       0 1px 0 rgba(255, 255, 255, 0.04),
       0 18px 36px -12px var(--music-glow);
+  }
+
+  .shadow-music-elevated {
+    box-shadow: var(--music-shadow-elevated);
+  }
+
+  .backdrop-music {
+    background-color: var(--music-surface-frost);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
   }
 
   .text-glow-music {
