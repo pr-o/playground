@@ -13,6 +13,7 @@ const customJestConfig = {
     '<rootDir>/src/__tests__/clones/**/*.test.(ts|tsx)',
     '<rootDir>/src/__tests__/games/**/*.test.(ts|tsx)',
   ],
+  transformIgnorePatterns: ['/node_modules/(?!(msw|@mswjs|@open-draft|until-async)/)'],
 };
 
 export default createJestConfig(customJestConfig);
