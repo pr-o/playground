@@ -62,7 +62,7 @@ export function MusicTrackActionSheet() {
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent
         className={cn(
-          'fixed inset-x-0 bottom-0 z-[9999] mt-auto flex max-h-[80vh] flex-col rounded-t-3xl border border-white/10 bg-music-hero/95 p-0 text-music-primary shadow-xl backdrop-blur md:hidden',
+          'fixed inset-x-0 bottom-0 z-[9999] mt-auto flex max-h-[80vh] flex-col rounded-t-3xl border border-white/10 bg-music-hero/95 p-0 text-music-primary shadow-xl backdrop-music md:hidden',
         )}
       >
         <DialogHeader className="border-b border-white/10 px-6 py-4 text-left">

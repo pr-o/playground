@@ -31,7 +31,7 @@ export function MusicQueueDrawer({ isOpen }: MusicQueueDrawerProps) {
     return (
       <div
         className={cn(
-          'fixed inset-0 z-50 flex flex-col bg-music-queue text-music-primary transition',
+          'fixed inset-0 z-50 flex flex-col bg-music-queue text-music-primary transition backdrop-music',
           isOpen
             ? 'translate-y-0 opacity-100'
             : 'pointer-events-none translate-y-full opacity-0',

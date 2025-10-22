@@ -237,7 +237,7 @@ export function MusicPlaylistCard({ playlist, href, className }: MusicPlaylistCa
 }
 
 export function MusicMixCard({ playlist, href, className }: MusicMixCardProps) {
-  const targetHref = href ?? musicPath('playlist', playlist.id);
+  const targetHref = href ?? musicPath('mix', playlist.id);
   const playbackTrack = playlistCardToPlayback(playlist);
   const { handlePlay, handlePlayNext, handleAddToQueue } = useCardPlaybackActions(
     playlist.name,

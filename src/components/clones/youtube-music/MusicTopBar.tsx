@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { MUSIC_BASE_PATH, MUSIC_PRIMARY_NAV } from '@/lib/music/constants';
+import { MUSIC_BASE_PATH, MUSIC_PRIMARY_NAV, musicPath } from '@/lib/music/constants';
 import { useMusicUIStore } from '@/store/music';
 import { useMusicSearchSuggestions } from '@/hooks/music/use-music-search-suggestions';
 import type { MusicSearchSuggestion } from '@/types/music';
@@ -49,7 +49,7 @@ export function MusicTopBar() {
     (query: string) => {
       const trimmed = query.trim();
       if (!trimmed) return;
-      router.push(`/clones/youtube-music/search?q=${encodeURIComponent(trimmed)}`);
+      router.push(`${musicPath('search')}?q=${encodeURIComponent(trimmed)}`);
       setSearchFocused(false);
     },
     [router, setSearchFocused],
@@ -118,7 +118,7 @@ export function MusicTopBar() {
   );
 
   return (
-    <div className="sticky top-0 z-40 border-b border-music/60 bg-music-hero/80 backdrop-blur">
+    <div className="sticky top-0 z-40 border-b border-music/60 bg-music-hero/80 backdrop-music">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-6 py-4">
         {showAuthError && (
           <div className="flex items-center justify-between gap-4 rounded-2xl border border-red-900/50 bg-red-950/40 px-4 py-3 text-sm text-red-200">
