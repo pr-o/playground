@@ -315,7 +315,8 @@ export function BejeweledGame() {
           const palette = isActive
             ? 'border-primary/70 bg-primary text-primary-foreground shadow'
             : 'border-border bg-background text-foreground shadow-sm hover:bg-accent hover:text-accent-foreground';
-          const disabledClasses = disabled ? 'cursor-not-allowed opacity-60' : '';
+          const cursorClass = disabled ? 'cursor-not-allowed' : 'cursor-pointer';
+          const disabledClasses = disabled ? 'opacity-60' : '';
           return (
             <button
               key={stage.key}
@@ -323,7 +324,7 @@ export function BejeweledGame() {
               aria-pressed={isActive}
               disabled={disabled}
               onClick={() => handleStageSelect(stage.key)}
-              className={[baseClasses, palette, disabledClasses]
+              className={[baseClasses, palette, cursorClass, disabledClasses]
                 .filter(Boolean)
                 .join(' ')}
             >

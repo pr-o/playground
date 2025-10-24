@@ -27,7 +27,7 @@ export function ProjectCard({ project, className }: ProjectCardProps) {
         <button
           type="button"
           className={cn(
-            'group w-full border border-border bg-card text-left transition-colors hover:bg-card/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
+            'group w-full border border-border bg-card text-left transition-colors cursor-pointer hover:bg-card/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
             className,
           )}
           aria-label={`Show details for ${title}`}
@@ -43,10 +43,10 @@ export function ProjectCard({ project, className }: ProjectCardProps) {
       </DialogTrigger>
 
       <DialogContent className="bg-transparent p-0">
-        <div className="relative w-full max-w-4xl overflow-hidden rounded-3xl border border-border/80 bg-card text-card-foreground shadow-2xl">
+        <div className="relative w-full max-w-3xl overflow-hidden rounded-3xl border border-border/80 bg-card text-card-foreground shadow-2xl">
           <DialogCloseButton />
-          <div className="grid gap-6 p-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
-            <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-muted">
+          <div className="grid gap-8 p-6 lg:grid-cols-[300px_minmax(0,1fr)]">
+            <div className="relative h-[300px] w-[300px] overflow-hidden rounded-2xl bg-muted sm:mx-auto lg:mx-0">
               <Image
                 src={thumbnail}
                 alt={thumbnailAlt}
