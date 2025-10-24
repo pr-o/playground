@@ -7,9 +7,12 @@ type BreakpointValueKey = MusicBreakpointKey | 'base';
 
 export type BreakpointValues<T> = Partial<Record<BreakpointValueKey, T>>;
 
-function sortBreakpointsDescending() {
+function sortBreakpointsDescending(): Array<[MusicBreakpointKey, number]> {
   return Object.entries(MUSIC_BREAKPOINTS)
-    .map(([key, value]) => [key as MusicBreakpointKey, value] as const)
+    .map(
+      ([key, value]) =>
+        [key as MusicBreakpointKey, value] as [MusicBreakpointKey, number],
+    )
     .sort((a, b) => b[1] - a[1]);
 }
 
