@@ -29,6 +29,9 @@ export class CombinationManager {
 
     for (const rowFields of this.board.fields) {
       for (const field of rowFields) {
+        if (!field) {
+          continue;
+        }
         const tile = field.tile;
         if (!tile || visited.has(tile)) {
           continue;

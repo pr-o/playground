@@ -1,6 +1,12 @@
 import { Container, Sprite, Ticker } from 'pixi.js';
 import type { MatchCluster } from './combination-manager';
 import { BEJEWELED_CONFIG, type BejeweledTileId } from './config';
+
+function createFullMask(): boolean[][] {
+  return Array.from({ length: BEJEWELED_CONFIG.rows }, () =>
+    Array.from({ length: BEJEWELED_CONFIG.cols }, () => true),
+  );
+}
 import { getBoardDimensions } from './board-geometry';
 import { Field } from './field';
 import { Tile } from './tile';
@@ -13,6 +19,7 @@ export type BoardOptions = {
   viewportHeight: number;
   ticker: Ticker;
   enableDebugOverlay?: boolean;
+  shape?: boolean[][];
 };
 
 export class Board {
@@ -20,7 +27,7 @@ export class Board {
   readonly fieldsContainer: Container;
   readonly tilesContainer: Container;
 
-  readonly fields: Field[][] = [];
+  readonly fields: Array<Array<Field | null>> = [];
   readonly tiles: Tile[] = [];
 
   onSwapRequest?: (from: Tile, to: Tile) => void;
@@ -34,6 +41,7 @@ export class Board {
   private readonly debugLayer: Container;
   private debugOverlayEnabled: boolean;
   private feedbackTimeout: ReturnType<typeof setTimeout> | null = null;
+  private readonly shapeMask: boolean[][];
 
   constructor(options: BoardOptions) {
     this.container = new Container();
@@ -57,6 +65,7 @@ export class Board {
     options.stage.addChild(this.container);
     this.ticker = options.ticker;
     this.debugOverlayEnabled = options.enableDebugOverlay ?? false;
+    this.shapeMask = options.shape ?? createFullMask();
 
     this.createFields();
     this.populateTiles();
@@ -67,7 +76,7 @@ export class Board {
     this.centerWithin(viewportWidth, viewportHeight);
   }
 
-  getField(row: number, col: number): Field | undefined {
+  getField(row: number, col: number): Field | null | undefined {
     return this.fields[row]?.[col];
   }
 
@@ -85,8 +94,13 @@ export class Board {
 
   private createFields() {
     for (let row = 0; row < BEJEWELED_CONFIG.rows; row += 1) {
-      const rowFields: Field[] = [];
+      const rowFields: Array<Field | null> = [];
       for (let col = 0; col < BEJEWELED_CONFIG.cols; col += 1) {
+        const isEnabled = this.shapeMask[row]?.[col] ?? true;
+        if (!isEnabled) {
+          rowFields.push(null);
+          continue;
+        }
         const field = new Field(row, col);
         this.fieldsContainer.addChild(field.sprite);
         rowFields.push(field);
@@ -98,6 +112,9 @@ export class Board {
   private populateTiles() {
     for (const rowFields of this.fields) {
       for (const field of rowFields) {
+        if (!field) {
+          continue;
+        }
         const tile = new Tile();
         this.attachTileToField(tile, field);
         this.tilesContainer.addChild(tile.sprite);
@@ -167,44 +184,52 @@ export class Board {
     const animations: Promise<void>[] = [];
 
     for (let col = 0; col < BEJEWELED_CONFIG.cols; col += 1) {
-      let targetRow = BEJEWELED_CONFIG.rows - 1;
-
+      const columnFields: Field[] = [];
       for (let row = BEJEWELED_CONFIG.rows - 1; row >= 0; row -= 1) {
-        const sourceField = this.fields[row]?.[col];
-        if (!sourceField) {
-          continue;
+        const field = this.fields[row]?.[col];
+        if (field) {
+          columnFields.push(field);
         }
+      }
 
+      if (columnFields.length === 0) {
+        continue;
+      }
+
+      let targetIndex = 0;
+      for (const sourceField of columnFields) {
         const tile = sourceField.tile;
         if (!tile) {
           continue;
         }
 
-        const targetField = this.fields[targetRow]![col]!;
-        if (targetField !== sourceField) {
-          sourceField.setTile(null);
-          targetField.setTile(tile, { snap: false });
+        const targetField = columnFields[targetIndex]!;
+        targetIndex += 1;
 
-          const { x, y } = targetField.position;
-          if (animate) {
-            animations.push(
-              tweenTo(
-                tile.sprite,
-                { x, y },
-                {
-                  duration: BEJEWELED_CONFIG.fallDuration,
-                  ticker: this.ticker,
-                },
-              ).then(() => {
-                tile.sprite.position.set(x, y);
-              }),
-            );
-          } else {
-            tile.sprite.position.set(x, y);
-          }
+        if (targetField === sourceField) {
+          continue;
         }
 
-        targetRow -= 1;
+        sourceField.setTile(null);
+        targetField.setTile(tile, { snap: false });
+
+        const { x, y } = targetField.position;
+        if (animate) {
+          animations.push(
+            tweenTo(
+              tile.sprite,
+              { x, y },
+              {
+                duration: BEJEWELED_CONFIG.fallDuration,
+                ticker: this.ticker,
+              },
+            ).then(() => {
+              tile.sprite.position.set(x, y);
+            }),
+          );
+        } else {
+          tile.sprite.position.set(x, y);
+        }
       }
     }
 
