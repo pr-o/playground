@@ -8,7 +8,6 @@ import {
   DialogTrigger,
   DialogDescription,
   DialogTitle,
-  DialogCloseButton,
 } from '@/components/ui/dialog';
 import type { ProjectEntry } from '@/lib/project-entries';
 import { cn } from '@/lib/utils';
@@ -26,25 +25,33 @@ export function ProjectCard({ project, className }: ProjectCardProps) {
       <DialogTrigger asChild>
         <button
           type="button"
-          className={cn(
-            'group flex flex-col h-full w-full items-start gap-2 border border-border bg-card text-left cursor-pointer transition-colors hover:bg-card/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
-            className,
-          )}
+          className="group block w-full cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
           aria-label={`Show details for ${title}`}
         >
-          <div className="flex w-full items-center justify-between gap-3">
-            <span className="text-lg font-semibold">{title}</span>
-            <span className="text-xs uppercase tracking-wide text-muted-foreground group-hover:text-foreground">
-              {tag}
-            </span>
+          <div
+            className={cn(
+              'flex h-full w-full flex-col items-start gap-2 rounded-2xl border border-border/70 bg-gradient-to-br from-card via-card/95 to-card/85 p-5 text-left shadow-[0_10px_25px_rgba(15,15,26,0.08)] ring-1 ring-border/50 transition duration-200 hover:-translate-y-[1px] hover:border-primary/40 hover:ring-primary/10 group-hover:bg-card',
+              className,
+            )}
+          >
+            <div className="flex w-full items-center justify-between gap-3">
+              <span className="text-lg font-semibold">{title}</span>
+              <span className="text-xs uppercase tracking-wide text-muted-foreground group-hover:text-foreground">
+                {tag}
+              </span>
+            </div>
+            <p className="mt-2 text-sm text-muted-foreground">{description}</p>
           </div>
-          <p className="mt-2 text-sm text-muted-foreground">{description}</p>
         </button>
       </DialogTrigger>
 
-      <DialogContent className="bg-transparent p-0">
-        <div className="relative w-full max-w-3xl overflow-hidden rounded-3xl border border-border/80 bg-card text-card-foreground shadow-2xl">
-          <DialogCloseButton />
+      <DialogContent
+        // onInteractOutside={(e) => {
+        //   e.preventDefault();
+        // }}
+        className="max-w-3xl gap-0 rounded-none border-none bg-transparent p-0 shadow-none sm:max-w-4xl"
+      >
+        <div className="relative overflow-hidden rounded-3xl border border-border/80 bg-card text-card-foreground shadow-2xl">
           <div className="grid gap-8 p-6 lg:grid-cols-[300px_minmax(0,1fr)]">
             <div className="relative h-[300px] w-[300px] overflow-hidden rounded-2xl bg-muted sm:mx-auto lg:mx-0">
               <Image

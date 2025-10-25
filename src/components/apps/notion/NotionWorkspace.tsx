@@ -12,7 +12,13 @@ import {
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
-import { Select } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { ToolbarButton } from './ToolbarButton';
 import { BLOCK_LABELS, STORAGE_KEY } from './constants';
@@ -467,17 +473,20 @@ export function NotionWorkspace() {
                   ? (getBlockById(activeDocument, focusedBlockId)?.type ?? 'paragraph')
                   : 'paragraph'
               }
-              onChange={(event) =>
-                focusedBlockId &&
-                changeBlockType(focusedBlockId, event.target.value as BlockType)
+              onValueChange={(next) =>
+                focusedBlockId && changeBlockType(focusedBlockId, next as BlockType)
               }
-              className="h-8 w-40 border-border bg-card text-xs"
             >
-              {Object.entries(BLOCK_LABELS).map(([type, label]) => (
-                <option key={type} value={type}>
-                  {label}
-                </option>
-              ))}
+              <SelectTrigger size="sm" className="h-8 w-40 border-border bg-card text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(BLOCK_LABELS).map(([type, label]) => (
+                  <SelectItem key={type} value={type}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
             </Select>
             <ToolbarButton
               label="Bold"

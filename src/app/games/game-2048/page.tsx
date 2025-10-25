@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { Game2048 } from '@/components/games/game-2048/Game2048';
-import { SonnerToaster } from '@/components/ui/sonner';
+import { Toaster } from '@/components/ui/sonner';
 
 const title = '2048 Remix - Playground';
 
@@ -42,7 +42,7 @@ export default function Game2048Page() {
         {/* Client component renders the interactive game */}
         <Game2048 />
       </Suspense>
-      <SonnerToaster position="top-center" />
+      <Toaster position="top-center" />
     </div>
   );
 }

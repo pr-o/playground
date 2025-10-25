@@ -6,7 +6,7 @@ import {
   Dialog,
   DialogContent,
   DialogTrigger,
-  DialogCloseButton,
+  DialogClose,
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useNetflixTitleDetail } from '@/hooks/netflix/use-netflix-title-detail';
@@ -148,7 +148,7 @@ export function MediaCard({ item, className, size = 'compact' }: MediaCardProps)
       <DialogContent className="p-4" onPointerDown={handleDialogPointerDown}>
         <div className="relative w-full max-w-4xl overflow-hidden rounded-2xl bg-zinc-950 text-white shadow-2xl">
           <DialogTitle className="sr-only">{modalMedia.title}</DialogTitle>
-          <DialogCloseButton />
+          <DialogClose />
           <div className="relative aspect-video w-full bg-zinc-900">
             {heroImage ? (
               <Image

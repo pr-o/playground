@@ -2,7 +2,13 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { LayoutGrid, Library, List as ListIcon, PlusCircle } from 'lucide-react';
-import { Select } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   MusicArtistCard,
   MusicPlaylistCard,
@@ -378,35 +384,47 @@ export function MusicLibraryTabs({
 
           <Select
             value={sortOption}
-            onChange={(event) => setSortOption(event.target.value as SortOption)}
-            className="h-9 min-w-[8rem] rounded-full border-white/10 bg-white/10 text-sm text-music-muted"
+            onValueChange={(next) => setSortOption(next as SortOption)}
           >
-            <option value="recent">Recent activity</option>
-            <option value="az">A → Z</option>
+            <SelectTrigger className="h-9 min-w-[8rem] rounded-full border-white/10 bg-white/10 text-sm text-music-muted">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="recent">Recent activity</SelectItem>
+              <SelectItem value="az">A → Z</SelectItem>
+            </SelectContent>
           </Select>
 
           {activeTab === 'playlists' && (
             <Select
               value={formatFilter}
-              onChange={(event) => setFormatFilter(event.target.value as FormatFilter)}
-              className="h-9 min-w-[8rem] rounded-full border-white/10 bg-white/10 text-sm text-music-muted"
+              onValueChange={(next) => setFormatFilter(next as FormatFilter)}
             >
-              <option value="all">All formats</option>
-              <option value="compilation">Compilations</option>
-              <option value="mix">Mixes</option>
+              <SelectTrigger className="h-9 min-w-[8rem] rounded-full border-white/10 bg-white/10 text-sm text-music-muted">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All formats</SelectItem>
+                <SelectItem value="compilation">Compilations</SelectItem>
+                <SelectItem value="mix">Mixes</SelectItem>
+              </SelectContent>
             </Select>
           )}
 
           {activeTab === 'albums' && (
             <Select
               value={yearFilter}
-              onChange={(event) => setYearFilter(event.target.value as YearFilter)}
-              className="h-9 min-w-[8rem] rounded-full border-white/10 bg-white/10 text-sm text-music-muted"
+              onValueChange={(next) => setYearFilter(next as YearFilter)}
             >
-              <option value="all">All years</option>
-              <option value="2020s">2020s</option>
-              <option value="2010s">2010s</option>
-              <option value="earlier">Earlier</option>
+              <SelectTrigger className="h-9 min-w-[8rem] rounded-full border-white/10 bg-white/10 text-sm text-music-muted">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All years</SelectItem>
+                <SelectItem value="2020s">2020s</SelectItem>
+                <SelectItem value="2010s">2010s</SelectItem>
+                <SelectItem value="earlier">Earlier</SelectItem>
+              </SelectContent>
             </Select>
           )}
         </div>
