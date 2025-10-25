@@ -7,7 +7,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { FlagIcon, HomeIcon, PlaySquareIcon } from 'lucide-react';
+import { FlameIcon, HomeIcon, PlaySquareIcon } from 'lucide-react';
 import Link from 'next/link';
 
 const items = [
@@ -25,7 +25,7 @@ const items = [
   {
     title: 'Trending',
     url: '/feed/trending',
-    icon: FlagIcon,
+    icon: FlameIcon,
   },
 ];
 
