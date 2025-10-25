@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { MusicLibraryTabs } from '@/components/clones/youtube-music/MusicLibraryTabs';
+import { MusicLibraryTabs } from '@/components/apps/youtube-music/MusicLibraryTabs';
 import { useMusicLibraryData } from '@/hooks/music/use-music-library-data';
 
 export default function YoutubeMusicLibraryPage() {

@@ -1,13 +1,13 @@
 import { getMusicHomeData } from '@/lib/music';
-import { ContentSection } from '@/components/clones/youtube-music/ContentSection';
-import { HorizontalScroller } from '@/components/clones/youtube-music/HorizontalScroller';
+import { ContentSection } from '@/components/apps/youtube-music/ContentSection';
+import { HorizontalScroller } from '@/components/apps/youtube-music/HorizontalScroller';
 import {
   MusicArtistCard,
   MusicMixCard,
   MusicPlaylistCard,
   MusicQuickPickCard,
   MusicReleaseCard,
-} from '@/components/clones/youtube-music/MusicCards';
+} from '@/components/apps/youtube-music/MusicCards';
 
 export default async function YoutubeMusicHomePage() {
   const result = await getMusicHomeData();

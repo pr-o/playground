@@ -3,14 +3,14 @@
 import Image from 'next/image';
 import { useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { ContentSection } from '@/components/clones/youtube-music/ContentSection';
-import { HorizontalScroller } from '@/components/clones/youtube-music/HorizontalScroller';
-import { MusicTrackTable } from '@/components/clones/youtube-music/MusicTrackTable';
+import { ContentSection } from '@/components/apps/youtube-music/ContentSection';
+import { HorizontalScroller } from '@/components/apps/youtube-music/HorizontalScroller';
+import { MusicTrackTable } from '@/components/apps/youtube-music/MusicTrackTable';
 import {
   MusicArtistCard,
   MusicReleaseCard,
-} from '@/components/clones/youtube-music/MusicCards';
-import { MusicTrackRow } from '@/components/clones/youtube-music/MusicTrackRow';
+} from '@/components/apps/youtube-music/MusicCards';
+import { MusicTrackRow } from '@/components/apps/youtube-music/MusicTrackRow';
 import type {
   AlbumCardData,
   ArtistHeroData,

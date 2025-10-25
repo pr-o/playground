@@ -1,8 +1,8 @@
 'use client';
 
 import { useMemo } from 'react';
-import { HeroBanner } from '@/components/clones/netflix/hero-banner';
-import { MediaCarousel } from '@/components/clones/netflix/media-carousel';
+import { HeroBanner } from '@/components/apps/netflix/hero-banner';
+import { MediaCarousel } from '@/components/apps/netflix/media-carousel';
 import { NEW_AND_POPULAR_ORDER } from '@/lib/netflix/constants';
 import {
   useNetflixCollection,

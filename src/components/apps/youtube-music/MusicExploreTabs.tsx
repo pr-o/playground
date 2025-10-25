@@ -1,13 +1,13 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { ContentSection } from '@/components/clones/youtube-music/ContentSection';
-import { HorizontalScroller } from '@/components/clones/youtube-music/HorizontalScroller';
+import { ContentSection } from '@/components/apps/youtube-music/ContentSection';
+import { HorizontalScroller } from '@/components/apps/youtube-music/HorizontalScroller';
 import {
   MusicArtistCard,
   MusicReleaseCard,
-} from '@/components/clones/youtube-music/MusicCards';
-import { MusicTrackRow } from '@/components/clones/youtube-music/MusicTrackRow';
+} from '@/components/apps/youtube-music/MusicCards';
+import { MusicTrackRow } from '@/components/apps/youtube-music/MusicTrackRow';
 import type { MusicExploreSection } from '@/types/music';
 
 type ExploreTab = 'new-releases' | 'charts' | 'moods';

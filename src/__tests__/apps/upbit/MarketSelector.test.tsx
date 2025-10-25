@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MarketSelector } from '@/components/clones/upbit/MarketSelector';
+import { MarketSelector } from '@/components/apps/upbit/MarketSelector';
 import type { UpbitMarket } from '@/lib/upbit/types';
 
 const markets: UpbitMarket[] = [

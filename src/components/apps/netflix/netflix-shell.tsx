@@ -104,7 +104,7 @@ export function NetflixShell({ children }: NetflixShellProps) {
         <div />
         <div className="flex items-center gap-4 text-sm font-medium text-white/70 md:text-base">
           <Image
-            src="/assets/clones/account-profile.png"
+            src="/assets/apps/account-profile.png"
             alt="Profile picture"
             width={32}
             height={32}

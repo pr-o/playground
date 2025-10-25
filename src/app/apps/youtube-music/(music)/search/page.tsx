@@ -1,8 +1,8 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
 import { searchMusicCatalog, musicPath } from '@/lib/music';
-import { ContentSection } from '@/components/clones/youtube-music/ContentSection';
-import { MusicSearchResults } from '@/components/clones/youtube-music/MusicSearchResults';
+import { ContentSection } from '@/components/apps/youtube-music/ContentSection';
+import { MusicSearchResults } from '@/components/apps/youtube-music/MusicSearchResults';
 
 type YoutubeMusicSearchPageProps = {
   searchParams?: {

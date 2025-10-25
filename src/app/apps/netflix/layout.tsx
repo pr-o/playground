@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
-import { NetflixProviders } from '@/components/clones/netflix/netflix-providers';
-import { NetflixShell } from '@/components/clones/netflix/netflix-shell';
+import { NetflixProviders } from '@/components/apps/netflix/netflix-providers';
+import { NetflixShell } from '@/components/apps/netflix/netflix-shell';
 
 const title = 'Netflix - Playground';
 

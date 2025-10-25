@@ -1,6 +1,6 @@
 import type { CollectionSlug } from './types';
 
-export const NETFLIX_ROUTE_BASE = '/clones/netflix';
+export const NETFLIX_ROUTE_BASE = '/apps/netflix';
 
 export const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p';
 export const TMDB_BACKDROP_SIZE = 'w1280';

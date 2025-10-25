@@ -7,10 +7,10 @@ import {
   MusicArtistCard,
   MusicPlaylistCard,
   MusicReleaseCard,
-} from '@/components/clones/youtube-music/MusicCards';
-import { MusicTrackRow } from '@/components/clones/youtube-music/MusicTrackRow';
-import { ContentSection } from '@/components/clones/youtube-music/ContentSection';
-import { HorizontalScroller } from '@/components/clones/youtube-music/HorizontalScroller';
+} from '@/components/apps/youtube-music/MusicCards';
+import { MusicTrackRow } from '@/components/apps/youtube-music/MusicTrackRow';
+import { ContentSection } from '@/components/apps/youtube-music/ContentSection';
+import { HorizontalScroller } from '@/components/apps/youtube-music/HorizontalScroller';
 import type { MusicSearchResult, MusicSearchGroup, MusicTopResult } from '@/types/music';
 import { cn } from '@/lib/utils';
 import { musicPath } from '@/lib/music/constants';

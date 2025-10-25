@@ -1,5 +1,5 @@
 import { getMusicExploreData } from '@/lib/music';
-import { MusicExploreTabs } from '@/components/clones/youtube-music/MusicExploreTabs';
+import { MusicExploreTabs } from '@/components/apps/youtube-music/MusicExploreTabs';
 
 export default async function YoutubeMusicExplorePage() {
   const result = await getMusicExploreData();

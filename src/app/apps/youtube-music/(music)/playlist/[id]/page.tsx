@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { MusicPlaylistDetail } from '@/components/clones/youtube-music/MusicPlaylistDetail';
+import { MusicPlaylistDetail } from '@/components/apps/youtube-music/MusicPlaylistDetail';
 import { getMusicPlaylistDetail } from '@/lib/music';
 
 type PlaylistPageParams = {

@@ -1,9 +1,9 @@
 'use client';
 
 import { useMemo } from 'react';
-import { HeroBanner } from '@/components/clones/netflix/hero-banner';
-import { MediaCard } from '@/components/clones/netflix/media-card';
-import { useMyList } from '@/components/clones/netflix/my-list-context';
+import { HeroBanner } from '@/components/apps/netflix/hero-banner';
+import { MediaCard } from '@/components/apps/netflix/media-card';
+import { useMyList } from '@/components/apps/netflix/my-list-context';
 import { pickHeroCandidate } from '@/lib/netflix/normalize';
 
 export default function NetflixMyListPage() {

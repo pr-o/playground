@@ -10,7 +10,7 @@ const customJestConfig = {
   },
   moduleDirectories: ['node_modules', '<rootDir>/'],
   testMatch: [
-    '<rootDir>/src/__tests__/clones/**/*.test.(ts|tsx)',
+    '<rootDir>/src/__tests__/apps/**/*.test.(ts|tsx)',
     '<rootDir>/src/__tests__/games/**/*.test.(ts|tsx)',
   ],
   transformIgnorePatterns: ['/node_modules/(?!(msw|@mswjs|@open-draft|until-async)/)'],

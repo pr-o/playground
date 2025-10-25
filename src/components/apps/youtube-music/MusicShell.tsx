@@ -2,13 +2,13 @@
 
 import type { ReactNode } from 'react';
 import { Suspense } from 'react';
-import { MusicBottomPlayer } from '@/components/clones/youtube-music/MusicBottomPlayer';
-import { MusicMobileNav } from '@/components/clones/youtube-music/MusicMobileNav';
-import { MusicQueueDrawer } from '@/components/clones/youtube-music/MusicQueueDrawer';
-import { MusicSidebar } from '@/components/clones/youtube-music/MusicSidebar';
-import { MusicTopBar } from '@/components/clones/youtube-music/MusicTopBar';
-import { MusicToastViewport } from '@/components/clones/youtube-music/MusicToastViewport';
-import { MusicTrackActionSheet } from '@/components/clones/youtube-music/MusicTrackActionSheet';
+import { MusicBottomPlayer } from '@/components/apps/youtube-music/MusicBottomPlayer';
+import { MusicMobileNav } from '@/components/apps/youtube-music/MusicMobileNav';
+import { MusicQueueDrawer } from '@/components/apps/youtube-music/MusicQueueDrawer';
+import { MusicSidebar } from '@/components/apps/youtube-music/MusicSidebar';
+import { MusicTopBar } from '@/components/apps/youtube-music/MusicTopBar';
+import { MusicToastViewport } from '@/components/apps/youtube-music/MusicToastViewport';
+import { MusicTrackActionSheet } from '@/components/apps/youtube-music/MusicTrackActionSheet';
 import { usePlaybackShortcuts } from '@/hooks/music/use-playback-shortcuts';
 import { useMusicUIStore } from '@/store/music';
 

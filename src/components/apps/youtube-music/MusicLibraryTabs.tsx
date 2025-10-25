@@ -7,8 +7,8 @@ import {
   MusicArtistCard,
   MusicPlaylistCard,
   MusicReleaseCard,
-} from '@/components/clones/youtube-music/MusicCards';
-import { MusicTrackRow } from '@/components/clones/youtube-music/MusicTrackRow';
+} from '@/components/apps/youtube-music/MusicCards';
+import { MusicTrackRow } from '@/components/apps/youtube-music/MusicTrackRow';
 import type {
   AlbumCardData,
   ArtistSummaryData,
@@ -19,7 +19,7 @@ import {
   MusicPlaylistCardSkeleton,
   MusicReleaseCardSkeleton,
   TrackRowSkeleton,
-} from '@/components/clones/youtube-music/MusicSkeletons';
+} from '@/components/apps/youtube-music/MusicSkeletons';
 import { cn } from '@/lib/utils';
 
 type LibraryTab = 'playlists' | 'songs' | 'albums' | 'artists';

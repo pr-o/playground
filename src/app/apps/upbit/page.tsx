@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Dashboard } from '@/components/clones/upbit/Dashboard';
+import { Dashboard } from '@/components/apps/upbit/Dashboard';
 
 const title = 'Upbit Dashboard - Playground';
 

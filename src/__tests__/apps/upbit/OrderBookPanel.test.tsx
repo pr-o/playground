@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import { OrderBookPanel } from '@/components/clones/upbit/OrderBookPanel';
+import { OrderBookPanel } from '@/components/apps/upbit/OrderBookPanel';
 import type { OrderbookLevel, UpbitTicker } from '@/lib/upbit/types';
 
 const asks: OrderbookLevel[] = [

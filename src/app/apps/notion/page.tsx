@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { NotionWorkspace } from '@/components/clones/notion/NotionWorkspace';
+import { NotionWorkspace } from '@/components/apps/notion/NotionWorkspace';
 
 const title = 'Notion - Playground';
 

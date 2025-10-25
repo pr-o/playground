@@ -5,9 +5,9 @@ import { Menu, Moon, Sun } from 'lucide-react';
 import { useEffect } from 'react';
 import { shallow } from '@/lib/zustand/shallow';
 
-import { CanvasStage } from '@/components/clones/excalidraw/CanvasStage';
-import { StylePanel } from '@/components/clones/excalidraw/StylePanel';
-import { ToolBar } from '@/components/clones/excalidraw/ToolBar';
+import { CanvasStage } from '@/components/apps/excalidraw/CanvasStage';
+import { StylePanel } from '@/components/apps/excalidraw/StylePanel';
+import { ToolBar } from '@/components/apps/excalidraw/ToolBar';
 import {
   createClipboardPayload,
   EXCALIDRAW_CLIPBOARD_MIME,

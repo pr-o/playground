@@ -22,7 +22,7 @@ export const ProjectEntries: ProjectEntry[] = [
     kind: ProjectKind.App,
     description:
       'Rebuild of the Netflix browsing experience with dynamic carousels, watch lists, and hero spotlights fed by live TMDB data.',
-    thumbnail: '/assets/clones/netflix-logo.svg',
+    thumbnail: '/assets/apps/netflix-logo.svg',
     thumbnailAlt: 'Preview of the Netflix clone.',
     techStack: ['TMDB Open API'],
   },
@@ -33,7 +33,7 @@ export const ProjectEntries: ProjectEntry[] = [
     kind: ProjectKind.App,
     description:
       'Live market dashboard for Upbit showing streaming order book depth, price movement charts, and market snapshots.',
-    thumbnail: '/assets/clones/upbit-logo.svg',
+    thumbnail: '/assets/apps/upbit-logo.svg',
     thumbnailAlt: 'Preview of the Upbit dashboard clone.',
     techStack: ['React Query', 'Upbit Open API', 'WebSocket'],
   },
@@ -44,7 +44,7 @@ export const ProjectEntries: ProjectEntry[] = [
     kind: ProjectKind.App,
     description:
       'Responsive recreation of the YouTube Music web app with Discogs API data, multi-tab navigation.',
-    thumbnail: '/assets/clones/youtube-music-logo.svg',
+    thumbnail: '/assets/apps/youtube-music-logo.svg',
     thumbnailAlt: 'Preview of the YouTube Music clone.',
     techStack: ['React Query', 'Discogs Open API'],
   },
@@ -55,7 +55,7 @@ export const ProjectEntries: ProjectEntry[] = [
     kind: ProjectKind.App,
     description:
       'Infinite canvas whiteboard with Excalidraw-inspired layout, tools, and drawing surface.',
-    thumbnail: '/assets/clones/excalidraw-logo.svg',
+    thumbnail: '/assets/apps/excalidraw-logo.svg',
     thumbnailAlt: 'Preview of the Excalidraw clone.',
     techStack: ['Konva', 'Zustand', 'Immer'],
   },
@@ -66,7 +66,7 @@ export const ProjectEntries: ProjectEntry[] = [
     kind: ProjectKind.App,
     description:
       'A local-first documents workspace with block editing, inline formatting, and persistence in the browser.',
-    thumbnail: '/assets/clones/notion-logo.svg',
+    thumbnail: '/assets/apps/notion-logo.svg',
     thumbnailAlt: 'Preview of the Notion clone.',
     techStack: ['Discogs API', 'Blocks Editor', 'IndexedDB'],
   },

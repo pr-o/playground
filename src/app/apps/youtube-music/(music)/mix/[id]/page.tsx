@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { MusicMixDetail } from '@/components/clones/youtube-music/MusicMixDetail';
+import { MusicMixDetail } from '@/components/apps/youtube-music/MusicMixDetail';
 import { getMusicMixDetail } from '@/lib/music';
 
 type MixPageParams = {

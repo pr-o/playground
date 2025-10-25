@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { ExcalidrawApp } from '@/components/clones/excalidraw/ExcalidrawApp';
+import { ExcalidrawApp } from '@/components/apps/excalidraw/ExcalidrawApp';
 
 const title = 'Excalidraw - Playground';
 

@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default function ClonesIndexPage() {
+export default function GamesIndexPage() {
   const games = ProjectEntries.filter(({ kind }) => kind === ProjectKind.Game);
 
   return (

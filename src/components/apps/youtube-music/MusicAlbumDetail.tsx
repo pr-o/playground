@@ -1,11 +1,11 @@
 'use client';
 
 import { useMemo } from 'react';
-import { MusicDetailHero } from '@/components/clones/youtube-music/MusicDetailHero';
-import { MusicTrackTable } from '@/components/clones/youtube-music/MusicTrackTable';
-import { ContentSection } from '@/components/clones/youtube-music/ContentSection';
-import { HorizontalScroller } from '@/components/clones/youtube-music/HorizontalScroller';
-import { MusicReleaseCard } from '@/components/clones/youtube-music/MusicCards';
+import { MusicDetailHero } from '@/components/apps/youtube-music/MusicDetailHero';
+import { MusicTrackTable } from '@/components/apps/youtube-music/MusicTrackTable';
+import { ContentSection } from '@/components/apps/youtube-music/ContentSection';
+import { HorizontalScroller } from '@/components/apps/youtube-music/HorizontalScroller';
+import { MusicReleaseCard } from '@/components/apps/youtube-music/MusicCards';
 import type { AlbumCardData, AlbumHeroData, TrackRowData } from '@/types/music';
 import { useMusicPlaybackStore, useMusicUIStore } from '@/store/music';
 import { trackRowsToPlayback } from '@/lib/music/playback';
