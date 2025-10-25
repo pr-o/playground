@@ -27,7 +27,7 @@ export function ProjectCard({ project, className }: ProjectCardProps) {
         <button
           type="button"
           className={cn(
-            'group w-full border border-border bg-card text-left transition-colors cursor-pointer hover:bg-card/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
+            'group flex flex-col h-full w-full items-start gap-2 border border-border bg-card text-left cursor-pointer transition-colors hover:bg-card/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
             className,
           )}
           aria-label={`Show details for ${title}`}
