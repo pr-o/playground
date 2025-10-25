@@ -16,6 +16,16 @@ export type ProjectEntry = {
 
 export const ProjectEntries: ProjectEntry[] = [
   {
+    title: 'YouTube Clone',
+    href: '/apps/youtube',
+    tag: 'youtube',
+    kind: ProjectKind.App,
+    description: 'Responsive recreation of the YouTube web app.',
+    thumbnail: '/assets/apps/youtube-logo.svg',
+    thumbnailAlt: 'Preview of the YouTube clone.',
+    techStack: ['React Query', 'Drizzle', 'tRPC'],
+  },
+  {
     title: 'Netflix Clone',
     href: '/apps/netflix',
     tag: 'netflix',
