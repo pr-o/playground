@@ -1,5 +1,10 @@
 'use client';
 
+import { HistoryIcon, ListVideoIcon, ThumbsUpIcon } from 'lucide-react';
+import { useAuth, useClerk } from '@clerk/nextjs';
+import { usePathname } from 'next/navigation';
+import Link from 'next/link';
+
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -8,10 +13,6 @@ import {
   SidebarMenuItem,
   SidebarGroupLabel,
 } from '@/components/ui/sidebar';
-
-import { HistoryIcon, ListVideoIcon, ThumbsUpIcon } from 'lucide-react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 
 const baseURL = '/apps/youtube';
 
@@ -38,6 +39,8 @@ const items = [
 
 export const PersonalSection = () => {
   const pathname = usePathname();
+  const clerk = useClerk();
+  const { isSignedIn } = useAuth();
 
   return (
     <SidebarGroup>
@@ -49,10 +52,15 @@ export const PersonalSection = () => {
               <SidebarMenuButton
                 tooltip={item.title}
                 asChild
-                isActive={pathname === item.url}
-                onClick={(e) => {}}
+                isActive={false}
+                onClick={(e) => {
+                  if (!isSignedIn && item.auth) {
+                    e.preventDefault();
+                    return clerk.openSignIn();
+                  }
+                }}
               >
-                <Link prefetch href={item.url} className="flex items-center gap-4">
+                <Link href={item.url} className="flex items-center gap-4">
                   <item.icon />
                   <span className="text-sm">{item.title}</span>
                 </Link>

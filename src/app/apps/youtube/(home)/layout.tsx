@@ -1,4 +1,5 @@
 import { HomeLayout } from '@/components/apps/youtube/layouts/home';
+import { ClerkProvider } from '@clerk/nextjs';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -6,9 +7,11 @@ interface LayoutProps {
 
 const Layout = ({ children }: LayoutProps) => {
   return (
-    <HomeLayout>
-      <div>{children}</div>
-    </HomeLayout>
+    <ClerkProvider afterSignOutUrl="/apps/youtube">
+      <HomeLayout>
+        <div>{children}</div>
+      </HomeLayout>
+    </ClerkProvider>
   );
 };
 

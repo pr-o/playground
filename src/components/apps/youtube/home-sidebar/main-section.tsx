@@ -8,6 +8,8 @@ import {
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { FlameIcon, HomeIcon, PlaySquareIcon } from 'lucide-react';
+import { useAuth, useClerk } from '@clerk/nextjs';
+
 import Link from 'next/link';
 
 const baseURL = '/apps/youtube';
@@ -32,6 +34,9 @@ const items = [
 ];
 
 export const MainSection = () => {
+  const clerk = useClerk();
+  const { isSignedIn } = useAuth();
+
   return (
     <SidebarGroup>
       <SidebarGroupContent>
@@ -41,8 +46,13 @@ export const MainSection = () => {
               <SidebarMenuButton
                 tooltip={item.title}
                 asChild
-                isActive={false} //TODO: change to look at current pathname
-                onClick={(e) => {}} //TODO: Do something on click
+                isActive={false}
+                onClick={(e) => {
+                  if (!isSignedIn && item.auth) {
+                    e.preventDefault();
+                    return clerk.openSignIn();
+                  }
+                }}
               >
                 <Link href={item.url} className="flex items-center gap-4">
                   <item.icon />
