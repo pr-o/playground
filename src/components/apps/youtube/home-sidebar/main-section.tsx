@@ -10,21 +10,23 @@ import {
 import { FlameIcon, HomeIcon, PlaySquareIcon } from 'lucide-react';
 import Link from 'next/link';
 
+const baseURL = '/apps/youtube';
+
 const items = [
   {
     title: 'Home',
-    url: '/',
+    url: baseURL,
     icon: HomeIcon,
   },
   {
     title: 'Subscriptions',
-    url: '/feed/subscriptions',
+    url: `${baseURL}/feed/subscriptions`,
     icon: PlaySquareIcon,
     auth: true,
   },
   {
     title: 'Trending',
-    url: '/feed/trending',
+    url: `${baseURL}/feed/trending`,
     icon: FlameIcon,
   },
 ];
