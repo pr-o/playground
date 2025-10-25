@@ -32,7 +32,7 @@ export function ProjectCard({ project, className }: ProjectCardProps) {
           )}
           aria-label={`Show details for ${title}`}
         >
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex w-full items-center justify-between gap-3">
             <span className="text-lg font-semibold">{title}</span>
             <span className="text-xs uppercase tracking-wide text-muted-foreground group-hover:text-foreground">
               {tag}
@@ -92,9 +92,6 @@ export function ProjectCard({ project, className }: ProjectCardProps) {
                 >
                   Visit project
                 </Link>
-                <span className="text-xs text-muted-foreground">
-                  Opens the interactive Playground build in a dedicated page.
-                </span>
               </div>
             </div>
           </div>

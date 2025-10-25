@@ -16,19 +16,9 @@ export type ProjectEntry = {
 
 export const ProjectEntries: ProjectEntry[] = [
   {
-    title: 'YouTube Clone',
-    href: '/apps/youtube',
-    tag: 'youtube',
-    kind: ProjectKind.App,
-    description: 'Responsive recreation of the YouTube web app.',
-    thumbnail: '/assets/apps/youtube-logo.svg',
-    thumbnailAlt: 'Preview of the YouTube clone.',
-    techStack: ['React Query', 'Drizzle', 'tRPC'],
-  },
-  {
-    title: 'Netflix Clone',
+    title: 'Netflix',
     href: '/apps/netflix',
-    tag: 'netflix',
+    tag: 'clone',
     kind: ProjectKind.App,
     description:
       'Rebuild of the Netflix browsing experience with dynamic carousels, watch lists, and hero spotlights fed by live TMDB data.',
@@ -39,7 +29,7 @@ export const ProjectEntries: ProjectEntry[] = [
   {
     title: 'Upbit Dashboard',
     href: '/apps/upbit',
-    tag: 'upbit',
+    tag: 'clone',
     kind: ProjectKind.App,
     description:
       'Live market dashboard for Upbit showing streaming order book depth, price movement charts, and market snapshots.',
@@ -48,9 +38,19 @@ export const ProjectEntries: ProjectEntry[] = [
     techStack: ['React Query', 'Upbit Open API', 'WebSocket'],
   },
   {
-    title: 'YouTube Music Clone',
+    title: 'YouTube',
+    href: '/apps/youtube',
+    tag: 'clone',
+    kind: ProjectKind.App,
+    description: 'Responsive recreation of the YouTube web app.',
+    thumbnail: '/assets/apps/youtube-logo.svg',
+    thumbnailAlt: 'Preview of the YouTube clone.',
+    techStack: ['React Query', 'Drizzle', 'tRPC'],
+  },
+  {
+    title: 'YouTube Music',
     href: '/apps/youtube-music',
-    tag: 'youtube-music',
+    tag: 'clone',
     kind: ProjectKind.App,
     description:
       'Responsive recreation of the YouTube Music web app with Discogs API data, multi-tab navigation.',
@@ -59,9 +59,9 @@ export const ProjectEntries: ProjectEntry[] = [
     techStack: ['React Query', 'Discogs Open API'],
   },
   {
-    title: 'Excalidraw Clone',
+    title: 'Excalidraw',
     href: '/apps/excalidraw',
-    tag: 'excalidraw',
+    tag: 'clone',
     kind: ProjectKind.App,
     description:
       'Infinite canvas whiteboard with Excalidraw-inspired layout, tools, and drawing surface.',
@@ -70,9 +70,9 @@ export const ProjectEntries: ProjectEntry[] = [
     techStack: ['Konva', 'Zustand', 'Immer'],
   },
   {
-    title: 'Notion Clone',
+    title: 'Notion',
     href: '/apps/notion',
-    tag: 'notion',
+    tag: 'clone',
     kind: ProjectKind.App,
     description:
       'A local-first documents workspace with block editing, inline formatting, and persistence in the browser.',
@@ -83,7 +83,7 @@ export const ProjectEntries: ProjectEntry[] = [
   {
     title: '2048 Remix',
     href: '/games/game-2048',
-    tag: '2048',
+    tag: 'clone',
     kind: ProjectKind.Game,
     description:
       'A modern take on 2048 with persistent state, upcoming animations, and achievement tracking.',
@@ -94,7 +94,7 @@ export const ProjectEntries: ProjectEntry[] = [
   {
     title: 'Bejeweled',
     href: '/games/bejeweled',
-    tag: 'bejeweled',
+    tag: 'clone',
     kind: ProjectKind.Game,
     description: 'A modern take on Bejeweled in a PixiJS-powered renderer.',
     thumbnail: '/assets/games/bejeweled-logo.svg',

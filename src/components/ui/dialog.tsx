@@ -89,7 +89,7 @@ const DialogCloseButton = ({
 }: React.ComponentPropsWithoutRef<typeof DialogClose>) => (
   <DialogClose
     className={cn(
-      'absolute right-4 top-4 rounded-full bg-black/60 p-2 text-white transition hover:bg-black',
+      'absolute right-4 top-4 rounded-full cursor-pointer bg-black/60 p-2 text-white transition hover:bg-black',
       className,
     )}
     {...props}
