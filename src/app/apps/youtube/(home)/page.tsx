@@ -1,11 +1,21 @@
-'use client';
-import { Button } from '@/components/ui/button';
-import Image from 'next/image';
+// import { trpc } from '@/trpc/client'; // to fetch from client
+import { HydrateClient, trpc } from '@/trpc/server';
+import { PageClient } from './client';
+import { Suspense } from 'react';
+import { ErrorBoundary } from 'react-error-boundary';
 
-export default function Home() {
+export default async function Home() {
+  // const { data } = await trpc.hello.useQuery({ user: 'Sung' }); // fetch from client
+  // const data = await trpc.hello({ user: 'Sung' }); // fetch from backend
+  void trpc.hello.prefetch({ user: 'Sung' }); // fetch from backend
+
   return (
-    <div>
-      <h1 className="text-5xl text-gray-500">video load in the future!</h1>
-    </div>
+    <HydrateClient>
+      <Suspense fallback={<p>Loading...</p>}>
+        <ErrorBoundary fallback={<p>Error</p>}>
+          <PageClient />
+        </ErrorBoundary>
+      </Suspense>
+    </HydrateClient>
   );
 }
