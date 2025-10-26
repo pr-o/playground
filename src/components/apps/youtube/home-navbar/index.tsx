@@ -3,25 +3,32 @@ import Image from 'next/image';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { AuthButton } from '@/components/apps/youtube/auth/auth-button';
 import { SearchInput } from './search-input';
+import { ExitLink } from '@/components/apps/ExitLink';
 
 export const HomeNavbar = () => {
   return (
-    <nav className="fixed top-0 left-0 right-0 h-16 bg-white flex items-center px-2 pr-5 z-50">
+    <nav className="fixed top-0 left-0 right-0 h-16 bg-background flex items-center px-2 pr-5 z-50">
       <div className="flex items-center gap-4 w-full">
         {/* Menu and logo */}
         <div className="flex items-center flex-shrink-0">
           <SidebarTrigger />
-          <Link href="/apps/youtube">
-            <div className="px-4 flex items-center gap-1">
-              <Image
-                src="/assets/apps/youtube/logo.svg"
-                height={32}
-                width={32}
-                alt="logo"
-              />
-              <p className="text-xl font-semibold tracking-tight">NewTube</p>
-            </div>
-          </Link>
+          <div className="px-4 flex items-center gap-4">
+            <ExitLink
+              href="/apps"
+              className="flex items-center gap-1 text-lg font-extrabold"
+            />
+            <Link href="/apps/youtube">
+              <div className="flex items-center gap-1.5">
+                <Image
+                  src="/assets/apps/youtube/logo.svg"
+                  height={32}
+                  width={32}
+                  alt="logo"
+                />
+                <p className="text-xl font-semibold tracking-tight">NewTube</p>
+              </div>
+            </Link>
+          </div>
         </div>
         {/* Search bar */}
         <div className="flex-1 flex justify-center max-w-[720px] mx-auto">

@@ -27,7 +27,9 @@ export function SiteHeader() {
   const [isHidden, setIsHidden] = useState(false);
 
   useEffect(() => {
-    setIsHidden(pathname.startsWith('/apps/netflix'));
+    const whereToHide = ['/apps/netflix', '/apps/youtube'];
+    const needtoHide = whereToHide.some((path) => pathname.includes(path));
+    setIsHidden(needtoHide);
   }, [pathname]);
 
   if (isHidden) {
@@ -36,7 +38,7 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-40 border-b bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/70">
-      <div className="mx-auto flex h-14 w-full max-w-6xl items-center gap-6 px-4">
+      <div className="mx-auto flex h-13 w-full max-w-6xl items-center gap-6 px-4">
         <Link href="/" className="text-sm font-semibold uppercase tracking-wide">
           Playground
         </Link>

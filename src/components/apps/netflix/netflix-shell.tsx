@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { NETFLIX_ROUTE_BASE } from '@/lib/netflix/constants';
+import { ExitLink } from '@/components/apps/ExitLink';
 
 type NavLink = {
   href: string;
@@ -73,16 +74,15 @@ export function NetflixShell({ children }: NetflixShellProps) {
             : 'bg-gradient-to-b from-black/90 to-transparent',
         )}
       >
-        <div className="flex items-center space-x-6">
+        <div className="flex items-center space-x-4">
+          <ExitLink href="/apps" />
           <Link
             href={NETFLIX_ROUTE_BASE}
             className="text-2xl font-extrabold text-red-600"
           >
             NETFLIX
           </Link>
-          <Link href={'/'} className="text-lg font-extrabold">
-            <span className="inline underline ">Exit</span>
-          </Link>
+
           <nav className="ml-4 hidden gap-6 text-sm font-medium md:flex">
             {navLinks.map((link) => {
               const active = link.isActive(pathname);
