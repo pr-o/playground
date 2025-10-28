@@ -4,20 +4,11 @@ import { memo, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import type { ActivePiece, Board, TetrominoId } from '@/lib/tetris';
 import { cn } from '@/lib/utils';
+import { TETROMINO_COLORS } from './pieceColors';
 
 type GameBoardProps = {
   board: Board;
   active: ActivePiece | null;
-};
-
-const COLORS: Record<TetrominoId, string> = {
-  I: 'bg-cyan-400 border-cyan-300',
-  O: 'bg-amber-300 border-amber-200',
-  T: 'bg-purple-400 border-purple-300',
-  S: 'bg-emerald-400 border-emerald-300',
-  Z: 'bg-rose-400 border-rose-300',
-  J: 'bg-blue-400 border-blue-300',
-  L: 'bg-orange-400 border-orange-300',
 };
 
 const CELL_SIZE = 28;
@@ -34,7 +25,7 @@ const ActiveCells = ({ active }: { active: ActivePiece }) => {
             key={`active-${index}`}
             className={cn(
               'absolute rounded-sm border',
-              COLORS[active.id],
+              TETROMINO_COLORS[active.id],
               'shadow-[0_0_8px_rgba(255,255,255,0.25)]',
             )}
             style={{ width: CELL_SIZE, height: CELL_SIZE }}
@@ -89,7 +80,7 @@ export const GameBoard = memo(function GameBoard({ board, active }: GameBoardPro
             key={key}
             className={cn(
               'rounded-sm border',
-              COLORS[id],
+              TETROMINO_COLORS[id],
               'shadow-[0_0_6px_rgba(255,255,255,0.18)]',
             )}
             layoutId={key}
