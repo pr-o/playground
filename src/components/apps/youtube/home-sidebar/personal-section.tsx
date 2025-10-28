@@ -2,7 +2,6 @@
 
 import { HistoryIcon, ListVideoIcon, ThumbsUpIcon } from 'lucide-react';
 import { useAuth, useClerk } from '@clerk/nextjs';
-import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 
 import {
