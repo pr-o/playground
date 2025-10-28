@@ -49,6 +49,11 @@ export const useInput = (actions: TetrisInputActions) => {
   const softDropActiveRef = useRef(false);
 
   useEffect(() => {
+    const repeatState = repeatRef.current;
+    const clearRepeatTimers = () => {
+      clearRepeat(repeatState);
+    };
+
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.repeat) {
         return;
@@ -57,8 +62,8 @@ export const useInput = (actions: TetrisInputActions) => {
       if (LEFT_KEYS.has(event.code)) {
         event.preventDefault();
         actions.onLeft();
-        clearRepeat(repeatRef.current);
-        repeatRef.current.left = setInterval(() => {
+        clearRepeatTimers();
+        repeatState.left = setInterval(() => {
           actions.onLeft();
         }, KEY_REPEAT_MS);
         return;
@@ -67,8 +72,8 @@ export const useInput = (actions: TetrisInputActions) => {
       if (RIGHT_KEYS.has(event.code)) {
         event.preventDefault();
         actions.onRight();
-        clearRepeat(repeatRef.current);
-        repeatRef.current.right = setInterval(() => {
+        clearRepeatTimers();
+        repeatState.right = setInterval(() => {
           actions.onRight();
         }, KEY_REPEAT_MS);
         return;
@@ -121,17 +126,17 @@ export const useInput = (actions: TetrisInputActions) => {
 
     const handleKeyUp = (event: KeyboardEvent) => {
       if (LEFT_KEYS.has(event.code)) {
-        if (repeatRef.current.left) {
-          clearInterval(repeatRef.current.left);
-          repeatRef.current.left = null;
+        if (repeatState.left) {
+          clearInterval(repeatState.left);
+          repeatState.left = null;
         }
         return;
       }
 
       if (RIGHT_KEYS.has(event.code)) {
-        if (repeatRef.current.right) {
-          clearInterval(repeatRef.current.right);
-          repeatRef.current.right = null;
+        if (repeatState.right) {
+          clearInterval(repeatState.right);
+          repeatState.right = null;
         }
         return;
       }
@@ -148,7 +153,7 @@ export const useInput = (actions: TetrisInputActions) => {
     window.addEventListener('keyup', handleKeyUp);
 
     return () => {
-      clearRepeat(repeatRef.current);
+      clearRepeatTimers();
       if (softDropActiveRef.current) {
         actions.onSoftDrop(false);
         softDropActiveRef.current = false;
