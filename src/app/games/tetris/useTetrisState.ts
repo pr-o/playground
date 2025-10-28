@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   BOARD_HEIGHT,
   BOARD_WIDTH,
@@ -230,7 +230,22 @@ export function useTetrisState(
     return nextQueue;
   };
 
-  const spawnNext = () => {
+  useEffect(() => {
+    setState((prev) => {
+      if (prev.isGameOver) return prev;
+      const desiredLength = previewCount + 1;
+      if (prev.queue.length >= desiredLength) {
+        return prev;
+      }
+      const nextQueue = fillQueue(prev.queue, desiredLength);
+      return {
+        ...prev,
+        queue: nextQueue,
+      };
+    });
+  }, [previewCount]);
+
+  const spawnNext = useCallback(() => {
     setState((prev) => {
       if (prev.isGameOver) return prev;
       const queue = fillQueue(prev.queue, previewCount + 1);
@@ -255,30 +270,30 @@ export function useTetrisState(
         canHold: true,
       };
     });
-  };
+  }, [previewCount]);
 
-  const reset = () => {
+  const reset = useCallback(() => {
     bagRef.current.reset();
     setState(createInitialState);
-  };
+  }, []);
 
-  const move = (delta: { row: number; col: number }) => {
+  const move = useCallback((delta: { row: number; col: number }) => {
     setState((prev) => {
       if (prev.isGameOver) return prev;
       const next = applyMove(prev, delta);
       return next === prev ? prev : next;
     });
-  };
+  }, []);
 
-  const rotate = (direction: 'cw' | 'ccw') => {
+  const rotate = useCallback((direction: 'cw' | 'ccw') => {
     setState((prev) => {
       if (prev.isGameOver) return prev;
       const next = rotateActive(prev, direction);
       return next === prev ? prev : next;
     });
-  };
+  }, []);
 
-  const tick = () => {
+  const tick = useCallback(() => {
     setState((prev) => {
       if (prev.isGameOver || !prev.active) return prev;
       const stepped = applyMove(prev, { row: 1, col: 0 });
@@ -287,16 +302,16 @@ export function useTetrisState(
       }
       return stepped;
     });
-  };
+  }, []);
 
-  const hardDrop = () => {
+  const hardDrop = useCallback(() => {
     setState((prev) => {
       if (prev.isGameOver) return prev;
       return executeHardDrop(prev);
     });
-  };
+  }, []);
 
-  const hold = () => {
+  const hold = useCallback(() => {
     setState((prev) => {
       if (prev.isGameOver || !prev.active || !prev.canHold) {
         return prev;
@@ -354,22 +369,12 @@ export function useTetrisState(
         canHold: false,
       };
     });
-  };
+  }, [previewCount]);
 
-  const queuePreview = useMemo(() => {
-    if (previewCount <= 0) {
-      return [];
-    }
-
-    if (state.queue.length >= previewCount) {
-      return state.queue.slice(0, previewCount);
-    }
-
-    const missing = previewCount - state.queue.length;
-    const additional = bagRef.current.preview(missing);
-
-    return [...state.queue, ...additional].slice(0, previewCount);
-  }, [state.queue, previewCount]);
+  const queuePreview = useMemo(
+    () => state.queue.slice(0, Math.max(0, previewCount)),
+    [state.queue, previewCount],
+  );
 
   return {
     state,
