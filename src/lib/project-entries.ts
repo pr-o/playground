@@ -101,4 +101,15 @@ export const ProjectEntries: ProjectEntry[] = [
     thumbnailAlt: 'Preview of the Bejeweled clone.',
     techStack: ['PixiJS'],
   },
+  {
+    title: 'Tetris Classic',
+    href: '/games/tetris',
+    tag: 'tetris',
+    kind: ProjectKind.Game,
+    description:
+      'A minimalist Tetris experience with responsive controls and Framer Motion-enhanced animations.',
+    thumbnail: '/assets/games/tetris/tetris-logo.svg',
+    thumbnailAlt: 'Preview of the Tetris Classic experience.',
+    techStack: ['React', 'TypeScript', 'Motion'],
+  },
 ];
