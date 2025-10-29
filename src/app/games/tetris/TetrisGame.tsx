@@ -160,16 +160,13 @@ export function TetrisGame() {
       ref={containerRef}
       className="relative flex flex-1 flex-col gap-4 rounded-lg border border-border bg-card p-6 shadow-sm"
     >
-      <div className="flex flex-1 flex-col gap-4 md:flex-row">
-        <GameBoard board={state.board} active={state.active} />
-        <aside className="flex w-full flex-col gap-4 md:max-w-[240px]">
+      <div className="flex flex-1 flex-col gap-4 md:flex-row md:items-start md:justify-center md:gap-6">
+        <aside className="flex w-full flex-col gap-4 md:max-w-[220px]">
           <ScorePanel
             score={state.stats.score}
             lines={state.stats.lines}
             level={state.stats.level}
           />
-          <NextQueue queue={queuePreview} slots={3} isReady={isMounted} />
-          <HoldSlot piece={state.hold} canHold={state.canHold} />
           <div className="rounded-lg border border-border bg-muted/10 p-4 text-sm text-muted-foreground">
             <p>
               Controls: ←/→ to move, ↑ rotate CW, Z/Ctrl rotate CCW, ↓ soft drop, Space
@@ -180,6 +177,11 @@ export function TetrisGame() {
               hold.
             </p>
           </div>
+        </aside>
+        <GameBoard board={state.board} active={state.active} />
+        <aside className="flex w-full flex-col gap-4 md:max-w-[220px]">
+          <NextQueue queue={queuePreview} slots={3} isReady={isMounted} />
+          <HoldSlot piece={state.hold} canHold={state.canHold} />
         </aside>
       </div>
       <TouchControls actions={inputHandlers} disabled={status !== GameStatus.Running} />
