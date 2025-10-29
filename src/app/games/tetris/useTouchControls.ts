@@ -30,14 +30,15 @@ export const useTouchControls = ({
       return;
     }
 
-    if (typeof window === 'undefined' || !('ontouchstart' in window)) {
+    if (typeof window === 'undefined') {
       return;
     }
 
-    const target = ref.current ?? window;
-    if (!target) {
+    if (!ref.current) {
       return;
     }
+
+    const target = ref.current;
 
     let startX = 0;
     let startY = 0;
