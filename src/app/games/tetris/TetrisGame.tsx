@@ -26,14 +26,20 @@ export function TetrisGame() {
   const [status, setStatus] = useState<GameStatus>(GameStatus.Idle);
   const [isMounted, setIsMounted] = useState(false);
   const containerRef = useRef<HTMLElement | null>(null);
-  const previousStatusRef = useRef<GameStatus>(GameStatus.Idle);
 
-  const { setSoftDrop, start, pause, resume } = useGameLoop({
+  const {
+    setSoftDrop,
+    start: startLoop,
+    pause: pauseLoop,
+    resume: resumeLoop,
+    reset: resetLoop,
+  } = useGameLoop({
     level: state.stats.level,
     onTick: tick,
     autoStart: false,
     paused: status !== GameStatus.Running,
   });
+  const previousStatusRef = useRef<GameStatus>(GameStatus.Idle);
 
   useEffect(() => {
     if (!state.active && !state.isGameOver) {
@@ -52,19 +58,18 @@ export function TetrisGame() {
 
     if (status === GameStatus.Running) {
       if (previous === GameStatus.Paused) {
-        resume();
+        resumeLoop();
       } else {
-        start();
+        resetLoop();
+        startLoop();
       }
     } else {
-      if (previous === GameStatus.Running) {
-        pause();
-      }
+      pauseLoop();
       setSoftDrop(false);
     }
 
     previousStatusRef.current = status;
-  }, [status, pause, resume, start, setSoftDrop]);
+  }, [status, pauseLoop, resumeLoop, startLoop, resetLoop, setSoftDrop]);
 
   useEffect(() => {
     setIsMounted(true);
@@ -73,14 +78,22 @@ export function TetrisGame() {
   const startNewGame = useCallback(() => {
     reset();
     setSoftDrop(false);
-    setStatus(GameStatus.Running);
-  }, [reset, setSoftDrop]);
+    resetLoop();
+    setStatus((current) => {
+      if (current === GameStatus.Running) {
+        startLoop();
+        return current;
+      }
+      return GameStatus.Running;
+    });
+  }, [reset, setSoftDrop, resetLoop, startLoop]);
 
   const resetToIdle = useCallback(() => {
     reset();
     setSoftDrop(false);
+    resetLoop();
     setStatus(GameStatus.Idle);
-  }, [reset, setSoftDrop]);
+  }, [reset, setSoftDrop, resetLoop]);
 
   const inputHandlers = useMemo(() => {
     return {

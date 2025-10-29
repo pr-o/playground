@@ -80,26 +80,29 @@ export function useGameLoop({
   );
 
   const start = useCallback(() => {
-    if (isRunning) return;
+    if (runningRef.current) return;
     runningRef.current = true;
     lastTimeRef.current = null;
     accumulatorRef.current = 0;
     setIsRunning(true);
     frameRef.current = requestAnimationFrame(loop);
-  }, [isRunning, loop]);
+  }, [loop]);
 
   const pause = useCallback(() => {
+    if (!runningRef.current && !isRunning) return;
     runningRef.current = false;
-    setIsRunning(false);
+    if (isRunning) {
+      setIsRunning(false);
+    }
     cancelLoop();
-  }, [cancelLoop]);
+  }, [cancelLoop, isRunning]);
 
   const resume = useCallback(() => {
-    if (isRunning) return;
+    if (runningRef.current) return;
     runningRef.current = true;
     setIsRunning(true);
     frameRef.current = requestAnimationFrame(loop);
-  }, [isRunning, loop]);
+  }, [loop]);
 
   const reset = useCallback(() => {
     pause();
@@ -120,9 +123,10 @@ export function useGameLoop({
   );
 
   useEffect(() => {
-    baseIntervalRef.current = getGravityIntervalForLevel(level);
+    const baseInterval = getGravityIntervalForLevel(level);
+    baseIntervalRef.current = baseInterval;
     if (!softDropRef.current) {
-      applyIntervalChange(baseIntervalRef.current);
+      applyIntervalChange(baseInterval);
     }
   }, [level, applyIntervalChange]);
 
