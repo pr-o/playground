@@ -19,8 +19,7 @@ export const NextQueue = memo(function NextQueue({
   className,
 }: NextQueueProps) {
   const items = useMemo(() => {
-    const length = Math.max(slots, queue.length);
-    return Array.from({ length }, (_, index) =>
+    return Array.from({ length: slots }, (_, index) =>
       isReady ? (queue[index] ?? null) : null,
     );
   }, [isReady, queue, slots]);

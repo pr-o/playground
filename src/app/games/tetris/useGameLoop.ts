@@ -1,14 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-const BASE_INTERVAL_MS = 1000;
-const LEVEL_DECREMENT_MS = 60;
-const MIN_INTERVAL_MS = 80;
-const SOFT_DROP_MULTIPLIER = 0.2;
+const BASE_INTERVAL_MS = 900;
+const LEVEL_ACCELERATION = 0.82;
+const MIN_INTERVAL_MS = 55;
+const SOFT_DROP_MULTIPLIER = 0.18;
+const SOFT_DROP_MIN_MS = 45;
 
 export const getGravityIntervalForLevel = (level: number): number => {
   const safeLevel = Math.max(1, level);
-  const interval = BASE_INTERVAL_MS - (safeLevel - 1) * LEVEL_DECREMENT_MS;
-  return Math.max(MIN_INTERVAL_MS, interval);
+  const acceleratedInterval =
+    BASE_INTERVAL_MS * Math.pow(LEVEL_ACCELERATION, safeLevel - 1);
+  return Math.max(MIN_INTERVAL_MS, Math.round(acceleratedInterval));
 };
 
 export type UseGameLoopOptions = {
@@ -101,6 +103,7 @@ export function useGameLoop({
     if (runningRef.current) return;
     runningRef.current = true;
     setIsRunning(true);
+    lastTimeRef.current = null;
     frameRef.current = requestAnimationFrame(loop);
   }, [loop]);
 
@@ -115,7 +118,7 @@ export function useGameLoop({
       softDropRef.current = enabled;
       const baseInterval = baseIntervalRef.current;
       const nextInterval = enabled
-        ? Math.max(MIN_INTERVAL_MS, baseInterval * SOFT_DROP_MULTIPLIER)
+        ? Math.max(SOFT_DROP_MIN_MS, baseInterval * SOFT_DROP_MULTIPLIER)
         : baseInterval;
       applyIntervalChange(nextInterval);
     },
