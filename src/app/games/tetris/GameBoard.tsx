@@ -106,6 +106,7 @@ export const GameBoard = memo(function GameBoard({ board, active }: GameBoardPro
               gridRow: `${row + 1} / span 1`,
               width: CELL_SIZE,
               height: CELL_SIZE,
+              opacity: 0.6,
             }}
             layoutId={key}
           />
