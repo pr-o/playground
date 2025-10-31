@@ -93,16 +93,52 @@ export const createSlitherConfig = (
 ): SlitherConfig => mergeConfig(defaultSlitherConfig, overrides);
 
 function mergeConfig<T>(base: T, overrides: PartialDeep<T>): T {
-  const result: Record<string, unknown> = Array.isArray(base) ? [...base] : { ...base };
+  if (Array.isArray(base)) {
+    if (!Array.isArray(overrides)) {
+      return [...(base as unknown[])] as unknown as T;
+    }
+
+    return overrides.map((item, index) => {
+      const original = (base as unknown[])[index];
+
+      if (isPlainObject(item) && isPlainObject(original)) {
+        return mergeConfig(original, item as PartialDeep<typeof original>);
+      }
+
+      if (Array.isArray(item)) {
+        return [...item];
+      }
+
+      return isPlainObject(item) ? { ...(item as Record<string, unknown>) } : item;
+    }) as unknown as T;
+  }
+
+  if (!isPlainObject(base)) {
+    return (overrides as T) ?? base;
+  }
+
+  if (!isPlainObject(overrides)) {
+    return { ...(base as Record<string, unknown>) } as T;
+  }
+
+  const result: Record<string, unknown> = {
+    ...(base as Record<string, unknown>),
+  };
 
   for (const key of Object.keys(overrides) as Array<keyof typeof overrides>) {
     const overrideValue = overrides[key];
     if (overrideValue === undefined) continue;
 
-    const originalValue = (base as Record<string, unknown>)[key];
+    const originalValue = (base as Record<string, unknown>)[key as string];
 
     if (Array.isArray(overrideValue)) {
-      result[key as string] = [...overrideValue];
+      result[key as string] = overrideValue.map((item) =>
+        Array.isArray(item)
+          ? [...item]
+          : isPlainObject(item)
+            ? { ...(item as Record<string, unknown>) }
+            : item,
+      );
       continue;
     }
 

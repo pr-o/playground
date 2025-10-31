@@ -2,6 +2,7 @@
 
 import { memo, useEffect, useMemo, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import type { Transition } from 'framer-motion';
 import type { ActivePiece, Board, TetrominoId } from '@/lib/tetris';
 import { cn } from '@/lib/utils';
 import { TETROMINO_COLORS } from './pieceColors';
@@ -81,9 +82,14 @@ const ActiveCells = ({ active }: { active: ActivePiece }) => {
     previousIdRef.current = active.id;
   }, [active.position.row, active.rotation, active.id]);
 
-  const cellTransition = isHardDrop
+  const cellTransition: Transition = isHardDrop
     ? { duration: 0.08, ease: 'easeOut' }
-    : { type: 'spring', stiffness: 360, damping: rotationChanged ? 18 : 24, mass: 0.38 };
+    : {
+        type: 'spring',
+        stiffness: 360,
+        damping: rotationChanged ? 18 : 24,
+        mass: 0.38,
+      };
 
   return (
     <motion.div
