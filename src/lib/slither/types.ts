@@ -10,6 +10,7 @@ export type SnakeKind = 'player' | 'bot';
 export type SnakeSegment = {
   position: Vector2;
   angle: number;
+  distance: number;
 };
 
 export type SnakeState = {
