@@ -102,6 +102,16 @@ export const ProjectEntries: ProjectEntry[] = [
     techStack: ['PixiJS'],
   },
   {
+    title: 'Slither Arcade',
+    href: '/games/slither',
+    tag: 'Slither',
+    kind: ProjectKind.Game,
+    description: 'Single-player Slither-inspired arena built in PixiJS.',
+    thumbnail: '/assets/games/slither-logo.svg',
+    thumbnailAlt: 'Preview of the Slither Arcade prototype.',
+    techStack: ['PixiJS', 'TypeScript'],
+  },
+  {
     title: 'Tetris Classic',
     href: '/games/tetris',
     tag: 'tetris',
