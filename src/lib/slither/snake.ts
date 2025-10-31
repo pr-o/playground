@@ -46,6 +46,7 @@ export const createSnake = (
     length: totalLength,
     targetLength: options.targetLength ?? Math.max(baseLength, totalLength),
     speed: options.speed ?? config.baseSpeed,
+    currentSpeed: options.speed ?? config.baseSpeed,
     color: options.color ?? paletteColor,
     boostCharge: clamp(options.boostCharge ?? 1, 0, 1),
     isBoosting: false,

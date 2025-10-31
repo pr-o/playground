@@ -3,13 +3,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { GameState, SlitherApp, SlitherRenderer } from '@/lib/slither';
 import {
+  GameLoop,
+  computeCameraZoomForSpeed,
   createGameState,
   createSlitherApp,
   createSlitherConfig,
   createSlitherRenderer,
-  GameLoop,
-  useSlitherInput,
+  updateCamera,
   updatePlayerMovement,
+  useSlitherInput,
 } from '@/lib/slither';
 
 export const SlitherClient = () => {
@@ -65,6 +67,21 @@ export const SlitherClient = () => {
 
         currentState.elapsed += delta;
         updatePlayerMovement(currentState, latestInputRef.current, delta);
+
+        const headSegment = currentState.player.segments[0];
+        if (headSegment) {
+          const targetZoom = computeCameraZoomForSpeed(
+            currentState.config,
+            currentState.player.currentSpeed ?? currentState.player.speed,
+          );
+
+          updateCamera(currentState, {
+            targetPosition: headSegment.position,
+            targetZoom,
+            dt: delta,
+          });
+        }
+
         currentRenderer.render(currentState);
       });
 
@@ -110,6 +127,9 @@ export const SlitherClient = () => {
   );
   const boostCharge = (stateRef.current?.player.boostCharge ?? 0).toFixed(2);
   const targetLength = Math.round(stateRef.current?.player.targetLength ?? 0);
+  const cameraZoom = (stateRef.current?.camera.zoom ?? configRef.current.maxZoom).toFixed(
+    2,
+  );
 
   return (
     <div className="relative aspect-video w-full overflow-hidden rounded-2xl border border-white/10 bg-slate-950/70">
@@ -124,6 +144,7 @@ export const SlitherClient = () => {
         <span>Boost: {inputState.isBoosting ? 'Active' : 'Idle'}</span>
         <span>Boost Charge: {boostCharge}</span>
         <span>Target Length: {targetLength}</span>
+        <span>Camera Zoom: {cameraZoom}</span>
       </div>
       {!isReady && (
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gradient-to-b from-slate-950/40 via-slate-950/10 to-slate-950/60">

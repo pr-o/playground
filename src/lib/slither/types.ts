@@ -20,6 +20,7 @@ export type SnakeState = {
   length: number;
   targetLength: number;
   speed: number;
+  currentSpeed: number;
   color: string;
   boostCharge: number;
   isBoosting: boolean;

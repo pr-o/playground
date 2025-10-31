@@ -81,6 +81,7 @@ export const updatePlayerMovement = (
 
   snake.isBoosting = isBoosting;
   snake.boostCharge = boostCharge;
+  snake.currentSpeed = speed;
 };
 
 // Resamples the recorded path into evenly spaced segments using linear interpolation.

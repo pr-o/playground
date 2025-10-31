@@ -1,5 +1,5 @@
 import type { SlitherConfig } from './config';
-import { clamp, lerp, length } from './math';
+import { clamp, lerp, length, EPSILON } from './math';
 import type { CameraState, GameState, Vector2 } from './types';
 
 export type CameraUpdateContext = {
@@ -60,6 +60,24 @@ export const updateCamera = (state: GameState, context: CameraUpdateContext) => 
 
   const zoomFactor = smoothingFactor(config.camera.zoomLerp, dt);
   camera.zoom = lerp(camera.zoom, camera.targetZoom, zoomFactor);
+};
+
+export const computeCameraZoomForSpeed = (
+  config: SlitherConfig,
+  currentSpeed: number,
+): number => {
+  const baseSpeed = config.baseSpeed;
+  const boostSpeed = baseSpeed * config.boostMultiplier;
+  const speedRange = Math.max(boostSpeed - baseSpeed, EPSILON);
+  const normalized = clamp(
+    ((currentSpeed - baseSpeed) / speedRange) * config.camera.zoomSpeedFactor,
+    0,
+    1,
+  );
+
+  const zoomRange = config.maxZoom - config.minZoom;
+  const offset = zoomRange * normalized;
+  return clamp(config.maxZoom - offset, config.minZoom, config.maxZoom);
 };
 
 const clampPositionToWorld = (position: Vector2, worldRadius: number) => {
