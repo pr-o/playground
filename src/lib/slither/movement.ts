@@ -1,7 +1,7 @@
 import { EPSILON, add, clamp, distance, rotateTowards } from './math';
 import type { GameState, SlitherInputState, SnakeSegment, Vector2 } from './types';
 
-const MAX_PATH_PADDING = 4;
+const PATH_RESERVE_FACTOR = 4;
 
 export const updatePlayerMovement = (
   state: GameState,
@@ -40,36 +40,49 @@ export const updatePlayerMovement = (
 
   snake.path.unshift({ ...newHeadPosition });
 
-  const maxSamples = Math.max(
-    snake.segments.length + MAX_PATH_PADDING,
-    Math.ceil(snake.targetLength / spacing) + MAX_PATH_PADDING,
-  );
+  const maxPathLength = snake.targetLength + spacing * PATH_RESERVE_FACTOR;
+  const trimmedPath = trimPathToLength(snake.path, maxPathLength);
+  const pathLength = computePathLength(trimmedPath);
+  const effectiveLength = Math.min(snake.targetLength, pathLength);
 
-  if (snake.path.length > maxSamples) {
-    snake.path.length = maxSamples;
-  }
-
-  const resampled = resamplePath(snake.path, spacing, snake.targetLength, nextAngle);
+  const resampled = resamplePath(trimmedPath, spacing, effectiveLength, nextAngle);
 
   snake.segments = resampled;
-  snake.path = resampled.map((segment) => ({ ...segment.position }));
+  snake.path = trimmedPath;
   const tail = resampled[resampled.length - 1];
   snake.length = tail ? tail.distance : snake.length;
 
   snake.isBoosting = input.isBoosting;
 };
 
+// Resamples the recorded path into evenly spaced segments using linear interpolation.
 const resamplePath = (
   path: Vector2[],
   spacing: number,
   targetLength: number,
   headAngle: number,
 ): SnakeSegment[] => {
-  const maxDistance = Math.max(targetLength, spacing);
-  const sampleCount = Math.max(2, Math.ceil(maxDistance / spacing) + 1);
-  const sampleDistances = Array.from({ length: sampleCount }, (_, index) =>
-    Math.min(index * spacing, maxDistance),
-  );
+  const sampleLength = Math.max(0, targetLength);
+  const steps = Math.max(1, Math.ceil(sampleLength / spacing));
+  const sampleDistances: number[] = [];
+
+  for (let i = 0; i <= steps; i += 1) {
+    const dist = Math.min(i * spacing, sampleLength);
+    if (
+      sampleDistances.length === 0 ||
+      dist - sampleDistances[sampleDistances.length - 1] > EPSILON
+    ) {
+      sampleDistances.push(dist);
+    }
+  }
+
+  if (sampleDistances[sampleDistances.length - 1] < sampleLength - EPSILON) {
+    sampleDistances.push(sampleLength);
+  }
+
+  if (sampleDistances.length < 2) {
+    sampleDistances.push(sampleLength);
+  }
 
   const segments: SnakeSegment[] = [];
   let segmentIndex = 0;
@@ -119,4 +132,49 @@ const resamplePath = (
   }
 
   return segments;
+};
+
+const trimPathToLength = (path: Vector2[], maxLength: number): Vector2[] => {
+  if (path.length <= 1) return path.slice();
+
+  const trimmed: Vector2[] = [{ ...path[0] }];
+  let accumulated = 0;
+
+  for (let i = 1; i < path.length; i += 1) {
+    const prev = trimmed[trimmed.length - 1];
+    const current = path[i];
+    const segmentLength = distance(prev, current);
+
+    if (accumulated + segmentLength > maxLength) {
+      const remaining = maxLength - accumulated;
+      if (segmentLength > EPSILON) {
+        const t = clamp(remaining / segmentLength, 0, 1);
+        trimmed.push({
+          x: prev.x + (current.x - prev.x) * t,
+          y: prev.y + (current.y - prev.y) * t,
+        });
+      } else {
+        trimmed.push({ ...prev });
+      }
+      break;
+    }
+
+    trimmed.push({ ...current });
+    accumulated += segmentLength;
+
+    if (accumulated >= maxLength - EPSILON) {
+      break;
+    }
+  }
+
+  return trimmed;
+};
+
+const computePathLength = (path: Vector2[]): number => {
+  if (path.length <= 1) return 0;
+  let total = 0;
+  for (let i = 1; i < path.length; i += 1) {
+    total += distance(path[i - 1], path[i]);
+  }
+  return total;
 };
