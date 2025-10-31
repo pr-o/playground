@@ -4,6 +4,7 @@ import type { GameState, SnakeSegment } from './types';
 
 export type SlitherRenderer = {
   root: Container;
+  render: (state: GameState) => void;
   destroy: () => void;
 };
 
@@ -16,6 +17,7 @@ export const createSlitherRenderer = (
   const background = new Graphics();
   const pellets = new Graphics();
   const snakes = new Graphics();
+  let currentState = state;
 
   world.addChild(background);
   world.addChild(pellets);
@@ -23,19 +25,28 @@ export const createSlitherRenderer = (
   root.addChild(world);
 
   drawWorld(background, state);
-  drawPellets(pellets, state);
-  drawSnake(snakes, state);
-  centerOnPlayer(app, world, state);
+  const renderScene = (nextState: GameState) => {
+    currentState = nextState;
+    drawPellets(pellets, currentState);
+    drawSnake(snakes, currentState);
+    applyCamera(app, world, currentState);
+  };
+
+  renderScene(state);
 
   app.stage.addChild(root);
 
-  const handleResize = () => centerOnPlayer(app, world, state);
+  const handleResize = () => applyCamera(app, world, currentState);
   const resizeObserver = createResizeObserver(app, handleResize);
 
   return {
     root,
+    render: renderScene,
     destroy: () => {
       resizeObserver?.();
+      if (root.parent) {
+        root.parent.removeChild(root);
+      }
       root.destroy({ children: true });
     },
   };
@@ -109,16 +120,19 @@ const drawHeadHighlight = (gfx: Graphics, segments: SnakeSegment[]) => {
   gfx.circle(head.position.x, head.position.y, 4).fill({ color: 0xffffff, alpha: 0.9 });
 };
 
-const centerOnPlayer = (app: SlitherApp, world: Container, state: GameState) => {
-  const head = state.player.segments[0];
+const applyCamera = (app: SlitherApp, world: Container, state: GameState) => {
+  const {
+    camera: { position, zoom },
+  } = state;
   const renderer = app.renderer as PixiRendererLike;
   const screen = renderer?.screen ?? {
     width: renderer?.width ?? 0,
     height: renderer?.height ?? 0,
   };
 
-  world.pivot.set(head.position.x, head.position.y);
+  world.pivot.set(position.x, position.y);
   world.position.set(screen.width / 2, screen.height / 2);
+  world.scale.set(zoom, zoom);
 };
 
 const createResizeObserver = (

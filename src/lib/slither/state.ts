@@ -1,5 +1,6 @@
 import type { SlitherConfig, SlitherConfigOverrides } from './config';
 import { createSlitherConfig } from './config';
+import { createCameraState } from './camera';
 import { createId } from './id';
 import { TAU } from './math';
 import { createSnake } from './snake';
@@ -25,7 +26,7 @@ export const createGameState = (options: CreateGameStateOptions = {}): GameState
     boostCharge: 1,
   });
 
-  const cameraPosition = { ...player.segments[0].position };
+  const camera = createCameraState(config, player.segments[0].position);
 
   const pellets = seedPellets(config, random);
   const spatialIndex = createSpatialIndex({
@@ -43,11 +44,7 @@ export const createGameState = (options: CreateGameStateOptions = {}): GameState
 
   return {
     config,
-    camera: {
-      position: cameraPosition,
-      zoom: config.maxZoom,
-      targetZoom: config.maxZoom,
-    },
+    camera,
     player,
     bots: [],
     pellets,

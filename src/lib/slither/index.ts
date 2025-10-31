@@ -8,3 +8,4 @@ export * from './id';
 export * from './loop';
 export * from './spatial-index';
 export * from './renderer';
+export * from './camera';
