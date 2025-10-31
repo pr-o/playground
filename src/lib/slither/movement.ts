@@ -2,6 +2,7 @@ import { EPSILON, add, clamp, distance, rotateTowards } from './math';
 import type { GameState, SlitherInputState, SnakeSegment, Vector2 } from './types';
 
 const PATH_RESERVE_FACTOR = 4;
+const MIN_LENGTH_PADDING = 0.5;
 
 export const updatePlayerMovement = (
   state: GameState,
@@ -13,10 +14,36 @@ export const updatePlayerMovement = (
   const head = snake.segments[0];
   if (!head) return;
 
+  const baseLength = Math.max(state.config.snake.initialLength, spacing);
+  const drainRate = state.config.boostDrainRate / baseLength;
+  const regenRate = state.config.boostRegenRate / baseLength;
+
+  let boostCharge = snake.boostCharge;
+  let speedMultiplier = 1;
+  let isBoosting = false;
+
+  if (input.isBoosting && boostCharge > EPSILON) {
+    boostCharge = clamp(boostCharge - drainRate * dt, 0, 1);
+    if (boostCharge > EPSILON) {
+      speedMultiplier = state.config.boostMultiplier;
+      isBoosting = true;
+
+      const shedRate = spacing * Math.max(drainRate, EPSILON);
+      const minLength = Math.max(baseLength * MIN_LENGTH_PADDING, spacing * 2);
+      snake.targetLength = Math.max(minLength, snake.targetLength - shedRate * dt);
+    }
+  }
+
+  if (!isBoosting) {
+    boostCharge = clamp(boostCharge + regenRate * dt, 0, 1);
+  }
+
+  const baseSpeed = snake.speed;
+  const speed = baseSpeed * speedMultiplier;
+
   const steering = input.steering;
   const hasSteering = Math.abs(steering.x) > EPSILON || Math.abs(steering.y) > EPSILON;
   const desiredAngle = hasSteering ? Math.atan2(steering.y, steering.x) : head.angle;
-  const speed = snake.speed;
   const maxTurnRate = speed / Math.max(state.config.snake.minTurnRadius, 1);
   const maxDelta = maxTurnRate * dt;
   const nextAngle = rotateTowards(head.angle, desiredAngle, maxDelta);
@@ -52,7 +79,8 @@ export const updatePlayerMovement = (
   const tail = resampled[resampled.length - 1];
   snake.length = tail ? tail.distance : snake.length;
 
-  snake.isBoosting = input.isBoosting;
+  snake.isBoosting = isBoosting;
+  snake.boostCharge = boostCharge;
 };
 
 // Resamples the recorded path into evenly spaced segments using linear interpolation.

@@ -140,7 +140,7 @@ export const useSlitherInput = (
     const handlePointerCancel = handlePointerLeave;
 
     const handleContextMenu = (event: MouseEvent) => {
-      if (pointerBoostButtons.size > 0) {
+      if (pointerBoostButtons.size > 0 || pointerActive) {
         event.preventDefault();
       }
     };

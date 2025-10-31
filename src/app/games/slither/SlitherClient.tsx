@@ -108,6 +108,8 @@ export const SlitherClient = () => {
     }),
     [inputState.steering.x, inputState.steering.y],
   );
+  const boostCharge = (stateRef.current?.player.boostCharge ?? 0).toFixed(2);
+  const targetLength = Math.round(stateRef.current?.player.targetLength ?? 0);
 
   return (
     <div className="relative aspect-video w-full overflow-hidden rounded-2xl border border-white/10 bg-slate-950/70">
@@ -120,6 +122,8 @@ export const SlitherClient = () => {
           Steering ({inputState.source}): {steeringVector.x}, {steeringVector.y}
         </span>
         <span>Boost: {inputState.isBoosting ? 'Active' : 'Idle'}</span>
+        <span>Boost Charge: {boostCharge}</span>
+        <span>Target Length: {targetLength}</span>
       </div>
       {!isReady && (
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gradient-to-b from-slate-950/40 via-slate-950/10 to-slate-950/60">
