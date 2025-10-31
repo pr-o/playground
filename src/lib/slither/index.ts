@@ -6,3 +6,4 @@ export * from './snake';
 export * from './state';
 export * from './id';
 export * from './loop';
+export * from './spatial-index';

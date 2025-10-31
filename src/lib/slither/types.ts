@@ -42,14 +42,28 @@ export type CameraState = {
   targetZoom: number;
 };
 
+export type SpatialOccupantKind =
+  | 'pellet'
+  | 'snake-head'
+  | 'snake-segment'
+  | 'snake-tail';
+
+export type SpatialOccupant = {
+  id: string;
+  kind: SpatialOccupantKind;
+  position: Vector2;
+  radius: number;
+};
+
 export type SpatialHashCell = {
   key: string;
-  occupantIds: string[];
+  occupantIds: Set<string>;
 };
 
 export type SpatialHashIndex = {
   cellSize: number;
   lookup: Map<string, SpatialHashCell>;
+  occupants: Map<string, SpatialOccupant>;
 };
 
 export type GameState = {

@@ -3,7 +3,8 @@ import { createSlitherConfig } from './config';
 import { createId } from './id';
 import { TAU } from './math';
 import { createSnake } from './snake';
-import type { GameState, Pellet, PelletKind, SpatialHashIndex, Vector2 } from './types';
+import { createSpatialIndex, insertSpatialOccupant } from './spatial-index';
+import type { GameState, Pellet, PelletKind, Vector2 } from './types';
 
 export type CreateGameStateOptions = {
   config?: SlitherConfig;
@@ -27,7 +28,18 @@ export const createGameState = (options: CreateGameStateOptions = {}): GameState
   const cameraPosition = { ...player.segments[0].position };
 
   const pellets = seedPellets(config, random);
-  const spatialIndex = createSpatialIndex(config);
+  const spatialIndex = createSpatialIndex({
+    cellSize: Math.max(config.snake.segmentSpacing, config.pellet.radius * 4),
+  });
+
+  for (const pellet of pellets) {
+    insertSpatialOccupant(spatialIndex, {
+      id: pellet.id,
+      kind: 'pellet',
+      position: pellet.position,
+      radius: pellet.radius,
+    });
+  }
 
   return {
     config,
@@ -95,11 +107,6 @@ const pelletColor = (kind: PelletKind, config: SlitherConfig): string => {
       return config.palette.pellets.normal;
   }
 };
-
-const createSpatialIndex = (config: SlitherConfig): SpatialHashIndex => ({
-  cellSize: Math.max(config.snake.segmentSpacing, config.pellet.radius * 4),
-  lookup: new Map(),
-});
 
 const spawnNearCenter = (radius: number, random: () => number): Vector2 => {
   const maxRadius = radius * 0.2;
