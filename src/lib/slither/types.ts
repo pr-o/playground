@@ -23,6 +23,7 @@ export type SnakeState = {
   color: string;
   boostCharge: number;
   isBoosting: boolean;
+  path: Vector2[];
 };
 
 export type PelletKind = 'normal' | 'rare' | 'boost';

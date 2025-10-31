@@ -37,6 +37,7 @@ export const createSnake = (
 
   const totalLength = computeSegmentLength(segments, segmentSpacing);
   const paletteColor = defaultSnakeColor(kind, config);
+  const path = segments.map((segment) => ({ ...segment.position }));
 
   return {
     id: options.id ?? createId(kind),
@@ -48,6 +49,7 @@ export const createSnake = (
     color: options.color ?? paletteColor,
     boostCharge: clamp(options.boostCharge ?? 1, 0, 1),
     isBoosting: false,
+    path,
   };
 };
 

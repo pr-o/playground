@@ -7,7 +7,9 @@ import {
   createSlitherApp,
   createSlitherConfig,
   createSlitherRenderer,
+  GameLoop,
   useSlitherInput,
+  updatePlayerMovement,
 } from '@/lib/slither';
 
 export const SlitherClient = () => {
@@ -15,9 +17,15 @@ export const SlitherClient = () => {
   const appRef = useRef<SlitherApp | null>(null);
   const stateRef = useRef<GameState | null>(null);
   const rendererRef = useRef<SlitherRenderer | null>(null);
+  const loopRef = useRef<GameLoop | null>(null);
   const [isReady, setIsReady] = useState(false);
   const configRef = useRef(createSlitherConfig());
   const inputState = useSlitherInput(containerRef);
+  const latestInputRef = useRef(inputState);
+
+  useEffect(() => {
+    latestInputRef.current = inputState;
+  }, [inputState]);
 
   useEffect(() => {
     let cancelled = false;
@@ -49,6 +57,18 @@ export const SlitherClient = () => {
 
       appRef.current = app;
       rendererRef.current = renderer;
+      const loop = new GameLoop({ autoStart: true });
+      loop.onTick((delta) => {
+        const currentState = stateRef.current;
+        const currentRenderer = rendererRef.current;
+        if (!currentState || !currentRenderer) return;
+
+        currentState.elapsed += delta;
+        updatePlayerMovement(currentState, latestInputRef.current, delta);
+        currentRenderer.render(currentState);
+      });
+
+      loopRef.current = loop;
 
       containerRef.current.appendChild(app.canvas);
       setIsReady(true);
@@ -61,6 +81,11 @@ export const SlitherClient = () => {
       if (rendererRef.current) {
         rendererRef.current.destroy();
         rendererRef.current = null;
+      }
+
+      if (loopRef.current) {
+        loopRef.current.destroy();
+        loopRef.current = null;
       }
 
       if (appRef.current) {

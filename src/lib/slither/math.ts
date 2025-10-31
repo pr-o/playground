@@ -43,3 +43,20 @@ export const angleTo = (from: Vector2, to: Vector2): number =>
 
 export const distanceSquared = (a: Vector2, b: Vector2): number =>
   lengthSquared(subtract(a, b));
+
+export const distance = (a: Vector2, b: Vector2): number =>
+  Math.sqrt(distanceSquared(a, b));
+
+export const angleDifference = (target: number, source: number): number =>
+  ((target - source + Math.PI) % TAU) - Math.PI;
+
+export const rotateTowards = (
+  current: number,
+  target: number,
+  maxDelta: number,
+): number => {
+  if (maxDelta <= 0) return current;
+  const delta = angleDifference(target, current);
+  const clampedDelta = clamp(delta, -maxDelta, maxDelta);
+  return current + clampedDelta;
+};
