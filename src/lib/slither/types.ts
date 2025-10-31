@@ -66,6 +66,18 @@ export type SpatialHashIndex = {
   occupants: Map<string, SpatialOccupant>;
 };
 
+export type InputSource = 'pointer' | 'keyboard' | 'none';
+
+export type SlitherInputState = {
+  steering: Vector2;
+  isBoosting: boolean;
+  source: InputSource;
+  pointerActive: boolean;
+  pointerPosition: Vector2 | null;
+  keyboardVector: Vector2;
+  updatedAt: number;
+};
+
 export type GameState = {
   config: SlitherConfig;
   camera: CameraState;

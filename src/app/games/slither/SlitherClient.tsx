@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { GameState, SlitherApp, SlitherRenderer } from '@/lib/slither';
 import {
   createGameState,
   createSlitherApp,
   createSlitherConfig,
   createSlitherRenderer,
+  useSlitherInput,
 } from '@/lib/slither';
 
 export const SlitherClient = () => {
@@ -16,6 +17,7 @@ export const SlitherClient = () => {
   const rendererRef = useRef<SlitherRenderer | null>(null);
   const [isReady, setIsReady] = useState(false);
   const configRef = useRef(createSlitherConfig());
+  const inputState = useSlitherInput(containerRef);
 
   useEffect(() => {
     let cancelled = false;
@@ -74,14 +76,25 @@ export const SlitherClient = () => {
   const pelletCount =
     stateRef.current?.pellets.length ?? configRef.current.pellet.initialCount;
   const worldRadius = configRef.current.worldRadius;
+  const steeringVector = useMemo(
+    () => ({
+      x: inputState.steering.x.toFixed(2),
+      y: inputState.steering.y.toFixed(2),
+    }),
+    [inputState.steering.x, inputState.steering.y],
+  );
 
   return (
     <div className="relative aspect-video w-full overflow-hidden rounded-2xl border border-white/10 bg-slate-950/70">
       <div ref={containerRef} className="relative h-full w-full" />
-      <div className="pointer-events-none absolute left-4 top-4 flex flex-col gap-1 text-[10px] uppercase tracking-[0.1em] text-cyan-300/30">
+      <div className="pointer-events-none absolute left-4 top-4 flex flex-col gap-1 text-[10px] uppercase tracking-[0.1em] text-cyan-300/40">
         <span>Pixi Canvas Ready: {isReady ? 'Yes' : 'No'}</span>
         <span>World Radius: {worldRadius}</span>
         <span>Pellets Seeded: {pelletCount}</span>
+        <span>
+          Steering ({inputState.source}): {steeringVector.x}, {steeringVector.y}
+        </span>
+        <span>Boost: {inputState.isBoosting ? 'Active' : 'Idle'}</span>
       </div>
       {!isReady && (
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gradient-to-b from-slate-950/40 via-slate-950/10 to-slate-950/60">
