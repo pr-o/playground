@@ -9,8 +9,12 @@ import {
   createSlitherApp,
   createSlitherConfig,
   createSlitherRenderer,
+  applyGrowthReserve,
   maintainPelletPopulation,
   processPelletConsumption,
+  emitPelletBurst,
+  emitBoostTrail,
+  updateParticles,
   updateCamera,
   updatePlayerMovement,
   useSlitherInput,
@@ -68,8 +72,20 @@ export const SlitherClient = () => {
         if (!currentState || !currentRenderer) return;
 
         currentState.elapsed += delta;
+        applyGrowthReserve(currentState, delta);
         updatePlayerMovement(currentState, latestInputRef.current, delta);
-        processPelletConsumption(currentState);
+        const pelletResult = processPelletConsumption(currentState);
+        if (pelletResult) {
+          for (const pellet of pelletResult.consumed) {
+            emitPelletBurst(currentState, pellet);
+          }
+        }
+
+        if (currentState.player.isBoosting) {
+          emitBoostTrail(currentState);
+        }
+
+        updateParticles(currentState, delta);
         maintainPelletPopulation(currentState);
 
         const headSegment = currentState.player.segments[0];

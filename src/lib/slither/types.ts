@@ -40,6 +40,17 @@ export type Pellet = {
   color: string;
 };
 
+export type Particle = {
+  id: string;
+  position: Vector2;
+  velocity: Vector2;
+  life: number;
+  lifespan: number;
+  radius: number;
+  color: string;
+  alpha: number;
+};
+
 export type CameraState = {
   position: Vector2;
   zoom: number;
@@ -90,6 +101,7 @@ export type GameState = {
   player: SnakeState;
   bots: SnakeState[];
   pellets: Pellet[];
+  particles: Particle[];
   elapsed: number;
   spatialIndex: SpatialHashIndex;
   random: RandomFn;

@@ -16,11 +16,13 @@ export const createSlitherRenderer = (
   const world = new Container();
   const background = new Graphics();
   const pellets = new Graphics();
+  const particles = new Graphics();
   const snakes = new Graphics();
   let currentState = state;
 
   world.addChild(background);
   world.addChild(pellets);
+  world.addChild(particles);
   world.addChild(snakes);
   root.addChild(world);
 
@@ -28,6 +30,7 @@ export const createSlitherRenderer = (
   const renderScene = (nextState: GameState) => {
     currentState = nextState;
     drawPellets(pellets, currentState);
+    drawParticles(particles, currentState);
     drawSnake(snakes, currentState);
     applyCamera(app, world, currentState);
   };
@@ -85,6 +88,18 @@ const drawPellets = (gfx: Graphics, state: GameState) => {
     gfx.circle(pellet.position.x, pellet.position.y, pellet.radius).fill({
       color: parseHex(pellet.color),
       alpha: 0.92,
+    });
+  }
+};
+
+const drawParticles = (gfx: Graphics, state: GameState) => {
+  gfx.clear();
+
+  for (const particle of state.particles) {
+    const alpha = Math.min(Math.max(particle.alpha, 0), 1);
+    gfx.circle(particle.position.x, particle.position.y, particle.radius).fill({
+      color: parseHex(particle.color),
+      alpha,
     });
   }
 };

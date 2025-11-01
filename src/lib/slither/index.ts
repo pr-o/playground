@@ -12,3 +12,5 @@ export * from './camera';
 export * from './input';
 export * from './movement';
 export * from './pellets';
+export * from './growth';
+export * from './particles';

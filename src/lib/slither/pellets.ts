@@ -53,9 +53,16 @@ export const maintainPelletPopulation = (state: GameState) => {
   }
 };
 
-export const processPelletConsumption = (state: GameState) => {
+export type PelletConsumptionResult = {
+  consumed: Pellet[];
+  growth: number;
+};
+
+export const processPelletConsumption = (
+  state: GameState,
+): PelletConsumptionResult | null => {
   const head = state.player.segments[0];
-  if (!head) return;
+  if (!head) return null;
 
   const captureRadius = Math.max(
     state.config.pellet.radius * 1.75,
@@ -66,9 +73,10 @@ export const processPelletConsumption = (state: GameState) => {
     kinds: ['pellet'],
   });
 
-  if (nearby.length === 0) return;
+  if (nearby.length === 0) return null;
 
   let growthTotal = 0;
+  const consumed: Pellet[] = [];
 
   for (const occupant of nearby) {
     const index = state.pellets.findIndex((pellet) => pellet.id === occupant.id);
@@ -76,14 +84,24 @@ export const processPelletConsumption = (state: GameState) => {
 
     const [pellet] = state.pellets.splice(index, 1);
     growthTotal += pellet.value;
+    consumed.push(pellet);
 
     removeSpatialOccupant(state.spatialIndex, pellet.id);
   }
 
-  if (growthTotal <= 0) return;
+  if (consumed.length === 0) {
+    return null;
+  }
 
-  state.player.growthReserve += growthTotal;
-  state.player.score += growthTotal;
+  if (growthTotal > 0) {
+    state.player.growthReserve += growthTotal;
+    state.player.score += growthTotal;
+  }
+
+  return {
+    consumed,
+    growth: growthTotal,
+  };
 };
 
 const createPellet = (config: SlitherConfig, random: () => number): Pellet => {

@@ -30,6 +30,7 @@ export type SlitherConfig = {
     minTurnRadius: number;
     segmentSpacing: number;
     growthPerPellet: number;
+    growthApplyRate: number;
   };
   camera: {
     followLerp: number;
@@ -63,6 +64,7 @@ export const defaultSlitherConfig: SlitherConfig = {
     minTurnRadius: 16,
     segmentSpacing: 10,
     growthPerPellet: 8,
+    growthApplyRate: 48,
   },
   camera: {
     followLerp: 0.1,

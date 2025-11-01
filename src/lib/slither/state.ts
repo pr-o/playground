@@ -48,6 +48,7 @@ export const createGameState = (options: CreateGameStateOptions = {}): GameState
     player,
     bots: [],
     pellets,
+    particles: [],
     elapsed: 0,
     spatialIndex,
     random,
