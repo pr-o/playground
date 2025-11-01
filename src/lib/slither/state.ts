@@ -1,11 +1,11 @@
 import type { SlitherConfig, SlitherConfigOverrides } from './config';
 import { createSlitherConfig } from './config';
 import { createCameraState } from './camera';
-import { createId } from './id';
 import { TAU } from './math';
+import { seedPellets } from './pellets';
 import { createSnake } from './snake';
 import { createSpatialIndex, insertSpatialOccupant } from './spatial-index';
-import type { GameState, Pellet, PelletKind, Vector2 } from './types';
+import type { GameState, Vector2 } from './types';
 
 export type CreateGameStateOptions = {
   config?: SlitherConfig;
@@ -50,68 +50,14 @@ export const createGameState = (options: CreateGameStateOptions = {}): GameState
     pellets,
     elapsed: 0,
     spatialIndex,
+    random,
   };
-};
-
-const seedPellets = (config: SlitherConfig, random: () => number): Pellet[] => {
-  const pellets: Pellet[] = [];
-
-  for (let i = 0; i < config.pellet.initialCount; i += 1) {
-    const kind = rollPelletKind(config, random);
-    const position = randomPointInArena(config.worldRadius, random);
-
-    pellets.push({
-      id: createId('pellet'),
-      kind,
-      position,
-      value: pelletValue(kind, config),
-      radius: config.pellet.radius,
-      color: pelletColor(kind, config),
-    });
-  }
-
-  return pellets;
-};
-
-const rollPelletKind = (config: SlitherConfig, random: () => number): PelletKind => {
-  const boostThreshold = config.pellet.boostChance;
-  const rareThreshold = boostThreshold + config.pellet.rareChance;
-  const roll = random();
-
-  if (roll < boostThreshold) return 'boost';
-  if (roll < rareThreshold) return 'rare';
-  return 'normal';
-};
-
-const pelletValue = (kind: PelletKind, config: SlitherConfig): number => {
-  switch (kind) {
-    case 'boost':
-      return config.snake.growthPerPellet;
-    case 'rare':
-      return config.snake.growthPerPellet * 2;
-    default:
-      return config.snake.growthPerPellet;
-  }
-};
-
-const pelletColor = (kind: PelletKind, config: SlitherConfig): string => {
-  switch (kind) {
-    case 'boost':
-      return config.palette.pellets.boost;
-    case 'rare':
-      return config.palette.pellets.rare;
-    default:
-      return config.palette.pellets.normal;
-  }
 };
 
 const spawnNearCenter = (radius: number, random: () => number): Vector2 => {
   const maxRadius = radius * 0.2;
   return randomPointInCircle(maxRadius, random);
 };
-
-const randomPointInArena = (radius: number, random: () => number): Vector2 =>
-  randomPointInCircle(radius, random);
 
 const randomPointInCircle = (radius: number, random: () => number): Vector2 => {
   const theta = random() * TAU;

@@ -13,6 +13,8 @@ export type SnakeInitOptions = {
   color?: string;
   targetLength?: number;
   boostCharge?: number;
+  growthReserve?: number;
+  score?: number;
 };
 
 export const createSnake = (
@@ -51,6 +53,8 @@ export const createSnake = (
     boostCharge: clamp(options.boostCharge ?? 1, 0, 1),
     isBoosting: false,
     path,
+    growthReserve: Math.max(0, options.growthReserve ?? 0),
+    score: Math.max(0, options.score ?? 0),
   };
 };
 

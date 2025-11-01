@@ -25,6 +25,8 @@ export type SnakeState = {
   boostCharge: number;
   isBoosting: boolean;
   path: Vector2[];
+  growthReserve: number;
+  score: number;
 };
 
 export type PelletKind = 'normal' | 'rare' | 'boost';
@@ -68,6 +70,8 @@ export type SpatialHashIndex = {
   occupants: Map<string, SpatialOccupant>;
 };
 
+export type RandomFn = () => number;
+
 export type InputSource = 'pointer' | 'keyboard' | 'none';
 
 export type SlitherInputState = {
@@ -88,4 +92,5 @@ export type GameState = {
   pellets: Pellet[];
   elapsed: number;
   spatialIndex: SpatialHashIndex;
+  random: RandomFn;
 };

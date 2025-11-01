@@ -9,6 +9,8 @@ import {
   createSlitherApp,
   createSlitherConfig,
   createSlitherRenderer,
+  maintainPelletPopulation,
+  processPelletConsumption,
   updateCamera,
   updatePlayerMovement,
   useSlitherInput,
@@ -67,6 +69,8 @@ export const SlitherClient = () => {
 
         currentState.elapsed += delta;
         updatePlayerMovement(currentState, latestInputRef.current, delta);
+        processPelletConsumption(currentState);
+        maintainPelletPopulation(currentState);
 
         const headSegment = currentState.player.segments[0];
         if (headSegment) {
@@ -130,6 +134,8 @@ export const SlitherClient = () => {
   const cameraZoom = (stateRef.current?.camera.zoom ?? configRef.current.maxZoom).toFixed(
     2,
   );
+  const score = Math.round(stateRef.current?.player.score ?? 0);
+  const growthReserve = Math.round(stateRef.current?.player.growthReserve ?? 0);
 
   return (
     <div className="relative aspect-video w-full overflow-hidden rounded-2xl border border-white/10 bg-slate-950/70">
@@ -144,6 +150,8 @@ export const SlitherClient = () => {
         <span>Boost: {inputState.isBoosting ? 'Active' : 'Idle'}</span>
         <span>Boost Charge: {boostCharge}</span>
         <span>Target Length: {targetLength}</span>
+        <span>Growth Reserve: {growthReserve}</span>
+        <span>Score: {score}</span>
         <span>Camera Zoom: {cameraZoom}</span>
       </div>
       {!isReady && (
