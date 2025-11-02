@@ -24,6 +24,7 @@ export type BotAIState = {
   wanderAngle: number;
   wanderTimer: number;
   cooldownTimer: number;
+  avoidanceMistakeTimer: number;
 };
 
 export type SnakeState = {

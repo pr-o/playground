@@ -19,6 +19,7 @@ import type {
   BotSnakeState,
   GameState,
   Pellet,
+  SnakeState,
   Vector2,
 } from './types';
 
@@ -87,11 +88,15 @@ export const updateBots = (state: GameState, dt: number) => {
     if (ai.cooldownTimer > 0) {
       ai.cooldownTimer = Math.max(0, ai.cooldownTimer - dt);
     }
+    if (ai.avoidanceMistakeTimer > 0) {
+      ai.avoidanceMistakeTimer = Math.max(0, ai.avoidanceMistakeTimer - dt);
+    }
     ai.wanderTimer -= dt;
 
     updateBotState(state, bot, head.position, playerHead.position);
     const steering = resolveBotSteering(state, bot, head.position, playerHead.position);
-    updateSnakeMovement(state, bot, steering, dt, { allowBoost: false });
+    const adjusted = applyAvoidance(state, bot, head.position, steering);
+    updateSnakeMovement(state, bot, adjusted, dt, { allowBoost: false });
   }
 };
 
@@ -234,6 +239,124 @@ const steerEvade = (
 
   ai.targetDirection = blended;
   return blended;
+};
+
+const applyAvoidance = (
+  state: GameState,
+  bot: BotSnakeState,
+  headPosition: Vector2,
+  desired: Vector2,
+): Vector2 => {
+  const {
+    bots: { avoidance },
+  } = state.config;
+
+  const desiredNormalized = normalize(desired);
+  if (
+    avoidance.radius <= EPSILON ||
+    avoidance.strength <= 0 ||
+    (Math.abs(desiredNormalized.x) < EPSILON && Math.abs(desiredNormalized.y) < EPSILON)
+  ) {
+    return desired;
+  }
+
+  if (bot.ai.avoidanceMistakeTimer > 0) {
+    return desiredNormalized;
+  }
+
+  const avoidanceVector = computeAvoidanceVector(
+    state,
+    bot,
+    headPosition,
+    desiredNormalized,
+  );
+  if (!avoidanceVector) {
+    return desiredNormalized;
+  }
+
+  if (state.random() < avoidance.mistakeChance) {
+    bot.ai.avoidanceMistakeTimer = avoidance.mistakeDuration;
+    return desiredNormalized;
+  }
+
+  const weight = clamp(avoidance.strength, 0, 1);
+  const blended = add(
+    scale(desiredNormalized, 1 - weight),
+    scale(avoidanceVector, weight),
+  );
+  const normalized = normalize(blended);
+
+  if (Math.abs(normalized.x) < EPSILON && Math.abs(normalized.y) < EPSILON) {
+    return avoidanceVector;
+  }
+
+  return normalized;
+};
+
+const computeAvoidanceVector = (
+  state: GameState,
+  bot: BotSnakeState,
+  headPosition: Vector2,
+  desiredDirection: Vector2,
+): Vector2 | null => {
+  const {
+    bots: {
+      avoidance: { radius, sampleStride },
+    },
+  } = state.config;
+
+  const stride = Math.max(1, Math.floor(sampleStride));
+  let accumulator = vec(0, 0);
+  let found = false;
+
+  const accumulateFromSnake = (snake: SnakeState, origin: Vector2, weight: number) => {
+    const segments = snake.segments;
+    const bias = snake.kind === 'player' ? weight * 1.2 : weight;
+
+    for (let i = 0; i < segments.length; i += stride) {
+      if (snake === bot && i < 6) continue;
+      const segment = segments[i];
+      const offset = subtract(origin, segment.position);
+      const dist = length(offset);
+      if (dist <= EPSILON || dist > radius) continue;
+
+      const falloff = (1 - dist / radius) * bias;
+      if (falloff <= 0) continue;
+
+      const contribution = scale(offset, falloff / Math.max(dist, EPSILON));
+      accumulator = add(accumulator, contribution);
+      found = true;
+    }
+  };
+
+  const gather = (origin: Vector2, weight: number) => {
+    accumulateFromSnake(state.player, origin, weight);
+    for (const other of state.bots) {
+      if (other === bot) continue;
+      accumulateFromSnake(other, origin, weight);
+    }
+  };
+
+  gather(headPosition, 1);
+
+  const hasDirection =
+    Math.abs(desiredDirection.x) > EPSILON || Math.abs(desiredDirection.y) > EPSILON;
+  if (hasDirection) {
+    const lookaheadDistance = radius * 0.65;
+    const lookahead = add(headPosition, scale(desiredDirection, lookaheadDistance));
+    gather(lookahead, 0.75);
+  }
+
+  if (!found) {
+    return null;
+  }
+
+  const magnitude = length(accumulator);
+  if (magnitude <= EPSILON) {
+    return null;
+  }
+
+  return scale(accumulator, 1 / magnitude);
 };
 
 const enterMode = (state: GameState, bot: BotSnakeState, mode: BotMode) => {
@@ -401,6 +524,7 @@ const createBotAIState = (state: GameState): BotAIState => {
     wanderAngle,
     wanderTimer: randomRange(wander.intervalMin, wander.intervalMax, random),
     cooldownTimer: 0,
+    avoidanceMistakeTimer: 0,
   };
 };
 

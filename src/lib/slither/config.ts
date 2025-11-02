@@ -62,6 +62,13 @@ export type SlitherConfig = {
       duration: number;
       cooldown: number;
     };
+    avoidance: {
+      radius: number;
+      strength: number;
+      mistakeChance: number;
+      mistakeDuration: number;
+      sampleStride: number;
+    };
   };
   palette: SlitherPalette;
 };
@@ -117,6 +124,13 @@ export const defaultSlitherConfig: SlitherConfig = {
       playerRadius: 260,
       duration: 1.2,
       cooldown: 1.75,
+    },
+    avoidance: {
+      radius: 120,
+      strength: 0.65,
+      mistakeChance: 0.12,
+      mistakeDuration: 1.6,
+      sampleStride: 3,
     },
   },
   palette: {
