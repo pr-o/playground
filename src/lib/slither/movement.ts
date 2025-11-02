@@ -1,5 +1,11 @@
 import { EPSILON, add, clamp, distance, rotateTowards } from './math';
-import type { GameState, SlitherInputState, SnakeSegment, Vector2 } from './types';
+import type {
+  GameState,
+  SlitherInputState,
+  SnakeSegment,
+  SnakeState,
+  Vector2,
+} from './types';
 
 const PATH_RESERVE_FACTOR = 4;
 const MIN_LENGTH_PADDING = 0.5;
@@ -9,7 +15,24 @@ export const updatePlayerMovement = (
   input: SlitherInputState,
   dt: number,
 ) => {
-  const snake = state.player;
+  updateSnakeMovement(state, state.player, input.steering, dt, {
+    allowBoost: true,
+    boosting: input.isBoosting,
+  });
+};
+
+export type UpdateSnakeMovementOptions = {
+  allowBoost?: boolean;
+  boosting?: boolean;
+};
+
+export const updateSnakeMovement = (
+  state: GameState,
+  snake: SnakeState,
+  steering: Vector2,
+  dt: number,
+  options: UpdateSnakeMovementOptions = {},
+) => {
   const spacing = state.config.snake.segmentSpacing;
   const head = snake.segments[0];
   if (!head) return;
@@ -22,7 +45,10 @@ export const updatePlayerMovement = (
   let speedMultiplier = 1;
   let isBoosting = false;
 
-  if (input.isBoosting && boostCharge > EPSILON) {
+  const allowBoost = options.allowBoost ?? false;
+  const boostRequested = allowBoost && options.boosting && boostCharge > EPSILON;
+
+  if (boostRequested) {
     boostCharge = clamp(boostCharge - drainRate * dt, 0, 1);
     if (boostCharge > EPSILON) {
       speedMultiplier = state.config.boostMultiplier;
@@ -34,14 +60,13 @@ export const updatePlayerMovement = (
     }
   }
 
-  if (!isBoosting) {
+  if (!isBoosting && allowBoost) {
     boostCharge = clamp(boostCharge + regenRate * dt, 0, 1);
   }
 
   const baseSpeed = snake.speed;
   const speed = baseSpeed * speedMultiplier;
 
-  const steering = input.steering;
   const hasSteering = Math.abs(steering.x) > EPSILON || Math.abs(steering.y) > EPSILON;
   const desiredAngle = hasSteering ? Math.atan2(steering.y, steering.x) : head.angle;
   const maxTurnRate = speed / Math.max(state.config.snake.minTurnRadius, 1);
@@ -80,7 +105,7 @@ export const updatePlayerMovement = (
   snake.length = tail ? tail.distance : snake.length;
 
   snake.isBoosting = isBoosting;
-  snake.boostCharge = boostCharge;
+  snake.boostCharge = allowBoost ? boostCharge : snake.boostCharge;
   snake.currentSpeed = speed;
 };
 

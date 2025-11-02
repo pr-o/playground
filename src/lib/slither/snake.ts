@@ -1,7 +1,7 @@
 import type { SlitherConfig } from './config';
 import { createId } from './id';
 import { clamp, vec } from './math';
-import type { SnakeKind, SnakeSegment, SnakeState, Vector2 } from './types';
+import type { BotAIState, SnakeKind, SnakeSegment, SnakeState, Vector2 } from './types';
 
 export type SnakeInitOptions = {
   id?: string;
@@ -15,6 +15,7 @@ export type SnakeInitOptions = {
   boostCharge?: number;
   growthReserve?: number;
   score?: number;
+  ai?: BotAIState;
 };
 
 export const createSnake = (
@@ -55,6 +56,7 @@ export const createSnake = (
     path,
     growthReserve: Math.max(0, options.growthReserve ?? 0),
     score: Math.max(0, options.score ?? 0),
+    ai: options.ai,
   };
 };
 

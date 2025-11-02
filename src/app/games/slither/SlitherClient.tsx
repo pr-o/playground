@@ -17,6 +17,7 @@ import {
   updateParticles,
   updateCamera,
   updatePlayerMovement,
+  updateBots,
   useSlitherInput,
 } from '@/lib/slither';
 
@@ -74,6 +75,7 @@ export const SlitherClient = () => {
         currentState.elapsed += delta;
         applyGrowthReserve(currentState, delta);
         updatePlayerMovement(currentState, latestInputRef.current, delta);
+        updateBots(currentState, delta);
         const pelletResult = processPelletConsumption(currentState);
         if (pelletResult) {
           for (const pellet of pelletResult.consumed) {

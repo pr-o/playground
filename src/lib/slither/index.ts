@@ -14,3 +14,4 @@ export * from './movement';
 export * from './pellets';
 export * from './growth';
 export * from './particles';
+export * from './bots';

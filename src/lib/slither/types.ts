@@ -13,6 +13,19 @@ export type SnakeSegment = {
   distance: number;
 };
 
+export type BotMode = 'wander' | 'chase' | 'evade';
+
+export type BotAIState = {
+  mode: BotMode;
+  modeSince: number;
+  targetDirection: Vector2;
+  targetPelletId: string | null;
+  targetPosition: Vector2 | null;
+  wanderAngle: number;
+  wanderTimer: number;
+  cooldownTimer: number;
+};
+
 export type SnakeState = {
   id: string;
   kind: SnakeKind;
@@ -27,6 +40,12 @@ export type SnakeState = {
   path: Vector2[];
   growthReserve: number;
   score: number;
+  ai?: BotAIState;
+};
+
+export type BotSnakeState = SnakeState & {
+  kind: 'bot';
+  ai: BotAIState;
 };
 
 export type PelletKind = 'normal' | 'rare' | 'boost';
@@ -99,7 +118,7 @@ export type GameState = {
   config: SlitherConfig;
   camera: CameraState;
   player: SnakeState;
-  bots: SnakeState[];
+  bots: BotSnakeState[];
   pellets: Pellet[];
   particles: Particle[];
   elapsed: number;

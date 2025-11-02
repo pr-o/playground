@@ -1,6 +1,6 @@
 import { Container, Graphics } from 'pixi.js';
 import type { SlitherApp } from './pixi';
-import type { GameState, SnakeSegment } from './types';
+import type { GameState, SnakeSegment, SnakeState } from './types';
 
 export type SlitherRenderer = {
   root: Container;
@@ -31,7 +31,7 @@ export const createSlitherRenderer = (
     currentState = nextState;
     drawPellets(pellets, currentState);
     drawParticles(particles, currentState);
-    drawSnake(snakes, currentState);
+    drawSnakes(snakes, currentState);
     applyCamera(app, world, currentState);
   };
 
@@ -104,20 +104,35 @@ const drawParticles = (gfx: Graphics, state: GameState) => {
   }
 };
 
-const drawSnake = (gfx: Graphics, state: GameState) => {
+const drawSnakes = (gfx: Graphics, state: GameState) => {
   gfx.clear();
-  const palette = state.config.palette.player;
+
+  for (const bot of state.bots) {
+    drawSnakeBody(gfx, state, bot, 0.8);
+  }
+
+  drawSnakeBody(gfx, state, state.player, 1);
+};
+
+const drawSnakeBody = (
+  gfx: Graphics,
+  state: GameState,
+  snake: SnakeState,
+  opacity: number,
+) => {
+  const palette = snake.kind === 'player' ? state.config.palette.player : [snake.color];
 
   const radius = state.config.snake.segmentSpacing * 0.55;
-  const segments = state.player.segments;
+  const segments = snake.segments;
   const lastIndex = segments.length - 1;
 
   for (let i = lastIndex; i >= 0; i -= 1) {
     const segment = segments[i];
     const color = pickGradientColor(palette, i / Math.max(lastIndex, 1));
 
-    const alpha = 0.65 + 0.35 * (1 - i / Math.max(lastIndex, 1));
-    const scale = 0.75 + 0.25 * (1 - i / Math.max(lastIndex, 1));
+    const t = 1 - i / Math.max(lastIndex, 1);
+    const alpha = (0.45 + 0.45 * t) * opacity;
+    const scale = 0.7 + 0.3 * t;
 
     gfx.circle(segment.position.x, segment.position.y, radius * scale).fill({
       color,
@@ -125,14 +140,16 @@ const drawSnake = (gfx: Graphics, state: GameState) => {
     });
   }
 
-  drawHeadHighlight(gfx, segments);
+  drawHeadHighlight(gfx, segments, snake.kind === 'player');
 };
 
-const drawHeadHighlight = (gfx: Graphics, segments: SnakeSegment[]) => {
+const drawHeadHighlight = (gfx: Graphics, segments: SnakeSegment[], accent: boolean) => {
   const head = segments[0];
   if (!head) return;
 
-  gfx.circle(head.position.x, head.position.y, 4).fill({ color: 0xffffff, alpha: 0.9 });
+  const color = accent ? 0xffffff : 0xffffff;
+  const alpha = accent ? 0.9 : 0.45;
+  gfx.circle(head.position.x, head.position.y, 4).fill({ color, alpha });
 };
 
 const applyCamera = (app: SlitherApp, world: Container, state: GameState) => {

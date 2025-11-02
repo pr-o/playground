@@ -5,7 +5,8 @@ import { TAU } from './math';
 import { seedPellets } from './pellets';
 import { createSnake } from './snake';
 import { createSpatialIndex, insertSpatialOccupant } from './spatial-index';
-import type { GameState, Vector2 } from './types';
+import type { BotSnakeState, GameState, Vector2 } from './types';
+import { spawnBots } from './bots';
 
 export type CreateGameStateOptions = {
   config?: SlitherConfig;
@@ -42,17 +43,21 @@ export const createGameState = (options: CreateGameStateOptions = {}): GameState
     });
   }
 
-  return {
+  const state: GameState = {
     config,
     camera,
     player,
-    bots: [],
+    bots: [] as BotSnakeState[],
     pellets,
     particles: [],
     elapsed: 0,
     spatialIndex,
     random,
   };
+
+  spawnBots(state);
+
+  return state;
 };
 
 const spawnNearCenter = (radius: number, random: () => number): Vector2 => {

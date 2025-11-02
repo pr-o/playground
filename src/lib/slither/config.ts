@@ -41,6 +41,28 @@ export type SlitherConfig = {
     maxTrail: number;
     burstPool: number;
   };
+  bots: {
+    count: number;
+    minLength: number;
+    maxLength: number;
+    minSpeedMultiplier: number;
+    maxSpeedMultiplier: number;
+    spawnRadiusFactor: number;
+    wander: {
+      intervalMin: number;
+      intervalMax: number;
+      angleJitter: number;
+    };
+    chase: {
+      pelletRadius: number;
+      minPelletValue: number;
+    };
+    evade: {
+      playerRadius: number;
+      duration: number;
+      cooldown: number;
+    };
+  };
   palette: SlitherPalette;
 };
 
@@ -74,6 +96,28 @@ export const defaultSlitherConfig: SlitherConfig = {
   particles: {
     maxTrail: 160,
     burstPool: 96,
+  },
+  bots: {
+    count: 6,
+    minLength: 16,
+    maxLength: 42,
+    minSpeedMultiplier: 0.8,
+    maxSpeedMultiplier: 1.1,
+    spawnRadiusFactor: 0.5,
+    wander: {
+      intervalMin: 1.2,
+      intervalMax: 2.8,
+      angleJitter: 0.65,
+    },
+    chase: {
+      pelletRadius: 420,
+      minPelletValue: 8,
+    },
+    evade: {
+      playerRadius: 260,
+      duration: 1.2,
+      cooldown: 1.75,
+    },
   },
   palette: {
     background: '#040714',
