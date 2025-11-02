@@ -16,6 +16,7 @@ export type SnakeInitOptions = {
   growthReserve?: number;
   score?: number;
   ai?: BotAIState;
+  generation?: number;
 };
 
 export const createSnake = (
@@ -57,6 +58,7 @@ export const createSnake = (
     growthReserve: Math.max(0, options.growthReserve ?? 0),
     score: Math.max(0, options.score ?? 0),
     ai: options.ai,
+    generation: options.generation ?? (kind === 'bot' ? 0 : undefined),
   };
 };
 

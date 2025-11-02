@@ -1,6 +1,8 @@
 import { updateSnakeMovement } from './movement';
 import { querySpatialIndex } from './spatial-index';
 import { createSnake } from './snake';
+import { spawnPelletCluster } from './pellets';
+import { createId } from './id';
 import {
   EPSILON,
   TAU,
@@ -23,63 +25,34 @@ import type {
   Vector2,
 } from './types';
 
+type BotSpawnOptions = {
+  generation: number;
+  colorIndex?: number;
+};
+
 export const spawnBots = (state: GameState) => {
-  const {
-    config: {
-      bots: {
-        count,
-        minLength,
-        maxLength,
-        minSpeedMultiplier,
-        maxSpeedMultiplier,
-        spawnRadiusFactor,
-      },
-      worldRadius,
-      baseSpeed,
-    },
-    random,
-    player,
-  } = state;
+  state.bots = [];
+  state.botRespawns = [];
+  const targetCount = state.config.bots.count;
 
-  const bots: BotSnakeState[] = [];
-  const spawnRadius = clamp(spawnRadiusFactor, 0.1, 1) * worldRadius;
-  const playerHead = player.segments[0]?.position ?? vec(0, 0);
-
-  for (let i = 0; i < count; i += 1) {
-    const speedMultiplier =
-      minSpeedMultiplier +
-      (maxSpeedMultiplier - minSpeedMultiplier) * clamp(random(), 0, 1);
-    const targetLength = minLength + (maxLength - minLength) * clamp(random(), 0, 1);
-
-    const position = resolveSpawnPosition(spawnRadius, worldRadius, playerHead, random);
-    const angle = random() * TAU;
-    const color = sampleBotColor(state, i);
-    const ai = createBotAIState(state);
-
-    const snake = createSnake(state.config, {
-      kind: 'bot',
-      length: targetLength,
-      position,
-      angle,
-      speed: baseSpeed * speedMultiplier,
-      targetLength,
-      color,
-      ai,
-    }) as BotSnakeState;
-
-    bots.push(snake);
+  for (let i = 0; i < targetCount; i += 1) {
+    const bot = createBotSnake(state, {
+      generation: 0,
+      colorIndex: i,
+    });
+    state.bots.push(bot);
   }
-
-  state.bots = bots;
 };
 
 export const updateBots = (state: GameState, dt: number) => {
+  processBotRespawns(state, dt);
   if (state.bots.length === 0) return;
 
   const playerHead = state.player.segments[0];
   if (!playerHead) return;
 
-  for (const bot of state.bots) {
+  for (let index = state.bots.length - 1; index >= 0; index -= 1) {
+    const bot = state.bots[index];
     const head = bot.segments[0];
     const ai = bot.ai;
     if (!head || !ai) continue;
@@ -97,8 +70,177 @@ export const updateBots = (state: GameState, dt: number) => {
     const steering = resolveBotSteering(state, bot, head.position, playerHead.position);
     const adjusted = applyAvoidance(state, bot, head.position, steering);
     updateSnakeMovement(state, bot, adjusted, dt, { allowBoost: false });
+
+    if (handleBotDefeat(state, bot, index)) {
+      continue;
+    }
   }
 };
+
+function createBotSnake(state: GameState, options: BotSpawnOptions): BotSnakeState {
+  const { config, random } = state;
+
+  const {
+    bots: {
+      minLength,
+      maxLength,
+      minSpeedMultiplier,
+      maxSpeedMultiplier,
+      spawnRadiusFactor,
+      respawn,
+    },
+    worldRadius,
+    baseSpeed,
+  } = config;
+
+  const baseLength = randomRange(minLength, maxLength, random);
+  const lengthMultiplier = 1 + respawn.lengthGrowth * options.generation;
+  const targetLength = baseLength * Math.max(1, lengthMultiplier);
+
+  const speedMultiplier =
+    randomRange(minSpeedMultiplier, maxSpeedMultiplier, random) *
+    (1 + respawn.speedGrowth * options.generation);
+
+  const spawnRadius = clamp(spawnRadiusFactor, 0.1, 1) * worldRadius;
+  const position = resolveSpawnPosition(state, spawnRadius);
+  const angle = random() * TAU;
+  const color = sampleBotColor(state, options.colorIndex);
+  const ai = createBotAIState(state);
+
+  const snake = createSnake(config, {
+    kind: 'bot',
+    length: targetLength,
+    targetLength,
+    position,
+    angle,
+    speed: baseSpeed * speedMultiplier,
+    color,
+    ai,
+    generation: options.generation,
+  }) as BotSnakeState;
+
+  snake.generation = options.generation;
+  snake.ai = ai;
+
+  return snake;
+}
+
+function processBotRespawns(state: GameState, dt: number) {
+  if (state.botRespawns.length === 0) return;
+
+  const targetCount = state.config.bots.count;
+
+  for (let i = state.botRespawns.length - 1; i >= 0; i -= 1) {
+    const entry = state.botRespawns[i];
+    entry.timeRemaining -= dt;
+
+    if (entry.timeRemaining > 0) continue;
+    if (state.bots.length >= targetCount) {
+      entry.timeRemaining = 0.1;
+      continue;
+    }
+
+    const bot = createBotSnake(state, { generation: entry.generation });
+    state.bots.push(bot);
+    state.botRespawns.splice(i, 1);
+  }
+}
+
+function handleBotDefeat(state: GameState, bot: BotSnakeState, index: number): boolean {
+  const reason = detectBotDefeat(state, bot);
+  if (!reason) return false;
+
+  const head = bot.segments[0];
+  if (head) {
+    const spacing = state.config.snake.segmentSpacing;
+    const pellets = Math.max(
+      6,
+      Math.round(
+        (bot.length / Math.max(spacing, EPSILON)) *
+          state.config.bots.respawn.pelletMultiplier,
+      ),
+    );
+
+    spawnPelletCluster(state, {
+      center: head.position,
+      count: pellets,
+      spread: state.config.bots.respawn.pelletSpread,
+    });
+  }
+
+  state.bots.splice(index, 1);
+  scheduleBotRespawn(state, (bot.generation ?? 0) + 1);
+
+  return true;
+}
+
+function scheduleBotRespawn(state: GameState, generation: number) {
+  const {
+    respawn: { delayMin, delayMax },
+  } = state.config.bots;
+
+  const delay = randomRange(delayMin, delayMax, state.random);
+
+  state.botRespawns.push({
+    id: createId('bot-respawn'),
+    timeRemaining: delay,
+    generation,
+  });
+}
+
+type BotDefeatReason = 'out-of-bounds' | 'player' | 'bot' | 'self';
+
+function detectBotDefeat(state: GameState, bot: BotSnakeState): BotDefeatReason | null {
+  const head = bot.segments[0];
+  if (!head) return null;
+
+  const spacing = state.config.snake.segmentSpacing;
+  const worldRadius = state.config.worldRadius;
+  const collisionRadius = spacing * 0.65;
+
+  if (length(head.position) >= worldRadius - spacing * 0.25) {
+    return 'out-of-bounds';
+  }
+
+  if (collidesWithSnake(head.position, state.player, collisionRadius)) {
+    return 'player';
+  }
+
+  for (const other of state.bots) {
+    if (other === bot) continue;
+    if (collidesWithSnake(head.position, other, collisionRadius)) {
+      return 'bot';
+    }
+  }
+
+  if (collidesWithSnake(head.position, bot, collisionRadius, 6, 2)) {
+    return 'self';
+  }
+
+  return null;
+}
+
+function collidesWithSnake(
+  point: Vector2,
+  snake: SnakeState,
+  radius: number,
+  skipSegments = 0,
+  stride = 2,
+): boolean {
+  const radiusSq = radius * radius;
+  const segments = snake.segments;
+
+  for (let i = skipSegments; i < segments.length; i += Math.max(1, stride)) {
+    const segment = segments[i];
+    const dx = point.x - segment.position.x;
+    const dy = point.y - segment.position.y;
+    if (dx * dx + dy * dy <= radiusSq) {
+      return true;
+    }
+  }
+
+  return false;
+}
 
 const updateBotState = (
   state: GameState,
@@ -448,17 +590,34 @@ const resolvePelletTarget = (
   return best;
 };
 
-const resolveSpawnPosition = (
-  spawnRadius: number,
-  worldRadius: number,
-  playerHead: Vector2,
-  random: () => number,
-): Vector2 => {
-  const minDistanceFromPlayer = Math.min(worldRadius * 0.3, 480);
+const resolveSpawnPosition = (state: GameState, spawnRadius: number): Vector2 => {
+  const {
+    config: { worldRadius },
+    random,
+    player,
+    bots,
+  } = state;
 
-  for (let attempt = 0; attempt < 8; attempt += 1) {
+  const playerHead = player.segments[0]?.position ?? vec(0, 0);
+  const minDistanceFromPlayer = Math.min(worldRadius * 0.3, 520);
+  const minDistanceFromBots = state.config.snake.segmentSpacing * 8;
+
+  for (let attempt = 0; attempt < 12; attempt += 1) {
     const candidate = randomPointInCircle(spawnRadius, random);
-    if (distance(candidate, playerHead) >= minDistanceFromPlayer) {
+    if (distance(candidate, playerHead) < minDistanceFromPlayer) continue;
+
+    let tooClose = false;
+
+    for (const other of bots) {
+      const head = other.segments[0];
+      if (!head) continue;
+      if (distance(candidate, head.position) < minDistanceFromBots) {
+        tooClose = true;
+        break;
+      }
+    }
+
+    if (!tooClose) {
       return candidate;
     }
   }
@@ -528,8 +687,12 @@ const createBotAIState = (state: GameState): BotAIState => {
   };
 };
 
-const sampleBotColor = (state: GameState, index: number) => {
+const sampleBotColor = (state: GameState, index?: number) => {
   const palette = state.config.palette.bots;
   if (palette.length === 0) return '#ffffff';
-  return palette[index % palette.length];
+  if (typeof index === 'number') {
+    return palette[index % palette.length];
+  }
+  const randomIndex = Math.floor(state.random() * palette.length);
+  return palette[randomIndex];
 };

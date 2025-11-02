@@ -42,11 +42,13 @@ export type SnakeState = {
   growthReserve: number;
   score: number;
   ai?: BotAIState;
+  generation?: number;
 };
 
 export type BotSnakeState = SnakeState & {
   kind: 'bot';
   ai: BotAIState;
+  generation: number;
 };
 
 export type PelletKind = 'normal' | 'rare' | 'boost';
@@ -125,4 +127,13 @@ export type GameState = {
   elapsed: number;
   spatialIndex: SpatialHashIndex;
   random: RandomFn;
+  botRespawns: PendingBotRespawnQueue;
 };
+
+export type PendingBotRespawn = {
+  id: string;
+  timeRemaining: number;
+  generation: number;
+};
+
+export type PendingBotRespawnQueue = PendingBotRespawn[];

@@ -104,15 +104,26 @@ export const processPelletConsumption = (
   };
 };
 
-const createPellet = (config: SlitherConfig, random: () => number): Pellet => {
-  const kind = rollPelletKind(config, random);
-  const position = randomPointInArena(config.worldRadius, random);
+export type CreatePelletOptions = {
+  kind?: PelletKind;
+  position?: Vector2;
+  value?: number;
+};
+
+export const createPellet = (
+  config: SlitherConfig,
+  random: () => number,
+  options: CreatePelletOptions = {},
+): Pellet => {
+  const kind = options.kind ?? rollPelletKind(config, random);
+  const position = options.position ?? randomPointInArena(config.worldRadius, random);
+  const value = options.value ?? pelletValue(kind, config);
 
   return {
     id: createId('pellet'),
     kind,
     position,
-    value: pelletValue(kind, config),
+    value,
     radius: config.pellet.radius,
     color: pelletColor(kind, config),
   };
@@ -160,4 +171,52 @@ const randomPointInCircle = (radius: number, random: () => number): Vector2 => {
     x: Math.cos(theta) * distance,
     y: Math.sin(theta) * distance,
   };
+};
+
+export type PelletClusterOptions = {
+  center: Vector2;
+  count: number;
+  spread?: number;
+  kind?: PelletKind;
+  valueMultiplier?: number;
+};
+
+export const spawnPelletCluster = (state: GameState, options: PelletClusterOptions) => {
+  const count = Math.max(1, Math.floor(options.count));
+  if (count <= 0) return;
+
+  const { config, random, pellets, spatialIndex } = state;
+
+  const spread = options.spread ?? config.bots.respawn.pelletSpread;
+  const kind = options.kind;
+  const valueMultiplier = options.valueMultiplier ?? 1;
+  const maxCount = config.pellet.maxCount;
+
+  for (let i = 0; i < count; i += 1) {
+    if (pellets.length >= maxCount) break;
+
+    const angle = random() * TAU;
+    const distance = Math.sqrt(random()) * spread;
+    const position = {
+      x: options.center.x + Math.cos(angle) * distance,
+      y: options.center.y + Math.sin(angle) * distance,
+    };
+
+    const pellet = createPellet(config, random, {
+      kind,
+      position,
+      value: Math.max(
+        config.snake.growthPerPellet * valueMultiplier,
+        config.snake.growthPerPellet * 0.25,
+      ),
+    });
+
+    pellets.push(pellet);
+    insertSpatialOccupant(spatialIndex, {
+      id: pellet.id,
+      kind: 'pellet',
+      position: pellet.position,
+      radius: pellet.radius,
+    });
+  }
 };

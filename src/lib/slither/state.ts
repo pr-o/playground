@@ -53,6 +53,7 @@ export const createGameState = (options: CreateGameStateOptions = {}): GameState
     elapsed: 0,
     spatialIndex,
     random,
+    botRespawns: [],
   };
 
   spawnBots(state);

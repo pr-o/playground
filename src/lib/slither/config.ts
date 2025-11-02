@@ -69,6 +69,14 @@ export type SlitherConfig = {
       mistakeDuration: number;
       sampleStride: number;
     };
+    respawn: {
+      delayMin: number;
+      delayMax: number;
+      lengthGrowth: number;
+      speedGrowth: number;
+      pelletMultiplier: number;
+      pelletSpread: number;
+    };
   };
   palette: SlitherPalette;
 };
@@ -131,6 +139,14 @@ export const defaultSlitherConfig: SlitherConfig = {
       mistakeChance: 0.12,
       mistakeDuration: 1.6,
       sampleStride: 3,
+    },
+    respawn: {
+      delayMin: 2.4,
+      delayMax: 4.2,
+      lengthGrowth: 0.08,
+      speedGrowth: 0.06,
+      pelletMultiplier: 0.35,
+      pelletSpread: 36,
     },
   },
   palette: {
