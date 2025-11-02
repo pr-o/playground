@@ -3,6 +3,7 @@ import { querySpatialIndex } from './spatial-index';
 import { createSnake } from './snake';
 import { spawnPelletCluster } from './pellets';
 import { createId } from './id';
+import { collidesWithSnake } from './collision';
 import {
   EPSILON,
   TAU,
@@ -262,28 +263,6 @@ function detectBotDefeat(state: GameState, bot: BotSnakeState): BotDefeatReason 
   }
 
   return null;
-}
-
-function collidesWithSnake(
-  point: Vector2,
-  snake: SnakeState,
-  radius: number,
-  skipSegments = 0,
-  stride = 2,
-): boolean {
-  const radiusSq = radius * radius;
-  const segments = snake.segments;
-
-  for (let i = skipSegments; i < segments.length; i += Math.max(1, stride)) {
-    const segment = segments[i];
-    const dx = point.x - segment.position.x;
-    const dy = point.y - segment.position.y;
-    if (dx * dx + dy * dy <= radiusSq) {
-      return true;
-    }
-  }
-
-  return false;
 }
 
 const updateBotState = (

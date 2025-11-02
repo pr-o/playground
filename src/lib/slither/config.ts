@@ -41,6 +41,13 @@ export type SlitherConfig = {
     maxTrail: number;
     burstPool: number;
   };
+  player: {
+    crashPelletMultiplier: number;
+    crashPelletSpread: number;
+    boundaryForgiveness: number;
+    selfCollisionSkip: number;
+    selfCollisionStride: number;
+  };
   bots: {
     count: number;
     minLength: number;
@@ -119,6 +126,13 @@ export const defaultSlitherConfig: SlitherConfig = {
   particles: {
     maxTrail: 160,
     burstPool: 96,
+  },
+  player: {
+    crashPelletMultiplier: 0.45,
+    crashPelletSpread: 48,
+    boundaryForgiveness: 18,
+    selfCollisionSkip: 8,
+    selfCollisionStride: 2,
   },
   bots: {
     count: 6,

@@ -59,6 +59,8 @@ export const createGameState = (options: CreateGameStateOptions = {}): GameState
       averageFrameTime: 1 / 60,
       cooldown: 0,
     },
+    status: 'running',
+    playerCrash: null,
   };
 
   spawnBots(state);

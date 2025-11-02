@@ -79,6 +79,16 @@ export type Particle = {
   alpha: number;
 };
 
+export type GameStatus = 'running' | 'player-crashed';
+
+export type PlayerCrashReason = 'boundary' | 'self';
+
+export type PlayerCrashState = {
+  reason: PlayerCrashReason;
+  position: Vector2;
+  at: number;
+};
+
 export type CameraState = {
   position: Vector2;
   zoom: number;
@@ -135,6 +145,8 @@ export type GameState = {
   random: RandomFn;
   botRespawns: PendingBotRespawnQueue;
   botBudget: BotBudgetState;
+  status: GameStatus;
+  playerCrash: PlayerCrashState | null;
 };
 
 export type PendingBotRespawn = {

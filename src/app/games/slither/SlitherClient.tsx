@@ -18,6 +18,7 @@ import {
   updateCamera,
   updatePlayerMovement,
   updateBots,
+  updatePlayerCollisions,
   useSlitherInput,
 } from '@/lib/slither';
 
@@ -73,18 +74,27 @@ export const SlitherClient = () => {
         if (!currentState || !currentRenderer) return;
 
         currentState.elapsed += delta;
-        applyGrowthReserve(currentState, delta);
-        updatePlayerMovement(currentState, latestInputRef.current, delta);
-        updateBots(currentState, delta, stats.frameTime);
-        const pelletResult = processPelletConsumption(currentState);
-        if (pelletResult) {
-          for (const pellet of pelletResult.consumed) {
-            emitPelletBurst(currentState, pellet);
-          }
+        const isRunning = currentState.status === 'running';
+
+        if (isRunning) {
+          applyGrowthReserve(currentState, delta);
+          updatePlayerMovement(currentState, latestInputRef.current, delta);
+          updatePlayerCollisions(currentState);
         }
 
-        if (currentState.player.isBoosting) {
-          emitBoostTrail(currentState);
+        updateBots(currentState, delta, stats.frameTime);
+
+        if (currentState.status === 'running') {
+          const pelletResult = processPelletConsumption(currentState);
+          if (pelletResult) {
+            for (const pellet of pelletResult.consumed) {
+              emitPelletBurst(currentState, pellet);
+            }
+          }
+
+          if (currentState.player.isBoosting) {
+            emitBoostTrail(currentState);
+          }
         }
 
         updateParticles(currentState, delta);
