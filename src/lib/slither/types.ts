@@ -51,6 +51,12 @@ export type BotSnakeState = SnakeState & {
   generation: number;
 };
 
+export type BotBudgetState = {
+  targetCount: number;
+  averageFrameTime: number;
+  cooldown: number;
+};
+
 export type PelletKind = 'normal' | 'rare' | 'boost';
 
 export type Pellet = {
@@ -128,6 +134,7 @@ export type GameState = {
   spatialIndex: SpatialHashIndex;
   random: RandomFn;
   botRespawns: PendingBotRespawnQueue;
+  botBudget: BotBudgetState;
 };
 
 export type PendingBotRespawn = {

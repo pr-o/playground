@@ -33,7 +33,10 @@ type BotSpawnOptions = {
 export const spawnBots = (state: GameState) => {
   state.bots = [];
   state.botRespawns = [];
-  const targetCount = state.config.bots.count;
+  const targetCount = Math.max(
+    0,
+    Math.min(state.botBudget.targetCount, state.config.bots.count),
+  );
 
   for (let i = 0; i < targetCount; i += 1) {
     const bot = createBotSnake(state, {
@@ -44,7 +47,8 @@ export const spawnBots = (state: GameState) => {
   }
 };
 
-export const updateBots = (state: GameState, dt: number) => {
+export const updateBots = (state: GameState, dt: number, frameTime?: number) => {
+  updateBotBudget(state, frameTime ?? dt);
   processBotRespawns(state, dt);
   if (state.bots.length === 0) return;
 
@@ -125,10 +129,50 @@ function createBotSnake(state: GameState, options: BotSpawnOptions): BotSnakeSta
   return snake;
 }
 
+function updateBotBudget(state: GameState, frameTime: number) {
+  const { performance, count: maxCount } = state.config.bots;
+
+  const budget = state.botBudget;
+  const clampedFrame = clamp(frameTime, 0, 0.12);
+  const smoothing = clamp(performance.smoothing, 0.01, 1);
+
+  if (!Number.isFinite(budget.averageFrameTime) || budget.averageFrameTime <= 0) {
+    budget.averageFrameTime = clampedFrame;
+  } else {
+    budget.averageFrameTime += (clampedFrame - budget.averageFrameTime) * smoothing;
+  }
+
+  budget.cooldown = Math.max(0, budget.cooldown - clampedFrame);
+
+  const minCount = Math.max(1, Math.min(performance.minCount, maxCount));
+  const adjustStep = Math.max(1, Math.floor(performance.adjustStep));
+
+  if (budget.cooldown <= 0) {
+    if (
+      budget.averageFrameTime > performance.degradeThreshold &&
+      budget.targetCount > minCount
+    ) {
+      budget.targetCount = Math.max(minCount, budget.targetCount - adjustStep);
+      budget.cooldown = performance.cooldown;
+    } else if (
+      budget.averageFrameTime < performance.recoveryThreshold &&
+      budget.targetCount < maxCount
+    ) {
+      budget.targetCount = Math.min(maxCount, budget.targetCount + adjustStep);
+      budget.cooldown = performance.cooldown;
+    }
+  }
+
+  budget.targetCount = Math.min(
+    maxCount,
+    Math.max(minCount, Math.floor(budget.targetCount)),
+  );
+}
+
 function processBotRespawns(state: GameState, dt: number) {
   if (state.botRespawns.length === 0) return;
 
-  const targetCount = state.config.bots.count;
+  const targetCount = Math.min(state.botBudget.targetCount, state.config.bots.count);
 
   for (let i = state.botRespawns.length - 1; i >= 0; i -= 1) {
     const entry = state.botRespawns[i];

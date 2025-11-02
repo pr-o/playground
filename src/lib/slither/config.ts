@@ -77,6 +77,14 @@ export type SlitherConfig = {
       pelletMultiplier: number;
       pelletSpread: number;
     };
+    performance: {
+      smoothing: number;
+      degradeThreshold: number;
+      recoveryThreshold: number;
+      adjustStep: number;
+      cooldown: number;
+      minCount: number;
+    };
   };
   palette: SlitherPalette;
 };
@@ -147,6 +155,14 @@ export const defaultSlitherConfig: SlitherConfig = {
       speedGrowth: 0.06,
       pelletMultiplier: 0.35,
       pelletSpread: 36,
+    },
+    performance: {
+      smoothing: 0.08,
+      degradeThreshold: 1 / 48,
+      recoveryThreshold: 1 / 58,
+      adjustStep: 1,
+      cooldown: 2.2,
+      minCount: 2,
     },
   },
   palette: {

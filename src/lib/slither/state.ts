@@ -54,6 +54,11 @@ export const createGameState = (options: CreateGameStateOptions = {}): GameState
     spatialIndex,
     random,
     botRespawns: [],
+    botBudget: {
+      targetCount: config.bots.count,
+      averageFrameTime: 1 / 60,
+      cooldown: 0,
+    },
   };
 
   spawnBots(state);

@@ -67,7 +67,7 @@ export const SlitherClient = () => {
       appRef.current = app;
       rendererRef.current = renderer;
       const loop = new GameLoop({ autoStart: true });
-      loop.onTick((delta) => {
+      loop.onTick((delta, stats) => {
         const currentState = stateRef.current;
         const currentRenderer = rendererRef.current;
         if (!currentState || !currentRenderer) return;
@@ -75,7 +75,7 @@ export const SlitherClient = () => {
         currentState.elapsed += delta;
         applyGrowthReserve(currentState, delta);
         updatePlayerMovement(currentState, latestInputRef.current, delta);
-        updateBots(currentState, delta);
+        updateBots(currentState, delta, stats.frameTime);
         const pelletResult = processPelletConsumption(currentState);
         if (pelletResult) {
           for (const pellet of pelletResult.consumed) {

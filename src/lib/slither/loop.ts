@@ -4,6 +4,7 @@ export type GameLoopStats = {
   frame: number;
   elapsed: number;
   delta: number;
+  frameTime: number;
 };
 
 export type GameLoopOptions = {
@@ -24,6 +25,7 @@ export class GameLoop {
   private accumulator = 0;
   private frame = 0;
   private elapsed = 0;
+  private lastFrameDuration = 1 / DEFAULT_FPS;
   private readonly ticks = new Set<GameLoopTick>();
 
   constructor(options: GameLoopOptions = {}) {
@@ -84,6 +86,7 @@ export class GameLoop {
 
     const delta = time - this.lastTime;
     this.lastTime = time;
+    this.lastFrameDuration = delta > 0 ? delta / 1000 : this.stepMs / 1000;
     this.accumulator += delta;
 
     let steps = 0;
@@ -105,6 +108,7 @@ export class GameLoop {
       frame: this.frame,
       elapsed: this.elapsed,
       delta: deltaSeconds,
+      frameTime: this.lastFrameDuration,
     };
 
     for (const tick of this.ticks) {
