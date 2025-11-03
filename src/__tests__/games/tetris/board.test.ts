@@ -4,9 +4,14 @@ import {
   canPlaceShape,
   clearCompletedLines,
   createEmptyBoard,
+  getCompletedLineIndexes,
   getTetrominoShape,
   lockShapeIntoBoard,
+  type TetrominoId,
 } from '@/lib/tetris';
+
+const makeFullRow = (id: TetrominoId): Array<TetrominoId | null> =>
+  Array.from({ length: BOARD_WIDTH }, () => id);
 
 describe('board placement helpers', () => {
   it('allows placement when all cells remain in bounds and empty', () => {
@@ -72,8 +77,8 @@ describe('board placement helpers', () => {
     const board = createEmptyBoard();
 
     // Fill bottom two rows completely.
-    board[BOARD_HEIGHT - 1] = Array(BOARD_WIDTH).fill('I');
-    board[BOARD_HEIGHT - 2] = Array(BOARD_WIDTH).fill('J');
+    board[BOARD_HEIGHT - 1] = makeFullRow('I');
+    board[BOARD_HEIGHT - 2] = makeFullRow('J');
 
     // Add a partial row above so we can verify it shifts down intact.
     board[BOARD_HEIGHT - 3][0] = 'L';
@@ -91,5 +96,15 @@ describe('board placement helpers', () => {
     expect(shiftedRow[0]).toBe('L');
     expect(shiftedRow[1]).toBe('L');
     expect(shiftedRow.slice(2).every((cell) => cell === null)).toBe(true);
+  });
+
+  it('reports completed line indexes in order from top to bottom', () => {
+    const board = createEmptyBoard();
+    board[5] = makeFullRow('I'); // placeholder I
+    board[7] = makeFullRow('J'); // placeholder J
+    board[6][3] = 'L';
+
+    const filled = getCompletedLineIndexes(board);
+    expect(filled).toEqual([5, 7]);
   });
 });
