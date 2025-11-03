@@ -22,9 +22,7 @@ export default defineConfig({
   },
   reporter: [['list']],
   webServer: {
-    command:
-      process.env.PLAYWRIGHT_TEST_WEB_SERVER_CMD ??
-      'npm run start -- --hostname 127.0.0.1 --port 3001',
+    command: process.env.PLAYWRIGHT_TEST_WEB_SERVER_CMD ?? 'npm run start -- --port 3001',
     url: process.env.PLAYWRIGHT_TEST_BASE_URL ?? 'http://127.0.0.1:3001',
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
