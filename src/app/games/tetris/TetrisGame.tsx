@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { GameBoard } from './GameBoard';
+import { LeaderboardPanel } from './LeaderboardPanel';
 import { HoldSlot } from './HoldSlot';
 import { NextQueue } from './NextQueue';
 import { ScorePanel } from './ScorePanel';
@@ -10,6 +11,7 @@ import { TouchControls } from './TouchControls';
 import { useGameLoop } from './useGameLoop';
 import { useInput } from './useInput';
 import { useTetrisState } from './useTetrisState';
+import { useLocalLeaderboard } from './useLocalLeaderboard';
 import { useTouchControls } from './useTouchControls';
 
 enum GameStatus {
@@ -26,6 +28,7 @@ export function TetrisGame() {
   const [status, setStatus] = useState<GameStatus>(GameStatus.Idle);
   const [isMounted, setIsMounted] = useState(false);
   const containerRef = useRef<HTMLElement | null>(null);
+  const previousGameOverRef = useRef(false);
 
   const {
     setSoftDrop,
@@ -40,6 +43,11 @@ export function TetrisGame() {
     paused: status !== GameStatus.Running,
   });
   const previousStatusRef = useRef<GameStatus>(GameStatus.Idle);
+  const {
+    entries: leaderboardEntries,
+    isReady: leaderboardReady,
+    submitScore,
+  } = useLocalLeaderboard();
 
   useEffect(() => {
     if (!state.active && !state.isGameOver) {
@@ -74,6 +82,19 @@ export function TetrisGame() {
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (state.isGameOver && !previousGameOverRef.current) {
+      submitScore(state.stats.score, state.stats.lines, state.stats.level);
+    }
+    previousGameOverRef.current = state.isGameOver;
+  }, [
+    state.isGameOver,
+    state.stats.score,
+    state.stats.lines,
+    state.stats.level,
+    submitScore,
+  ]);
 
   const startNewGame = useCallback(() => {
     reset();
@@ -167,6 +188,7 @@ export function TetrisGame() {
             lines={state.stats.lines}
             level={state.stats.level}
           />
+          <LeaderboardPanel entries={leaderboardEntries} isReady={leaderboardReady} />
           <div className="rounded-lg border border-border bg-muted/10 p-4 text-sm text-muted-foreground">
             <p>
               Controls: ←/→ to move, ↑ rotate CW, Z/Ctrl rotate CCW, ↓ soft drop, Space
