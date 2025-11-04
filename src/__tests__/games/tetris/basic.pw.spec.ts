@@ -52,4 +52,28 @@ test.describe('Tetris basic snapshots', () => {
       animations: 'disabled',
     });
   });
+
+  test('shows pause overlay when toggled via keyboard', async ({ page }) => {
+    await injectDeterministicRandom(page);
+
+    await page.goto('/games/tetris');
+
+    const main = page.getByRole('main');
+    const startButton = page.getByRole('button', { name: /start game/i });
+
+    await startButton.waitFor({ state: 'visible' });
+    await startButton.click();
+
+    await page.waitForSelector('text=Ready to Stack?', { state: 'detached' });
+
+    await page.keyboard.press('KeyP');
+
+    const pauseHeading = page.getByRole('heading', { name: /paused/i });
+    await pauseHeading.waitFor({ state: 'visible' });
+    await page.waitForTimeout(300);
+
+    await expect(main).toHaveScreenshot('tetris/pause-overlay.png', {
+      animations: 'disabled',
+    });
+  });
 });
