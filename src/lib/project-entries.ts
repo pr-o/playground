@@ -122,4 +122,14 @@ export const ProjectEntries: ProjectEntry[] = [
     thumbnailAlt: 'Preview of the Tetris Classic experience.',
     techStack: ['React', 'TypeScript', 'Motion'],
   },
+  {
+    title: 'Mini Sudoku',
+    href: '/games/sudoku',
+    tag: 'puzzle',
+    kind: ProjectKind.Game,
+    description: 'A modern Mini Sudoku built for touch and responsive design.',
+    thumbnail: '/assets/games/sudoku-logo.svg',
+    thumbnailAlt: 'Preview of the Mini Sudoku experience.',
+    techStack: ['React', 'TypeScript', 'Motion'],
+  },
 ];

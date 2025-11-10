@@ -1,0 +1,15 @@
+<svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Mini Sudoku Placeholder</title>
+  <desc id="desc">Stylized 6 by 6 sudoku grid with accent highlight</desc>
+  <rect width="120" height="120" rx="16" fill="#0f172a" />
+  <g stroke="#94a3b8" stroke-width="2">
+    <rect x="18" y="18" width="84" height="84" fill="none" />
+    <path d="M32 18v84 M46 18v84 M74 18v84 M88 18v84" />
+    <path d="M18 32h84 M18 46h84 M18 74h84 M18 88h84" />
+  </g>
+  <g stroke="#f8fafc" stroke-width="3">
+    <path d="M60 18v84" />
+    <path d="M18 60h84" />
+  </g>
+  <circle cx="60" cy="60" r="10" fill="#38bdf8" />
+</svg>
