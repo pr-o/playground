@@ -1,7 +1,8 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Board } from './components/Board';
+import { NumberPad } from './components/NumberPad';
 
 const mockGrid = Array.from({ length: 6 }, (_, row) =>
   Array.from({ length: 6 }, (_, col) => ({
@@ -13,7 +14,27 @@ const mockGrid = Array.from({ length: 6 }, (_, row) =>
 
 export function MiniSudokuGame() {
   const [selected, setSelected] = useState<{ row: number; col: number } | null>(null);
+  const [notesEnabled, setNotesEnabled] = useState(false);
   const grid = useMemo(() => mockGrid, []);
+
+  const handleInput = useCallback(
+    (value: number) => {
+      console.log('mini sudoku input placeholder', value, selected);
+    },
+    [selected],
+  );
+
+  const handleErase = useCallback(() => {
+    console.log('mini sudoku erase placeholder', selected);
+  }, [selected]);
+
+  const handleToggleNotes = useCallback(() => {
+    setNotesEnabled((prev) => !prev);
+  }, []);
+
+  const handleStubAction = useCallback((action: string) => {
+    console.log(`mini sudoku stub action: ${action}`);
+  }, []);
 
   return (
     <section className="flex flex-col gap-6 rounded-xl border border-border bg-card/80 p-6 shadow-sm">
@@ -37,26 +58,19 @@ export function MiniSudokuGame() {
         </div>
         <aside className="flex flex-1 flex-col gap-4 rounded-lg border border-dashed border-border/50 bg-muted/20 p-4 text-muted-foreground">
           <p className="text-sm">
-            Number pad, hints, and stats will live here. For now, this placeholder shows
-            the responsive panel layout.
+            Interact with the placeholder keypad below. Game actions are logged in the
+            console until state logic lands.
           </p>
-          <div className="flex flex-wrap gap-2">
-            {Array.from({ length: 6 }).map((_, index) => (
-              <button
-                key={index}
-                type="button"
-                className="flex-1 min-w-[60px] rounded-md border border-border bg-background px-3 py-2 text-center text-sm font-semibold text-foreground shadow-sm"
-              >
-                {index + 1}
-              </button>
-            ))}
-            <button
-              type="button"
-              className="flex-1 min-w-[60px] rounded-md border border-border bg-background px-3 py-2 text-center text-sm font-semibold text-foreground shadow-sm"
-            >
-              Erase
-            </button>
-          </div>
+          <NumberPad
+            digits={[1, 2, 3, 4, 5, 6]}
+            onInput={handleInput}
+            onErase={handleErase}
+            notesEnabled={notesEnabled}
+            onToggleNotes={handleToggleNotes}
+            onHint={() => handleStubAction('hint')}
+            onUndo={() => handleStubAction('undo')}
+            onRedo={() => handleStubAction('redo')}
+          />
         </aside>
       </div>
     </section>
