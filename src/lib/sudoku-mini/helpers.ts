@@ -1,10 +1,4 @@
-import {
-  BOARD_SIZE,
-  DIGITS,
-  REGION_HEIGHT,
-  REGION_WIDTH,
-  TOTAL_CELLS,
-} from './constants';
+import { BOARD_SIZE, REGION_HEIGHT, REGION_WIDTH, TOTAL_CELLS } from './constants';
 import type { CellCoordinate, CellValue, Digit, MiniSudokuBoard } from './types';
 
 export const createEmptyBoard = (): MiniSudokuBoard =>

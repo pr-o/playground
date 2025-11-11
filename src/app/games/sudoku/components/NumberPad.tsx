@@ -9,10 +9,12 @@ type NumberPadProps = {
   onUndo?: () => void;
   onRedo?: () => void;
   onHint?: () => void;
+  canUndo?: boolean;
+  canRedo?: boolean;
 };
 
 const baseButtonClass =
-  'flex flex-1 min-w-[64px] items-center justify-center rounded-lg border border-border bg-background px-4 py-3 text-base font-semibold text-foreground shadow-sm hover:bg-background/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40';
+  'flex flex-1 min-w-[64px] items-center justify-center rounded-lg border border-border bg-background px-4 py-3 text-base font-semibold text-foreground shadow-sm transition-colors hover:bg-background/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-60';
 
 export function NumberPad({
   digits = [1, 2, 3, 4, 5, 6],
@@ -23,6 +25,8 @@ export function NumberPad({
   onUndo,
   onRedo,
   onHint,
+  canUndo = true,
+  canRedo = false,
 }: NumberPadProps) {
   return (
     <div className="flex w-full flex-col gap-3">
@@ -52,10 +56,20 @@ export function NumberPad({
         <button type="button" className={baseButtonClass} onClick={onHint}>
           Hint
         </button>
-        <button type="button" className={baseButtonClass} onClick={onUndo}>
+        <button
+          type="button"
+          className={baseButtonClass}
+          onClick={onUndo}
+          disabled={!canUndo}
+        >
           Undo
         </button>
-        <button type="button" className={baseButtonClass} onClick={onRedo}>
+        <button
+          type="button"
+          className={baseButtonClass}
+          onClick={onRedo}
+          disabled={!canRedo}
+        >
           Redo
         </button>
       </div>

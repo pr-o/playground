@@ -1,40 +1,88 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useEffect } from 'react';
 import { Board } from './components/Board';
 import { NumberPad } from './components/NumberPad';
+import { useMiniSudoku } from './useMiniSudoku';
 
-const mockGrid = Array.from({ length: 6 }, (_, row) =>
-  Array.from({ length: 6 }, (_, col) => ({
-    value: row === col ? ((row + 1) as number) : null,
-    notes: row !== col ? [1, 2, 3] : [],
-    given: row === col,
-  })),
-);
+const DIGIT_REGEX = /^[1-6]$/;
 
 export function MiniSudokuGame() {
-  const [selected, setSelected] = useState<{ row: number; col: number } | null>(null);
-  const [notesEnabled, setNotesEnabled] = useState(false);
-  const grid = useMemo(() => mockGrid, []);
+  const {
+    board,
+    selected,
+    notesMode,
+    selectCell,
+    moveSelection,
+    toggleNotes,
+    inputDigit,
+    erase,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    requestHint,
+  } = useMiniSudoku();
 
-  const handleInput = useCallback(
-    (value: number) => {
-      console.log('mini sudoku input placeholder', value, selected);
-    },
-    [selected],
-  );
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const tagName = (event.target as HTMLElement | null)?.tagName;
+      if (tagName && ['INPUT', 'TEXTAREA'].includes(tagName)) {
+        return;
+      }
 
-  const handleErase = useCallback(() => {
-    console.log('mini sudoku erase placeholder', selected);
-  }, [selected]);
+      if (event.key.startsWith('Arrow')) {
+        event.preventDefault();
+        if (event.key === 'ArrowUp') moveSelection(-1, 0);
+        if (event.key === 'ArrowDown') moveSelection(1, 0);
+        if (event.key === 'ArrowLeft') moveSelection(0, -1);
+        if (event.key === 'ArrowRight') moveSelection(0, 1);
+        return;
+      }
 
-  const handleToggleNotes = useCallback(() => {
-    setNotesEnabled((prev) => !prev);
-  }, []);
+      if (DIGIT_REGEX.test(event.key)) {
+        event.preventDefault();
+        inputDigit(Number(event.key));
+        return;
+      }
 
-  const handleStubAction = useCallback((action: string) => {
-    console.log(`mini sudoku stub action: ${action}`);
-  }, []);
+      if (event.key === 'Backspace' || event.key === 'Delete') {
+        event.preventDefault();
+        erase();
+        return;
+      }
+
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'z') {
+        event.preventDefault();
+        if (event.shiftKey) {
+          redo();
+        } else {
+          undo();
+        }
+        return;
+      }
+
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'y') {
+        event.preventDefault();
+        redo();
+        return;
+      }
+
+      if (event.key.toLowerCase() === 'n') {
+        event.preventDefault();
+        toggleNotes();
+        return;
+      }
+
+      if (event.key.toLowerCase() === 'h') {
+        event.preventDefault();
+        requestHint();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [erase, inputDigit, moveSelection, redo, requestHint, toggleNotes, undo]);
 
   return (
     <section className="flex flex-col gap-6 rounded-xl border border-border bg-card/80 p-6 shadow-sm">
@@ -54,22 +102,25 @@ export function MiniSudokuGame() {
               </span>
             </div>
           </div>
-          <Board grid={grid} selected={selected} onCellSelect={setSelected} />
+          <Board grid={board} selected={selected} onCellSelect={selectCell} />
         </div>
         <aside className="flex flex-1 flex-col gap-4 rounded-lg border border-dashed border-border/50 bg-muted/20 p-4 text-muted-foreground">
-          <p className="text-sm">
-            Interact with the placeholder keypad below. Game actions are logged in the
-            console until state logic lands.
+          <p className="text-sm text-foreground">
+            Click or use arrow keys to select a cell. Input 1-6 to solve, toggle notes
+            with the button or press <kbd>N</kbd>, erase with Backspace/Delete, undo with
+            ⌘/Ctrl+Z, redo with ⌘/Ctrl+Shift+Z, and request a hint with <kbd>H</kbd>.
           </p>
           <NumberPad
             digits={[1, 2, 3, 4, 5, 6]}
-            onInput={handleInput}
-            onErase={handleErase}
-            notesEnabled={notesEnabled}
-            onToggleNotes={handleToggleNotes}
-            onHint={() => handleStubAction('hint')}
-            onUndo={() => handleStubAction('undo')}
-            onRedo={() => handleStubAction('redo')}
+            onInput={inputDigit}
+            onErase={erase}
+            notesEnabled={notesMode}
+            onToggleNotes={toggleNotes}
+            onHint={requestHint}
+            onUndo={undo}
+            onRedo={redo}
+            canUndo={canUndo}
+            canRedo={canRedo}
           />
         </aside>
       </div>
