@@ -12,6 +12,8 @@ export function MiniSudokuGame() {
     board,
     selected,
     notesMode,
+    conflicts,
+    mistakeTokens,
     selectCell,
     moveSelection,
     toggleNotes,
@@ -102,7 +104,13 @@ export function MiniSudokuGame() {
               </span>
             </div>
           </div>
-          <Board grid={board} selected={selected} onCellSelect={selectCell} />
+          <Board
+            grid={board}
+            selected={selected}
+            onCellSelect={selectCell}
+            conflicts={conflicts}
+            mistakeTokens={mistakeTokens}
+          />
         </div>
         <aside className="flex flex-1 flex-col gap-4 rounded-lg border border-dashed border-border/50 bg-muted/20 p-4 text-muted-foreground">
           <p className="text-sm text-foreground">

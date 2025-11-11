@@ -17,6 +17,9 @@ type MiniSudokuState = {
   future: MiniSudokuCell[][][];
   hintsUsed: number;
   lastHint: Selection | null;
+  conflicts: Record<string, boolean>;
+  mistakeTokens: Record<string, number>;
+  mistakeCount: number;
 };
 
 type Action =
@@ -30,6 +33,8 @@ type Action =
   | { type: 'REQUEST_HINT' };
 
 const GRID_SIZE = 6;
+const REGION_HEIGHT = 2;
+const REGION_WIDTH = 3;
 const HISTORY_LIMIT = 50;
 
 const SOLUTION_BOARD: number[][] = [
@@ -66,7 +71,64 @@ const initialState: MiniSudokuState = {
   future: [],
   hintsUsed: 0,
   lastHint: null,
+  conflicts: calculateConflicts(initialBoard),
+  mistakeTokens: {},
+  mistakeCount: 0,
 };
+
+const getCellKey = (row: number, col: number) => `${row}-${col}`;
+
+function calculateConflicts(board: MiniSudokuCell[][]): Record<string, boolean> {
+  const conflicts: Record<string, boolean> = {};
+
+  const markConflicts = (positions: Array<{ row: number; col: number }>) => {
+    if (positions.length <= 1) return;
+    positions.forEach(({ row, col }) => {
+      conflicts[getCellKey(row, col)] = true;
+    });
+  };
+
+  for (let row = 0; row < GRID_SIZE; row += 1) {
+    const buckets: Record<number, Array<{ row: number; col: number }>> = {};
+    for (let col = 0; col < GRID_SIZE; col += 1) {
+      const value = board[row][col]?.value;
+      if (value == null) continue;
+      buckets[value] = buckets[value] ?? [];
+      buckets[value].push({ row, col });
+    }
+    Object.values(buckets).forEach(markConflicts);
+  }
+
+  for (let col = 0; col < GRID_SIZE; col += 1) {
+    const buckets: Record<number, Array<{ row: number; col: number }>> = {};
+    for (let row = 0; row < GRID_SIZE; row += 1) {
+      const value = board[row][col]?.value;
+      if (value == null) continue;
+      buckets[value] = buckets[value] ?? [];
+      buckets[value].push({ row, col });
+    }
+    Object.values(buckets).forEach(markConflicts);
+  }
+
+  for (let startRow = 0; startRow < GRID_SIZE; startRow += REGION_HEIGHT) {
+    for (let startCol = 0; startCol < GRID_SIZE; startCol += REGION_WIDTH) {
+      const buckets: Record<number, Array<{ row: number; col: number }>> = {};
+      for (let r = 0; r < REGION_HEIGHT; r += 1) {
+        for (let c = 0; c < REGION_WIDTH; c += 1) {
+          const row = startRow + r;
+          const col = startCol + c;
+          const value = board[row][col]?.value;
+          if (value == null) continue;
+          buckets[value] = buckets[value] ?? [];
+          buckets[value].push({ row, col });
+        }
+      }
+      Object.values(buckets).forEach(markConflicts);
+    }
+  }
+
+  return conflicts;
+}
 
 const selectCell = (state: MiniSudokuState, next: Selection): MiniSudokuState => {
   const isSameCell = state.selected?.row === next.row && state.selected?.col === next.col;
@@ -80,9 +142,16 @@ const moveSelection = (state: MiniSudokuState, deltaRow: number, deltaCol: numbe
   return { ...state, selected: { row: nextRow, col: nextCol } };
 };
 
+type CommitOptions = {
+  conflicts?: Record<string, boolean>;
+  mistakeKey?: string | null;
+  incrementMistakes?: boolean;
+};
+
 const commitBoardChange = (
   state: MiniSudokuState,
   nextBoard: MiniSudokuCell[][],
+  options?: CommitOptions,
 ): MiniSudokuState => {
   if (nextBoard === state.board) {
     return state;
@@ -93,11 +162,25 @@ const commitBoardChange = (
     nextHistory.shift();
   }
 
+  const nextConflicts = options?.conflicts ?? calculateConflicts(nextBoard);
+  const nextMistakeTokens =
+    options?.mistakeKey != null
+      ? {
+          ...state.mistakeTokens,
+          [options.mistakeKey]: Date.now(),
+        }
+      : state.mistakeTokens;
+
   return {
     ...state,
     board: nextBoard,
     history: nextHistory,
     future: [],
+    conflicts: nextConflicts,
+    mistakeTokens: nextMistakeTokens,
+    mistakeCount: options?.incrementMistakes
+      ? state.mistakeCount + 1
+      : state.mistakeCount,
   };
 };
 
@@ -162,7 +245,15 @@ const reducer = (state: MiniSudokuState, action: Action): MiniSudokuState => {
         return { ...current, value, notes: [] };
       });
 
-      return commitBoardChange(state, nextBoard);
+      const conflicts = calculateConflicts(nextBoard);
+      const cellKey = getCellKey(selected.row, selected.col);
+      const hasMistake = !state.notesMode && Boolean(conflicts[cellKey]);
+
+      return commitBoardChange(state, nextBoard, {
+        conflicts,
+        mistakeKey: hasMistake ? cellKey : null,
+        incrementMistakes: hasMistake,
+      });
     }
     case 'ERASE': {
       const { selected } = state;
@@ -184,13 +275,25 @@ const reducer = (state: MiniSudokuState, action: Action): MiniSudokuState => {
       const previous = state.history[state.history.length - 1];
       const history = state.history.slice(0, -1);
       const future = [state.board, ...state.future];
-      return { ...state, board: previous, history, future };
+      return {
+        ...state,
+        board: previous,
+        history,
+        future,
+        conflicts: calculateConflicts(previous),
+      };
     }
     case 'REDO': {
       if (!state.future.length) return state;
       const [next, ...rest] = state.future;
       const history = [...state.history, state.board];
-      return { ...state, board: next, history, future: rest };
+      return {
+        ...state,
+        board: next,
+        history,
+        future: rest,
+        conflicts: calculateConflicts(next),
+      };
     }
     case 'REQUEST_HINT': {
       const target = findHintTarget(state);
@@ -285,6 +388,8 @@ export function useMiniSudoku() {
     notesMode: state.notesMode,
     hintsUsed: state.hintsUsed,
     lastHint: state.lastHint,
+    conflicts: state.conflicts,
+    mistakeTokens: state.mistakeTokens,
     canUndo: state.history.length > 0,
     canRedo: state.future.length > 0,
     selectCell: selectCellHandler,

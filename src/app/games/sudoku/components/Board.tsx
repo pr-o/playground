@@ -8,6 +8,7 @@ type BoardProps = {
   onCellSelect?: (row: number, col: number) => void;
   selected?: { row: number; col: number } | null;
   conflicts?: Record<string, boolean>;
+  mistakeTokens?: Record<string, number>;
 };
 
 const GRID_SIZE = 6;
@@ -28,6 +29,7 @@ export const Board = memo(function Board({
   onCellSelect,
   selected,
   conflicts,
+  mistakeTokens,
 }: BoardProps) {
   return (
     <div
@@ -49,6 +51,7 @@ export const Board = memo(function Board({
                 isGiven={cell.given}
                 isSelected={selected?.row === row && selected?.col === col}
                 isConflict={Boolean(conflicts?.[key])}
+                mistakeToken={mistakeTokens?.[key]}
                 onSelect={onCellSelect}
               />
             </div>

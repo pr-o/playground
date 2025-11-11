@@ -1,7 +1,7 @@
 'use client';
 
-import { memo } from 'react';
-import { motion } from 'framer-motion';
+import { memo, useEffect } from 'react';
+import { motion, useAnimation } from 'framer-motion';
 
 type CellProps = {
   row: number;
@@ -11,6 +11,7 @@ type CellProps = {
   isGiven?: boolean;
   isSelected?: boolean;
   isConflict?: boolean;
+  mistakeToken?: number;
   onSelect?: (row: number, col: number) => void;
 };
 
@@ -31,8 +32,19 @@ export const Cell = memo(function Cell({
   isGiven,
   isSelected,
   isConflict,
+  mistakeToken,
   onSelect,
 }: CellProps) {
+  const controls = useAnimation();
+
+  useEffect(() => {
+    if (mistakeToken == null) return;
+    controls.start({
+      x: [0, -4, 4, -2, 2, 0],
+      transition: { duration: 0.45, ease: 'easeInOut' },
+    });
+  }, [controls, mistakeToken]);
+
   const content =
     value ??
     (notes?.length ? (
@@ -58,6 +70,8 @@ export const Cell = memo(function Cell({
         .join(' ')}
       onClick={() => onSelect?.(row, col)}
       whileTap={{ scale: 0.95 }}
+      animate={controls}
+      initial={false}
       data-testid={`mini-sudoku-cell-${row}-${col}`}
     >
       {content}
