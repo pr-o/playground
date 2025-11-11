@@ -2,6 +2,7 @@
 
 import { memo, useEffect } from 'react';
 import { motion, useAnimation } from 'framer-motion';
+import type { ConflictFlags } from '../useMiniSudoku';
 
 type CellProps = {
   row: number;
@@ -10,7 +11,7 @@ type CellProps = {
   notes?: number[];
   isGiven?: boolean;
   isSelected?: boolean;
-  isConflict?: boolean;
+  conflicts?: ConflictFlags;
   mistakeToken?: number;
   onSelect?: (row: number, col: number) => void;
 };
@@ -21,7 +22,6 @@ const baseClasses =
   'relative aspect-square w-full border border-border/40 bg-slate-950/60 text-center text-xl font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50';
 
 const selectedClasses = 'bg-primary/15 text-primary shadow-inner shadow-primary/30';
-const conflictClasses = 'bg-destructive/20 text-destructive';
 const givenClasses = 'text-muted-foreground';
 
 export const Cell = memo(function Cell({
@@ -31,11 +31,14 @@ export const Cell = memo(function Cell({
   notes,
   isGiven,
   isSelected,
-  isConflict,
+  conflicts,
   mistakeToken,
   onSelect,
 }: CellProps) {
   const controls = useAnimation();
+  const hasConflict = Boolean(
+    conflicts && (conflicts.row || conflicts.col || conflicts.region),
+  );
 
   useEffect(() => {
     if (mistakeToken == null) return;
@@ -63,8 +66,8 @@ export const Cell = memo(function Cell({
       className={[
         baseClasses,
         isSelected ? selectedClasses : '',
-        isConflict ? conflictClasses : '',
-        isGiven ? givenClasses : '',
+        hasConflict ? 'border-transparent text-destructive' : '',
+        !hasConflict && isGiven ? givenClasses : '',
       ]
         .filter(Boolean)
         .join(' ')}
@@ -72,6 +75,7 @@ export const Cell = memo(function Cell({
       whileTap={{ scale: 0.95 }}
       animate={controls}
       initial={false}
+      aria-invalid={hasConflict}
       data-testid={`mini-sudoku-cell-${row}-${col}`}
     >
       {content}
