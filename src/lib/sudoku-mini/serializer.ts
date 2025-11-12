@@ -1,6 +1,7 @@
 import {
   Difficulty,
   type CellCoordinate,
+  type Digit,
   type MiniSudokuBoard,
   type MiniSudokuCell,
   type MiniSudokuGrid,
@@ -11,15 +12,16 @@ import {
 
 const SERIAL_VERSION = 1;
 
-const normalizeDigitArray = (input: unknown): number[] => {
+const normalizeDigitArray = (input: unknown): Digit[] => {
   if (!Array.isArray(input)) return [];
-  return Array.from(
+  const normalized = Array.from(
     new Set(
       input
         .filter((value): value is number => typeof value === 'number')
         .map((value) => Math.min(Math.max(Math.round(value), 1), 6)),
     ),
   ).sort((a, b) => a - b);
+  return normalized as Digit[];
 };
 
 const normalizeCellCoordinate = (coordinate: unknown): CellCoordinate | null => {
@@ -46,7 +48,7 @@ const sanitizeDifficulty = (value: unknown): Difficulty => {
 
 export const toMiniSudokuCell = (cell: Partial<MiniSudokuCell> = {}): MiniSudokuCell => ({
   value: typeof cell.value === 'number' ? cell.value : null,
-  notes: Array.isArray(cell.notes) ? cell.notes.slice().sort((a, b) => a - b) : [],
+  notes: normalizeDigitArray(cell.notes),
   given: Boolean(cell.given),
   wasHint: cell.wasHint,
 });
@@ -134,7 +136,7 @@ export const gridToBoard = (
   grid.map((row, rowIndex) =>
     row.map((value, colIndex) => ({
       value,
-      notes: [],
+      notes: [] as Digit[],
       given: givensMask?.[rowIndex]?.[colIndex] ?? value !== null,
     })),
   );

@@ -8,6 +8,7 @@ import { NextPuzzleButton } from './NextPuzzleButton';
 type GameHeaderProps = {
   puzzleLabel: string;
   timerLabel: string;
+  elapsedLabel?: string;
   mistakes: number;
   hintsUsed: number;
   maxHints: number;
@@ -23,6 +24,7 @@ type GameHeaderProps = {
 export function GameHeader({
   puzzleLabel,
   timerLabel,
+  elapsedLabel,
   mistakes,
   hintsUsed,
   maxHints,
@@ -55,6 +57,9 @@ export function GameHeader({
           <span className="font-mono text-lg font-semibold tabular-nums text-foreground">
             {timerLabel}
           </span>
+          {elapsedLabel ? (
+            <span className="text-xs text-muted-foreground">{elapsedLabel}</span>
+          ) : null}
         </div>
         <div className="flex flex-col text-left">
           <span className="text-xs uppercase tracking-wide">Mistakes</span>

@@ -8,6 +8,7 @@ import {
   generateMiniSudokuPuzzle,
   gridToBoard,
   serializePuzzleState,
+  type Digit,
   type MiniSudokuBoard,
   type MiniSudokuCell,
   type MiniSudokuGrid,
@@ -255,8 +256,10 @@ const commitBoardChange = (
   };
 };
 
-const areArraysEqual = (a: number[], b: number[]) =>
+const areArraysEqual = (a: Digit[], b: Digit[]) =>
   a.length === b.length && a.every((value, index) => value === b[index]);
+
+const sortNotes = (notes: Digit[]) => [...notes].sort((a, b) => a - b);
 
 const updateCell = (
   board: MiniSudokuBoard,
@@ -299,13 +302,13 @@ const reducer = (state: MiniSudokuState, action: Action): MiniSudokuState => {
       const cell = state.board[selected.row][selected.col];
       if (cell.given) return state;
 
-      const value = action.payload.value;
+      const value = action.payload.value as Digit;
       const nextBoard = updateCell(state.board, selected.row, selected.col, (current) => {
         if (state.notesMode) {
           const hasNote = current.notes.includes(value);
           const nextNotes = hasNote
             ? current.notes.filter((note) => note !== value)
-            : [...current.notes, value].sort();
+            : sortNotes([...current.notes, value]);
           if (areArraysEqual(nextNotes, current.notes)) {
             return current;
           }
@@ -316,7 +319,7 @@ const reducer = (state: MiniSudokuState, action: Action): MiniSudokuState => {
           return current;
         }
 
-        return { ...current, value, notes: [] };
+        return { ...current, value, notes: [] as Digit[] };
       });
 
       const conflicts = calculateConflicts(nextBoard);
@@ -342,7 +345,7 @@ const reducer = (state: MiniSudokuState, action: Action): MiniSudokuState => {
         if (current.value === null && current.notes.length === 0) {
           return current;
         }
-        return { ...current, value: null, notes: [] };
+        return { ...current, value: null, notes: [] as Digit[] };
       });
 
       return commitBoardChange(state, nextBoard);
@@ -410,7 +413,7 @@ const reducer = (state: MiniSudokuState, action: Action): MiniSudokuState => {
         return {
           ...current,
           value: correctValue,
-          notes: [],
+          notes: [] as Digit[],
           wasHint: true,
         };
       });
