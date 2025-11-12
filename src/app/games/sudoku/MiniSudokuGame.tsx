@@ -1,14 +1,25 @@
 'use client';
 
 import { useMemo } from 'react';
-import { DIFFICULTY_CONFIGS, type Difficulty } from '@/lib/sudoku-mini';
+import { DIFFICULTY_CONFIGS } from '@/lib/sudoku-mini';
+import { toast } from 'sonner';
 import { Board } from './components/Board';
 import { CompletionOverlay } from './components/CompletionOverlay';
 import { NumberPad } from './components/NumberPad';
+import { GameHeader } from './components/GameHeader';
+import { NotesToggle } from './components/NotesToggle';
+import { HintButton } from './components/HintButton';
 import { useSelectionNavigation } from './hooks/useSelectionNavigation';
 import { useSudokuTimer } from './hooks/useSudokuTimer';
 import { useHints } from './hooks/useHints';
 import { useMiniSudoku } from './useMiniSudoku';
+
+const formatElapsedDetailed = (ms: number) => {
+  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}m ${seconds.toString().padStart(2, '0')}s`;
+};
 
 export function MiniSudokuGame() {
   const {
@@ -83,53 +94,33 @@ export function MiniSudokuGame() {
     nextPuzzle();
   };
 
+  const handleHint = () => {
+    if (!hasHints) {
+      toast.warning('No hints remaining in this difficulty.');
+      return;
+    }
+    requestHint();
+  };
+
   return (
     <section className="flex flex-col gap-6 rounded-xl border border-border bg-card/80 p-6 shadow-sm">
-      <div className="flex flex-col gap-4 md:flex-row">
+      <GameHeader
+        puzzleLabel={puzzleLabel}
+        timerLabel={timerLabel}
+        mistakes={mistakeCount}
+        hintsUsed={hintsUsed}
+        maxHints={maxHints}
+        remainingHints={remainingHints}
+        elapsedLabel={formatElapsedDetailed(elapsedMs)}
+        difficulty={difficulty}
+        options={difficultyOptions}
+        onDifficultyChange={setDifficulty}
+        onRestart={handleRestart}
+        onNext={handleNextPuzzle}
+        status={status}
+      />
+      <div className="flex flex-col gap-6 xl:flex-row">
         <div className="flex flex-1 flex-col gap-4">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-sm uppercase tracking-wide text-muted-foreground">
-                Mini Sudoku
-              </p>
-              <h2 className="text-2xl font-semibold">{puzzleLabel}</h2>
-            </div>
-            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-              <div className="flex flex-col text-left">
-                <span className="text-xs uppercase tracking-wide">Timer</span>
-                <span className="font-mono text-lg font-semibold tabular-nums text-foreground">
-                  {timerLabel}
-                </span>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-xs uppercase tracking-wide">Mistakes</span>
-                <span className="text-lg font-semibold text-destructive">
-                  {mistakeCount}
-                </span>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-xs uppercase tracking-wide">Hints</span>
-                <span className="text-lg font-semibold text-primary">
-                  {remainingHints}/{maxHints}
-                </span>
-              </div>
-              <div className="flex flex-col text-left">
-                <span className="text-xs uppercase tracking-wide">Difficulty</span>
-                <select
-                  className="w-32 rounded-md border border-border bg-background/80 px-2 py-1 text-sm font-semibold text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-60"
-                  value={difficulty}
-                  onChange={(event) => setDifficulty(event.target.value as Difficulty)}
-                  disabled={status === 'loading'}
-                >
-                  {difficultyOptions.map((config) => (
-                    <option key={config.id} value={config.id}>
-                      {config.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
           {status === 'error' && (
             <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
               Failed to load puzzle.{' '}
@@ -157,27 +148,31 @@ export function MiniSudokuGame() {
             />
           </div>
         </div>
-        <aside className="flex flex-1 flex-col gap-4 rounded-lg border border-dashed border-border/50 bg-muted/20 p-4 text-muted-foreground">
-          <p className="text-sm text-foreground">
-            Click or use arrow keys to select a cell. Input 1-6 to solve, toggle notes
-            with the button or press <kbd>N</kbd>, erase with Backspace/Delete, undo with
-            ⌘/Ctrl+Z, redo with ⌘/Ctrl+Shift+Z, and request a hint with <kbd>H</kbd>.
-          </p>
+        <div className="flex w-full flex-col gap-4 xl:w-80">
+          <div className="flex flex-wrap justify-center gap-3 rounded-xl border border-border bg-card/70 p-3">
+            <NotesToggle
+              enabled={notesMode}
+              onToggle={toggleNotes}
+              disabled={interactionsDisabled}
+            />
+            <HintButton
+              remaining={remainingHints}
+              max={maxHints}
+              onHint={handleHint}
+              disabled={interactionsDisabled}
+            />
+          </div>
           <NumberPad
             digits={[1, 2, 3, 4, 5, 6]}
             onInput={inputDigit}
             onErase={erase}
-            notesEnabled={notesMode}
-            onToggleNotes={toggleNotes}
-            onHint={requestHint}
             onUndo={undo}
             onRedo={redo}
             canUndo={canUndo}
             canRedo={canRedo}
             disabled={interactionsDisabled}
-            hintDisabled={interactionsDisabled || !hasHints}
           />
-        </aside>
+        </div>
       </div>
       <CompletionOverlay
         open={status === 'completed'}

@@ -4,15 +4,11 @@ type NumberPadProps = {
   digits?: number[];
   onInput?: (value: number) => void;
   onErase?: () => void;
-  notesEnabled?: boolean;
-  onToggleNotes?: () => void;
   onUndo?: () => void;
   onRedo?: () => void;
-  onHint?: () => void;
   canUndo?: boolean;
   canRedo?: boolean;
   disabled?: boolean;
-  hintDisabled?: boolean;
 };
 
 const baseButtonClass =
@@ -22,15 +18,11 @@ export function NumberPad({
   digits = [1, 2, 3, 4, 5, 6],
   onInput,
   onErase,
-  notesEnabled,
-  onToggleNotes,
   onUndo,
   onRedo,
-  onHint,
   canUndo = true,
   canRedo = false,
   disabled = false,
-  hintDisabled = false,
 }: NumberPadProps) {
   return (
     <div className="flex w-full flex-col gap-3">
@@ -55,22 +47,6 @@ export function NumberPad({
           disabled={disabled}
         >
           Erase
-        </button>
-        <button
-          type="button"
-          className={`${baseButtonClass} ${notesEnabled ? 'border-primary text-primary' : ''}`}
-          onClick={onToggleNotes}
-          disabled={disabled}
-        >
-          Notes {notesEnabled ? 'On' : 'Off'}
-        </button>
-        <button
-          type="button"
-          className={baseButtonClass}
-          onClick={onHint}
-          disabled={disabled || hintDisabled}
-        >
-          Hint
         </button>
         <button
           type="button"
