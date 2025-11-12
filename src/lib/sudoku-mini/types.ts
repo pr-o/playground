@@ -49,6 +49,8 @@ export type SerializedPuzzle = {
   puzzleId: number;
   difficulty: Difficulty;
   cells: SerializedCell[][];
+  puzzle: MiniSudokuGrid;
+  solution: MiniSudokuGrid;
   notesMode: boolean;
   hintsUsed: number;
   mistakeCount: number;
@@ -60,6 +62,8 @@ export type PuzzleStatePayload = {
   puzzleId: number;
   difficulty: Difficulty;
   board: MiniSudokuBoard;
+  puzzle: MiniSudokuGrid;
+  solution: MiniSudokuGrid;
   notesMode: boolean;
   hintsUsed: number;
   mistakeCount: number;

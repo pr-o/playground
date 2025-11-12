@@ -11,6 +11,7 @@ type NumberPadProps = {
   onHint?: () => void;
   canUndo?: boolean;
   canRedo?: boolean;
+  disabled?: boolean;
 };
 
 const baseButtonClass =
@@ -27,6 +28,7 @@ export function NumberPad({
   onHint,
   canUndo = true,
   canRedo = false,
+  disabled = false,
 }: NumberPadProps) {
   return (
     <div className="flex w-full flex-col gap-3">
@@ -37,30 +39,42 @@ export function NumberPad({
             type="button"
             className={baseButtonClass}
             onClick={() => onInput?.(digit)}
+            disabled={disabled}
           >
             {digit}
           </button>
         ))}
       </div>
       <div className="grid grid-cols-3 gap-3">
-        <button type="button" className={baseButtonClass} onClick={onErase}>
+        <button
+          type="button"
+          className={baseButtonClass}
+          onClick={onErase}
+          disabled={disabled}
+        >
           Erase
         </button>
         <button
           type="button"
           className={`${baseButtonClass} ${notesEnabled ? 'border-primary text-primary' : ''}`}
           onClick={onToggleNotes}
+          disabled={disabled}
         >
           Notes {notesEnabled ? 'On' : 'Off'}
         </button>
-        <button type="button" className={baseButtonClass} onClick={onHint}>
+        <button
+          type="button"
+          className={baseButtonClass}
+          onClick={onHint}
+          disabled={disabled}
+        >
           Hint
         </button>
         <button
           type="button"
           className={baseButtonClass}
           onClick={onUndo}
-          disabled={!canUndo}
+          disabled={disabled || !canUndo}
         >
           Undo
         </button>
@@ -68,7 +82,7 @@ export function NumberPad({
           type="button"
           className={baseButtonClass}
           onClick={onRedo}
-          disabled={!canRedo}
+          disabled={disabled || !canRedo}
         >
           Redo
         </button>

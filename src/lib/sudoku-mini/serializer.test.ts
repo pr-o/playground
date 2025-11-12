@@ -1,4 +1,4 @@
-import { Difficulty, type MiniSudokuBoard } from './types';
+import { Difficulty, type MiniSudokuBoard, type MiniSudokuGrid } from './types';
 import {
   deserializeBoard,
   deserializePuzzleState,
@@ -20,6 +20,16 @@ sampleBoard[0][0].value = 1;
 sampleBoard[0][0].given = true;
 sampleBoard[1][1].notes = [2, 3];
 
+const samplePuzzleGrid: MiniSudokuGrid = [
+  [1, null],
+  [null, 2],
+] as MiniSudokuGrid;
+
+const sampleSolutionGrid: MiniSudokuGrid = [
+  [1, 2],
+  [3, 4],
+] as MiniSudokuGrid;
+
 describe('serializer', () => {
   it('serializes and deserializes boards losslessly', () => {
     const serialized = serializeBoard(sampleBoard);
@@ -32,6 +42,8 @@ describe('serializer', () => {
       puzzleId: 42,
       difficulty: Difficulty.Intermediate,
       board: sampleBoard,
+      puzzle: samplePuzzleGrid,
+      solution: sampleSolutionGrid,
       notesMode: true,
       hintsUsed: 2,
       mistakeCount: 1,
@@ -49,6 +61,8 @@ describe('serializer', () => {
       puzzleId: 1,
       difficulty: Difficulty.Beginner,
       board: sampleBoard,
+      puzzle: samplePuzzleGrid,
+      solution: sampleSolutionGrid,
       notesMode: false,
       hintsUsed: 0,
       mistakeCount: 0,

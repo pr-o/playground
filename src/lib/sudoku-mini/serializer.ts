@@ -78,6 +78,8 @@ export const serializePuzzleState = (payload: PuzzleStatePayload): SerializedPuz
   puzzleId: payload.puzzleId,
   difficulty: payload.difficulty,
   cells: serializeBoard(payload.board),
+  puzzle: payload.puzzle,
+  solution: payload.solution,
   notesMode: payload.notesMode,
   hintsUsed: payload.hintsUsed,
   mistakeCount: payload.mistakeCount,
@@ -104,6 +106,14 @@ export const deserializePuzzleState = (
     puzzleId: typeof payload.puzzleId === 'number' ? payload.puzzleId : defaults.puzzleId,
     difficulty: sanitizeDifficulty(payload.difficulty),
     board,
+    puzzle:
+      Array.isArray(payload.puzzle) && payload.puzzle.length
+        ? (payload.puzzle as MiniSudokuGrid)
+        : defaults.puzzle,
+    solution:
+      Array.isArray(payload.solution) && payload.solution.length
+        ? (payload.solution as MiniSudokuGrid)
+        : defaults.solution,
     notesMode:
       typeof payload.notesMode === 'boolean' ? payload.notesMode : defaults.notesMode,
     hintsUsed:

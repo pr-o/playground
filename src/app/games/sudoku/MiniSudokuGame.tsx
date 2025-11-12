@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { DIFFICULTY_CONFIGS, type Difficulty } from '@/lib/sudoku-mini';
 import { Board } from './components/Board';
 import { CompletionOverlay } from './components/CompletionOverlay';
 import { NumberPad } from './components/NumberPad';
@@ -42,6 +43,7 @@ export function MiniSudokuGame() {
     mistakeCount,
     status,
     puzzleId,
+    difficulty,
     selectCell,
     moveSelection,
     toggleNotes,
@@ -54,6 +56,7 @@ export function MiniSudokuGame() {
     requestHint,
     restartPuzzle,
     nextPuzzle,
+    setDifficulty,
   } = useMiniSudoku();
   const [elapsedMs, setElapsedMs] = useState(0);
   const rafRef = useRef<number | null>(null);
@@ -174,6 +177,8 @@ export function MiniSudokuGame() {
     [puzzleId],
   );
   const timerLabel = formatElapsed(elapsedMs);
+  const difficultyOptions = Object.values(DIFFICULTY_CONFIGS);
+  const interactionsDisabled = status === 'loading' || status === 'error';
 
   const handleRestart = () => {
     setElapsedMs(0);
@@ -213,15 +218,49 @@ export function MiniSudokuGame() {
                 <span className="text-xs uppercase tracking-wide">Hints</span>
                 <span className="text-lg font-semibold text-primary">{hintsUsed}</span>
               </div>
+              <div className="flex flex-col text-left">
+                <span className="text-xs uppercase tracking-wide">Difficulty</span>
+                <select
+                  className="w-32 rounded-md border border-border bg-background/80 px-2 py-1 text-sm font-semibold text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-60"
+                  value={difficulty}
+                  onChange={(event) => setDifficulty(event.target.value as Difficulty)}
+                  disabled={status === 'loading'}
+                >
+                  {difficultyOptions.map((config) => (
+                    <option key={config.id} value={config.id}>
+                      {config.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
-          <Board
-            grid={board}
-            selected={selected}
-            onCellSelect={selectCell}
-            conflicts={conflicts}
-            mistakeTokens={mistakeTokens}
-          />
+          {status === 'error' && (
+            <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              Failed to load puzzle.{' '}
+              <button
+                type="button"
+                className="font-semibold underline underline-offset-2 hover:text-destructive/80"
+                onClick={nextPuzzle}
+              >
+                Try again
+              </button>
+            </div>
+          )}
+          <div className="relative">
+            {(status === 'loading' || status === 'error') && (
+              <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-card/80 text-sm text-muted-foreground backdrop-blur">
+                {status === 'loading' ? 'Generating puzzle…' : 'Unavailable'}
+              </div>
+            )}
+            <Board
+              grid={board}
+              selected={selected}
+              onCellSelect={interactionsDisabled ? undefined : selectCell}
+              conflicts={conflicts}
+              mistakeTokens={mistakeTokens}
+            />
+          </div>
         </div>
         <aside className="flex flex-1 flex-col gap-4 rounded-lg border border-dashed border-border/50 bg-muted/20 p-4 text-muted-foreground">
           <p className="text-sm text-foreground">
@@ -240,6 +279,7 @@ export function MiniSudokuGame() {
             onRedo={redo}
             canUndo={canUndo}
             canRedo={canRedo}
+            disabled={interactionsDisabled}
           />
         </aside>
       </div>

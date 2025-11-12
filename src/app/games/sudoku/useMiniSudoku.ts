@@ -1,11 +1,18 @@
 import { useCallback, useEffect, useReducer, useRef } from 'react';
-
-export type MiniSudokuCell = {
-  value: number | null;
-  notes: number[];
-  given: boolean;
-  wasHint?: boolean;
-};
+import {
+  DEFAULT_DIFFICULTY,
+  Difficulty,
+  createEmptyBoard,
+  deserializePuzzleState,
+  generateMiniSudokuPuzzle,
+  gridToBoard,
+  serializePuzzleState,
+  type MiniSudokuBoard,
+  type MiniSudokuCell,
+  type MiniSudokuGrid,
+  type PuzzleStatePayload,
+  type PuzzleStatus,
+} from '@/lib/sudoku-mini';
 
 export type ConflictFlags = {
   row?: boolean;
@@ -14,14 +21,17 @@ export type ConflictFlags = {
 };
 
 type Selection = { row: number; col: number };
-type GameStatus = 'playing' | 'completed';
+type GameStatus = 'idle' | 'loading' | 'playing' | 'completed' | 'error';
 
 type MiniSudokuState = {
-  board: MiniSudokuCell[][];
+  board: MiniSudokuBoard;
+  puzzle: MiniSudokuGrid;
+  solution: MiniSudokuGrid;
+  difficulty: Difficulty;
   selected: Selection | null;
   notesMode: boolean;
-  history: MiniSudokuCell[][][];
-  future: MiniSudokuCell[][][];
+  history: MiniSudokuBoard[];
+  future: MiniSudokuBoard[];
   hintsUsed: number;
   lastHint: Selection | null;
   conflicts: Record<string, ConflictFlags>;
@@ -29,17 +39,7 @@ type MiniSudokuState = {
   mistakeCount: number;
   status: GameStatus;
   puzzleId: number;
-};
-
-type PersistedState = {
-  puzzleId: number;
-  board: MiniSudokuCell[][];
-  notesMode: boolean;
-  hintsUsed: number;
-  lastHint: Selection | null;
-  mistakeCount: number;
-  status: GameStatus;
-  difficulty: string;
+  error?: string;
 };
 
 type Action =
@@ -51,62 +51,74 @@ type Action =
   | { type: 'UNDO' }
   | { type: 'REDO' }
   | { type: 'REQUEST_HINT' }
-  | { type: 'HYDRATE_STATE'; payload: MiniSudokuState }
-  | { type: 'RESET_PUZZLE'; payload?: { advance?: boolean } };
+  | { type: 'RESTORE_PUZZLE' }
+  | { type: 'SET_DIFFICULTY'; payload: Difficulty }
+  | {
+      type: 'LOAD_PUZZLE_REQUEST';
+      payload: { difficulty: Difficulty };
+    }
+  | {
+      type: 'LOAD_PUZZLE_SUCCESS';
+      payload: {
+        board: MiniSudokuBoard;
+        puzzle: MiniSudokuGrid;
+        solution: MiniSudokuGrid;
+        difficulty: Difficulty;
+        puzzleId: number;
+      };
+    }
+  | { type: 'LOAD_PUZZLE_FAILURE'; payload: { message: string } }
+  | { type: 'HYDRATE_STATE'; payload: MiniSudokuState };
 
 const GRID_SIZE = 6;
 const REGION_HEIGHT = 2;
 const REGION_WIDTH = 3;
 const HISTORY_LIMIT = 50;
-const STORAGE_KEY = 'mini-sudoku-state-v1';
-const DEFAULT_DIFFICULTY = 'standard';
+const STORAGE_KEY = 'mini-sudoku-state-v2';
 
-const SOLUTION_BOARD: number[][] = [
-  [1, 2, 3, 4, 5, 6],
-  [4, 5, 6, 1, 2, 3],
-  [2, 3, 4, 5, 6, 1],
-  [5, 6, 1, 2, 3, 4],
-  [3, 4, 5, 6, 1, 2],
-  [6, 1, 2, 3, 4, 5],
-];
-
-const PUZZLE_BOARD: (number | null)[][] = [
-  [1, null, null, 4, null, 6],
-  [4, null, 6, null, 2, null],
-  [null, 3, null, 5, null, 1],
-  [5, null, 1, null, 3, null],
-  [null, 4, null, 6, null, 2],
-  [6, null, 2, null, 4, null],
-];
-
-const createInitialBoard = (): MiniSudokuCell[][] =>
-  PUZZLE_BOARD.map((row) =>
-    row.map((value) => ({
-      value,
-      notes: [],
-      given: value !== null,
-    })),
-  );
-
-const createInitialState = (puzzleId = 1): MiniSudokuState => {
-  const board = createInitialBoard();
+const createInitialState = (): MiniSudokuState => {
+  const puzzle = createEmptyBoard();
+  const solution = createEmptyBoard();
+  const board = gridToBoard(puzzle);
   return {
     board,
+    puzzle,
+    solution,
+    difficulty: DEFAULT_DIFFICULTY,
     selected: null,
     notesMode: false,
     history: [],
     future: [],
     hintsUsed: 0,
     lastHint: null,
-    conflicts: calculateConflicts(board),
+    conflicts: {},
     mistakeTokens: {},
     mistakeCount: 0,
-    status: 'playing',
-    puzzleId,
+    status: 'idle',
+    puzzleId: 0,
+    error: undefined,
   };
 };
 
 const initialState: MiniSudokuState = createInitialState();
+
+const buildStateFromPayload = (payload: PuzzleStatePayload): MiniSudokuState => {
+  const status: GameStatus = payload.status === 'completed' ? 'completed' : 'playing';
+  return {
+    ...createInitialState(),
+    board: payload.board,
+    puzzle: payload.puzzle,
+    solution: payload.solution,
+    difficulty: payload.difficulty,
+    notesMode: payload.notesMode,
+    hintsUsed: payload.hintsUsed,
+    mistakeCount: payload.mistakeCount,
+    status,
+    puzzleId: payload.puzzleId,
+    lastHint: payload.lastHint,
+    conflicts: calculateConflicts(payload.board),
+  };
+};
 
 const getStoredState = (): MiniSudokuState | null => {
   if (typeof window === 'undefined') {
@@ -117,62 +129,25 @@ const getStoredState = (): MiniSudokuState | null => {
     if (!raw) {
       return null;
     }
-    const parsed = JSON.parse(raw) as PersistedState;
-    return hydrateState(parsed);
+    const parsed = JSON.parse(raw);
+    const blankState = createInitialState();
+    const defaults: PuzzleStatePayload = {
+      puzzleId: 0,
+      difficulty: DEFAULT_DIFFICULTY,
+      board: blankState.board,
+      puzzle: blankState.puzzle,
+      solution: blankState.solution,
+      notesMode: false,
+      hintsUsed: 0,
+      mistakeCount: 0,
+      status: 'playing',
+      lastHint: null,
+    };
+    const payload = deserializePuzzleState(parsed, defaults);
+    return buildStateFromPayload(payload);
   } catch {
     return null;
   }
-};
-
-const normalizeBoard = (data: unknown): MiniSudokuCell[][] => {
-  const template = createInitialBoard();
-  if (!Array.isArray(data)) {
-    return template;
-  }
-
-  return template.map((row, rowIndex) =>
-    row.map((templateCell, colIndex) => {
-      const rawRow = Array.isArray(data[rowIndex]) ? data[rowIndex] : [];
-      const rawCell = rawRow[colIndex];
-      if (!rawCell || typeof rawCell !== 'object') {
-        return { ...templateCell, notes: [...templateCell.notes] };
-      }
-
-      const candidateValue =
-        typeof rawCell.value === 'number' && rawCell.value >= 1 && rawCell.value <= 6
-          ? rawCell.value
-          : null;
-
-      const sanitizedNotes = Array.isArray(rawCell.notes)
-        ? rawCell.notes
-            .filter((note: unknown): note is number => typeof note === 'number')
-            .map((note) => Math.min(Math.max(Math.round(note), 1), 6))
-        : [];
-
-      return {
-        value: templateCell.given ? templateCell.value : candidateValue,
-        notes: Array.from(new Set(sanitizedNotes)).sort((a, b) => a - b),
-        given: templateCell.given,
-        wasHint: Boolean(rawCell.wasHint),
-      };
-    }),
-  );
-};
-
-const hydrateState = (persisted: PersistedState): MiniSudokuState => {
-  const board = normalizeBoard(persisted.board);
-  return {
-    ...createInitialState(persisted.puzzleId ?? 1),
-    board,
-    notesMode: Boolean(persisted.notesMode),
-    hintsUsed: persisted.hintsUsed ?? 0,
-    lastHint: persisted.lastHint ?? null,
-    conflicts: calculateConflicts(board),
-    mistakeTokens: {},
-    mistakeCount: persisted.mistakeCount ?? 0,
-    status: persisted.status === 'completed' ? 'completed' : 'playing',
-    puzzleId: persisted.puzzleId ?? 1,
-  };
 };
 
 const getCellKey = (row: number, col: number) => `${row}-${col}`;
@@ -180,7 +155,7 @@ const getCellKey = (row: number, col: number) => `${row}-${col}`;
 const hasActiveConflict = (flags?: ConflictFlags) =>
   Boolean(flags?.row || flags?.col || flags?.region);
 
-function calculateConflicts(board: MiniSudokuCell[][]): Record<string, ConflictFlags> {
+function calculateConflicts(board: MiniSudokuBoard): Record<string, ConflictFlags> {
   const conflicts: Record<string, ConflictFlags> = {};
 
   const markConflicts = (
@@ -238,9 +213,9 @@ function calculateConflicts(board: MiniSudokuCell[][]): Record<string, ConflictF
   return conflicts;
 }
 
-const isBoardSolved = (board: MiniSudokuCell[][]): boolean =>
+const isBoardSolved = (board: MiniSudokuBoard, solution: MiniSudokuGrid): boolean =>
   board.every((row, rowIndex) =>
-    row.every((cell, colIndex) => cell.value === SOLUTION_BOARD[rowIndex][colIndex]),
+    row.every((cell, colIndex) => cell.value === solution[rowIndex]?.[colIndex]),
   );
 
 const selectCell = (state: MiniSudokuState, next: Selection): MiniSudokuState => {
@@ -263,7 +238,7 @@ type CommitOptions = {
 
 const commitBoardChange = (
   state: MiniSudokuState,
-  nextBoard: MiniSudokuCell[][],
+  nextBoard: MiniSudokuBoard,
   options?: CommitOptions,
 ): MiniSudokuState => {
   if (nextBoard === state.board) {
@@ -284,7 +259,10 @@ const commitBoardChange = (
         }
       : state.mistakeTokens;
 
-  const nextStatus: GameStatus = isBoardSolved(nextBoard) ? 'completed' : 'playing';
+  let nextStatus: GameStatus = state.status;
+  if (state.status !== 'loading' && state.status !== 'error') {
+    nextStatus = isBoardSolved(nextBoard, state.solution) ? 'completed' : 'playing';
+  }
 
   return {
     ...state,
@@ -304,7 +282,7 @@ const areArraysEqual = (a: number[], b: number[]) =>
   a.length === b.length && a.every((value, index) => value === b[index]);
 
 const updateCell = (
-  board: MiniSudokuCell[][],
+  board: MiniSudokuBoard,
   row: number,
   col: number,
   updater: (cell: MiniSudokuCell) => MiniSudokuCell,
@@ -335,7 +313,7 @@ const reducer = (state: MiniSudokuState, action: Action): MiniSudokuState => {
     case 'TOGGLE_NOTES':
       return { ...state, notesMode: !state.notesMode };
     case 'INPUT_VALUE': {
-      if (state.status === 'completed') {
+      if (state.status === 'loading' || state.status === 'error') {
         return state;
       }
       const { selected } = state;
@@ -375,7 +353,7 @@ const reducer = (state: MiniSudokuState, action: Action): MiniSudokuState => {
       });
     }
     case 'ERASE': {
-      if (state.status === 'completed') {
+      if (state.status === 'loading' || state.status === 'error') {
         return state;
       }
       const { selected } = state;
@@ -403,7 +381,12 @@ const reducer = (state: MiniSudokuState, action: Action): MiniSudokuState => {
         history,
         future,
         conflicts: calculateConflicts(previous),
-        status: isBoardSolved(previous) ? 'completed' : 'playing',
+        status:
+          state.status === 'error'
+            ? 'error'
+            : isBoardSolved(previous, state.solution)
+              ? 'completed'
+              : 'playing',
       };
     }
     case 'REDO': {
@@ -416,11 +399,16 @@ const reducer = (state: MiniSudokuState, action: Action): MiniSudokuState => {
         history,
         future: rest,
         conflicts: calculateConflicts(next),
-        status: isBoardSolved(next) ? 'completed' : 'playing',
+        status:
+          state.status === 'error'
+            ? 'error'
+            : isBoardSolved(next, state.solution)
+              ? 'completed'
+              : 'playing',
       };
     }
     case 'REQUEST_HINT': {
-      if (state.status === 'completed') {
+      if (state.status !== 'playing') {
         return state;
       }
       const target = findHintTarget(state);
@@ -428,7 +416,7 @@ const reducer = (state: MiniSudokuState, action: Action): MiniSudokuState => {
         return state;
       }
 
-      const correctValue = SOLUTION_BOARD[target.row][target.col];
+      const correctValue = state.solution[target.row]?.[target.col];
       if (!correctValue) {
         return state;
       }
@@ -458,6 +446,69 @@ const reducer = (state: MiniSudokuState, action: Action): MiniSudokuState => {
         selected: target,
       };
     }
+    case 'RESTORE_PUZZLE': {
+      const board = gridToBoard(state.puzzle);
+      return {
+        ...state,
+        board,
+        history: [],
+        future: [],
+        notesMode: false,
+        hintsUsed: 0,
+        mistakeCount: 0,
+        mistakeTokens: {},
+        conflicts: calculateConflicts(board),
+        status: 'playing',
+        selected: null,
+        lastHint: null,
+      };
+    }
+    case 'SET_DIFFICULTY': {
+      if (action.payload === state.difficulty && state.status !== 'error') {
+        return state;
+      }
+      return {
+        ...state,
+        difficulty: action.payload,
+        status: 'idle',
+        error: undefined,
+      };
+    }
+    case 'LOAD_PUZZLE_REQUEST':
+      return {
+        ...state,
+        status: 'loading',
+        difficulty: action.payload.difficulty,
+        error: undefined,
+        selected: null,
+      };
+    case 'LOAD_PUZZLE_SUCCESS': {
+      const { board, puzzle, solution, difficulty, puzzleId } = action.payload;
+      return {
+        ...state,
+        board,
+        puzzle,
+        solution,
+        difficulty,
+        puzzleId,
+        status: 'playing',
+        history: [],
+        future: [],
+        notesMode: false,
+        hintsUsed: 0,
+        lastHint: null,
+        conflicts: calculateConflicts(board),
+        mistakeTokens: {},
+        mistakeCount: 0,
+        selected: null,
+      };
+    }
+    case 'LOAD_PUZZLE_FAILURE':
+      return {
+        ...state,
+        status: 'error',
+        error: action.payload.message,
+      };
     case 'HYDRATE_STATE': {
       return {
         ...state,
@@ -466,25 +517,8 @@ const reducer = (state: MiniSudokuState, action: Action): MiniSudokuState => {
         future: [],
         conflicts: calculateConflicts(action.payload.board),
         mistakeTokens: {},
-      };
-    }
-    case 'RESET_PUZZLE': {
-      const advance = Boolean(action.payload?.advance);
-      const board = createInitialBoard();
-      return {
-        ...state,
-        board,
-        selected: null,
-        notesMode: false,
-        history: [],
-        future: [],
-        hintsUsed: 0,
-        lastHint: null,
-        conflicts: calculateConflicts(board),
-        mistakeTokens: {},
-        mistakeCount: 0,
-        status: 'playing',
-        puzzleId: advance ? state.puzzleId + 1 : state.puzzleId,
+        status: action.payload.status,
+        error: undefined,
       };
     }
     default:
@@ -517,6 +551,33 @@ export function useMiniSudoku() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const hydratedRef = useRef(false);
 
+  const loadPuzzle = useCallback(
+    (difficulty: Difficulty, options: { forceNew?: boolean } = {}) => {
+      dispatch({ type: 'LOAD_PUZZLE_REQUEST', payload: { difficulty } });
+      try {
+        const generated = generateMiniSudokuPuzzle(difficulty, {
+          forceNew: options.forceNew,
+        });
+        const board = gridToBoard(generated.puzzle);
+        dispatch({
+          type: 'LOAD_PUZZLE_SUCCESS',
+          payload: {
+            board,
+            puzzle: generated.puzzle,
+            solution: generated.solution,
+            difficulty,
+            puzzleId: generated.seed,
+          },
+        });
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : 'Failed to load Mini Sudoku puzzle.';
+        dispatch({ type: 'LOAD_PUZZLE_FAILURE', payload: { message } });
+      }
+    },
+    [dispatch],
+  );
+
   useEffect(() => {
     const stored = getStoredState();
     if (stored) {
@@ -526,17 +587,38 @@ export function useMiniSudoku() {
   }, [dispatch]);
 
   useEffect(() => {
-    if (typeof window === 'undefined' || !hydratedRef.current) return;
-    const payload: PersistedState = {
+    if (!hydratedRef.current) return;
+    if (state.status !== 'idle') return;
+    loadPuzzle(state.difficulty, { forceNew: true });
+  }, [loadPuzzle, state.difficulty, state.status]);
+
+  useEffect(() => {
+    if (
+      typeof window === 'undefined' ||
+      !hydratedRef.current ||
+      state.puzzleId === 0 ||
+      state.status === 'idle' ||
+      state.status === 'loading'
+    ) {
+      return;
+    }
+
+    const persistedStatus: PuzzleStatus =
+      state.status === 'completed' ? 'completed' : 'playing';
+
+    const payload = serializePuzzleState({
       puzzleId: state.puzzleId,
+      difficulty: state.difficulty,
       board: state.board,
+      puzzle: state.puzzle,
+      solution: state.solution,
       notesMode: state.notesMode,
       hintsUsed: state.hintsUsed,
-      lastHint: state.lastHint,
       mistakeCount: state.mistakeCount,
-      status: state.status,
-      difficulty: DEFAULT_DIFFICULTY,
-    };
+      status: persistedStatus,
+      lastHint: state.lastHint,
+    });
+
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
     } catch {
@@ -550,6 +632,9 @@ export function useMiniSudoku() {
     state.mistakeCount,
     state.status,
     state.puzzleId,
+    state.difficulty,
+    state.puzzle,
+    state.solution,
   ]);
 
   const selectCellHandler = useCallback(
@@ -573,9 +658,13 @@ export function useMiniSudoku() {
   const undo = useCallback(() => dispatch({ type: 'UNDO' }), []);
   const redo = useCallback(() => dispatch({ type: 'REDO' }), []);
   const hint = useCallback(() => dispatch({ type: 'REQUEST_HINT' }), []);
-  const restartPuzzle = useCallback(() => dispatch({ type: 'RESET_PUZZLE' }), []);
+  const restartPuzzle = useCallback(() => dispatch({ type: 'RESTORE_PUZZLE' }), []);
   const nextPuzzle = useCallback(
-    () => dispatch({ type: 'RESET_PUZZLE', payload: { advance: true } }),
+    () => loadPuzzle(state.difficulty, { forceNew: true }),
+    [loadPuzzle, state.difficulty],
+  );
+  const setDifficulty = useCallback(
+    (difficulty: Difficulty) => dispatch({ type: 'SET_DIFFICULTY', payload: difficulty }),
     [],
   );
 
@@ -590,6 +679,7 @@ export function useMiniSudoku() {
     mistakeCount: state.mistakeCount,
     status: state.status,
     puzzleId: state.puzzleId,
+    difficulty: state.difficulty,
     canUndo: state.history.length > 0,
     canRedo: state.future.length > 0,
     selectCell: selectCellHandler,
@@ -602,5 +692,6 @@ export function useMiniSudoku() {
     requestHint: hint,
     restartPuzzle,
     nextPuzzle,
+    setDifficulty,
   };
 }
