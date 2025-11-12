@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useReducer, useRef } from 'react';
 import {
   DEFAULT_DIFFICULTY,
+  DIFFICULTY_CONFIGS,
   Difficulty,
   createEmptyBoard,
   deserializePuzzleState,
@@ -12,7 +13,9 @@ import {
   type MiniSudokuGrid,
   type PuzzleStatePayload,
   type PuzzleStatus,
+  type SerializedPuzzle,
 } from '@/lib/sudoku-mini';
+import { usePersistentPuzzle } from './hooks/usePersistentPuzzle';
 
 export type ConflictFlags = {
   row?: boolean;
@@ -103,51 +106,25 @@ const createInitialState = (): MiniSudokuState => {
 const initialState: MiniSudokuState = createInitialState();
 
 const buildStateFromPayload = (payload: PuzzleStatePayload): MiniSudokuState => {
-  const status: GameStatus = payload.status === 'completed' ? 'completed' : 'playing';
+  const board = payload.board;
   return {
     ...createInitialState(),
-    board: payload.board,
+    board,
     puzzle: payload.puzzle,
     solution: payload.solution,
     difficulty: payload.difficulty,
     notesMode: payload.notesMode,
     hintsUsed: payload.hintsUsed,
-    mistakeCount: payload.mistakeCount,
-    status,
-    puzzleId: payload.puzzleId,
     lastHint: payload.lastHint,
-    conflicts: calculateConflicts(payload.board),
+    conflicts: calculateConflicts(board),
+    mistakeTokens: {},
+    mistakeCount: payload.mistakeCount,
+    status: payload.status === 'completed' ? 'completed' : 'playing',
+    puzzleId: payload.puzzleId,
+    selected: null,
+    history: [],
+    future: [],
   };
-};
-
-const getStoredState = (): MiniSudokuState | null => {
-  if (typeof window === 'undefined') {
-    return null;
-  }
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      return null;
-    }
-    const parsed = JSON.parse(raw);
-    const blankState = createInitialState();
-    const defaults: PuzzleStatePayload = {
-      puzzleId: 0,
-      difficulty: DEFAULT_DIFFICULTY,
-      board: blankState.board,
-      puzzle: blankState.puzzle,
-      solution: blankState.solution,
-      notesMode: false,
-      hintsUsed: 0,
-      mistakeCount: 0,
-      status: 'playing',
-      lastHint: null,
-    };
-    const payload = deserializePuzzleState(parsed, defaults);
-    return buildStateFromPayload(payload);
-  } catch {
-    return null;
-  }
 };
 
 const getCellKey = (row: number, col: number) => `${row}-${col}`;
@@ -411,6 +388,10 @@ const reducer = (state: MiniSudokuState, action: Action): MiniSudokuState => {
       if (state.status !== 'playing') {
         return state;
       }
+      const config = DIFFICULTY_CONFIGS[state.difficulty];
+      if (config && state.hintsUsed >= config.maxHints) {
+        return state;
+      }
       const target = findHintTarget(state);
       if (!target) {
         return state;
@@ -550,6 +531,7 @@ const findHintTarget = (state: MiniSudokuState): Selection | null => {
 export function useMiniSudoku() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const hydratedRef = useRef(false);
+  const { loadState, saveState } = usePersistentPuzzle<SerializedPuzzle>(STORAGE_KEY);
 
   const loadPuzzle = useCallback(
     (difficulty: Difficulty, options: { forceNew?: boolean } = {}) => {
@@ -579,12 +561,26 @@ export function useMiniSudoku() {
   );
 
   useEffect(() => {
-    const stored = getStoredState();
+    const stored = loadState();
     if (stored) {
-      dispatch({ type: 'HYDRATE_STATE', payload: stored });
+      const blankState = createInitialState();
+      const defaults: PuzzleStatePayload = {
+        puzzleId: blankState.puzzleId,
+        difficulty: blankState.difficulty,
+        board: blankState.board,
+        puzzle: blankState.puzzle,
+        solution: blankState.solution,
+        notesMode: blankState.notesMode,
+        hintsUsed: blankState.hintsUsed,
+        mistakeCount: blankState.mistakeCount,
+        status: 'playing',
+        lastHint: null,
+      };
+      const payload = deserializePuzzleState(stored, defaults);
+      dispatch({ type: 'HYDRATE_STATE', payload: buildStateFromPayload(payload) });
     }
     hydratedRef.current = true;
-  }, [dispatch]);
+  }, [dispatch, loadState]);
 
   useEffect(() => {
     if (!hydratedRef.current) return;
@@ -619,11 +615,7 @@ export function useMiniSudoku() {
       lastHint: state.lastHint,
     });
 
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-    } catch {
-      // ignore persistence errors
-    }
+    saveState(payload);
   }, [
     state.board,
     state.notesMode,
@@ -635,6 +627,7 @@ export function useMiniSudoku() {
     state.difficulty,
     state.puzzle,
     state.solution,
+    saveState,
   ]);
 
   const selectCellHandler = useCallback(

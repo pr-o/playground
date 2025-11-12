@@ -12,6 +12,7 @@ type NumberPadProps = {
   canUndo?: boolean;
   canRedo?: boolean;
   disabled?: boolean;
+  hintDisabled?: boolean;
 };
 
 const baseButtonClass =
@@ -29,6 +30,7 @@ export function NumberPad({
   canUndo = true,
   canRedo = false,
   disabled = false,
+  hintDisabled = false,
 }: NumberPadProps) {
   return (
     <div className="flex w-full flex-col gap-3">
@@ -66,7 +68,7 @@ export function NumberPad({
           type="button"
           className={baseButtonClass}
           onClick={onHint}
-          disabled={disabled}
+          disabled={disabled || hintDisabled}
         >
           Hint
         </button>

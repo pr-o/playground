@@ -1,36 +1,14 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo } from 'react';
 import { DIFFICULTY_CONFIGS, type Difficulty } from '@/lib/sudoku-mini';
 import { Board } from './components/Board';
 import { CompletionOverlay } from './components/CompletionOverlay';
 import { NumberPad } from './components/NumberPad';
+import { useSelectionNavigation } from './hooks/useSelectionNavigation';
+import { useSudokuTimer } from './hooks/useSudokuTimer';
+import { useHints } from './hooks/useHints';
 import { useMiniSudoku } from './useMiniSudoku';
-
-const DIGIT_REGEX = /^[1-6]$/;
-const TIMER_STORAGE_KEY = 'mini-sudoku-timer-v1';
-
-const readStoredElapsed = (puzzleId: number): number => {
-  if (typeof window === 'undefined') return 0;
-  try {
-    const raw = window.localStorage.getItem(TIMER_STORAGE_KEY);
-    if (!raw) return 0;
-    const data = JSON.parse(raw);
-    if (data?.puzzleId !== puzzleId) return 0;
-    return typeof data.elapsedMs === 'number' ? data.elapsedMs : 0;
-  } catch {
-    return 0;
-  }
-};
-
-const formatElapsed = (ms: number): string => {
-  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
-  const minutes = Math.floor(totalSeconds / 60)
-    .toString()
-    .padStart(2, '0');
-  const seconds = (totalSeconds % 60).toString().padStart(2, '0');
-  return `${minutes}:${seconds}`;
-};
 
 export function MiniSudokuGame() {
   const {
@@ -58,135 +36,50 @@ export function MiniSudokuGame() {
     nextPuzzle,
     setDifficulty,
   } = useMiniSudoku();
-  const [elapsedMs, setElapsedMs] = useState(0);
-  const rafRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      const tagName = (event.target as HTMLElement | null)?.tagName;
-      if (tagName && ['INPUT', 'TEXTAREA'].includes(tagName)) {
-        return;
-      }
-
-      if (event.key.startsWith('Arrow')) {
-        event.preventDefault();
-        if (event.key === 'ArrowUp') moveSelection(-1, 0);
-        if (event.key === 'ArrowDown') moveSelection(1, 0);
-        if (event.key === 'ArrowLeft') moveSelection(0, -1);
-        if (event.key === 'ArrowRight') moveSelection(0, 1);
-        return;
-      }
-
-      if (DIGIT_REGEX.test(event.key)) {
-        event.preventDefault();
-        inputDigit(Number(event.key));
-        return;
-      }
-
-      if (event.key === 'Backspace' || event.key === 'Delete') {
-        event.preventDefault();
-        erase();
-        return;
-      }
-
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'z') {
-        event.preventDefault();
-        if (event.shiftKey) {
-          redo();
-        } else {
-          undo();
-        }
-        return;
-      }
-
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'y') {
-        event.preventDefault();
+  const {
+    remaining: remainingHints,
+    maxHints,
+    hasHints,
+  } = useHints(difficulty, hintsUsed);
+  const {
+    elapsedMs,
+    formatted: timerLabel,
+    reset: resetTimer,
+  } = useSudokuTimer({
+    puzzleId,
+    status,
+  });
+  useSelectionNavigation({
+    disabled: status === 'loading' || status === 'error',
+    onMove: moveSelection,
+    onInput: inputDigit,
+    onErase: erase,
+    onToggleNotes: toggleNotes,
+    onUndo: (redoRequested) => {
+      if (redoRequested) {
         redo();
-        return;
+      } else {
+        undo();
       }
-
-      if (event.key.toLowerCase() === 'n') {
-        event.preventDefault();
-        toggleNotes();
-        return;
-      }
-
-      if (event.key.toLowerCase() === 'h') {
-        event.preventDefault();
-        requestHint();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [erase, inputDigit, moveSelection, redo, requestHint, toggleNotes, undo]);
-
-  useEffect(() => {
-    let prevTime: number | null = null;
-
-    if (status !== 'playing') {
-      if (rafRef.current) {
-        cancelAnimationFrame(rafRef.current);
-        rafRef.current = null;
-      }
-      prevTime = null;
-      return;
-    }
-
-    const tick = (timestamp: number) => {
-      if (prevTime == null) {
-        prevTime = timestamp;
-      }
-      const delta = timestamp - prevTime;
-      prevTime = timestamp;
-      setElapsedMs((current) => current + delta);
-      rafRef.current = requestAnimationFrame(tick);
-    };
-
-    rafRef.current = requestAnimationFrame(tick);
-
-    return () => {
-      if (rafRef.current) {
-        cancelAnimationFrame(rafRef.current);
-        rafRef.current = null;
-      }
-    };
-  }, [status]);
-
-  useEffect(() => {
-    setElapsedMs((current) => {
-      const stored = readStoredElapsed(puzzleId);
-      return stored === current ? current : stored;
-    });
-  }, [puzzleId]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    try {
-      window.localStorage.setItem(
-        TIMER_STORAGE_KEY,
-        JSON.stringify({ puzzleId, elapsedMs }),
-      );
-    } catch {
-      // ignore timer persistence failures
-    }
-  }, [elapsedMs, puzzleId]);
+    },
+    onRedo: redo,
+    onHint: requestHint,
+  });
 
   const puzzleLabel = useMemo(
     () => `Puzzle #${String(puzzleId).padStart(3, '0')}`,
     [puzzleId],
   );
-  const timerLabel = formatElapsed(elapsedMs);
   const difficultyOptions = Object.values(DIFFICULTY_CONFIGS);
   const interactionsDisabled = status === 'loading' || status === 'error';
 
   const handleRestart = () => {
-    setElapsedMs(0);
+    resetTimer();
     restartPuzzle();
   };
 
   const handleNextPuzzle = () => {
-    setElapsedMs(0);
+    resetTimer();
     nextPuzzle();
   };
 
@@ -216,7 +109,9 @@ export function MiniSudokuGame() {
               </div>
               <div className="flex flex-col">
                 <span className="text-xs uppercase tracking-wide">Hints</span>
-                <span className="text-lg font-semibold text-primary">{hintsUsed}</span>
+                <span className="text-lg font-semibold text-primary">
+                  {remainingHints}/{maxHints}
+                </span>
               </div>
               <div className="flex flex-col text-left">
                 <span className="text-xs uppercase tracking-wide">Difficulty</span>
@@ -280,6 +175,7 @@ export function MiniSudokuGame() {
             canUndo={canUndo}
             canRedo={canRedo}
             disabled={interactionsDisabled}
+            hintDisabled={interactionsDisabled || !hasHints}
           />
         </aside>
       </div>
