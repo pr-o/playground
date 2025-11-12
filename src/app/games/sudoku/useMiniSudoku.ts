@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useReducer } from 'react';
+import { useCallback, useEffect, useReducer, useRef } from 'react';
 
 export type MiniSudokuCell = {
   value: number | null;
@@ -51,6 +51,7 @@ type Action =
   | { type: 'UNDO' }
   | { type: 'REDO' }
   | { type: 'REQUEST_HINT' }
+  | { type: 'HYDRATE_STATE'; payload: MiniSudokuState }
   | { type: 'RESET_PUZZLE'; payload?: { advance?: boolean } };
 
 const GRID_SIZE = 6;
@@ -107,19 +108,19 @@ const createInitialState = (puzzleId = 1): MiniSudokuState => {
 
 const initialState: MiniSudokuState = createInitialState();
 
-const getStoredState = (): MiniSudokuState => {
+const getStoredState = (): MiniSudokuState | null => {
   if (typeof window === 'undefined') {
-    return initialState;
+    return null;
   }
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) {
-      return initialState;
+      return null;
     }
     const parsed = JSON.parse(raw) as PersistedState;
     return hydrateState(parsed);
   } catch {
-    return initialState;
+    return null;
   }
 };
 
@@ -457,6 +458,16 @@ const reducer = (state: MiniSudokuState, action: Action): MiniSudokuState => {
         selected: target,
       };
     }
+    case 'HYDRATE_STATE': {
+      return {
+        ...state,
+        ...action.payload,
+        history: [],
+        future: [],
+        conflicts: calculateConflicts(action.payload.board),
+        mistakeTokens: {},
+      };
+    }
     case 'RESET_PUZZLE': {
       const advance = Boolean(action.payload?.advance);
       const board = createInitialBoard();
@@ -503,10 +514,19 @@ const findHintTarget = (state: MiniSudokuState): Selection | null => {
 };
 
 export function useMiniSudoku() {
-  const [state, dispatch] = useReducer(reducer, initialState, () => getStoredState());
+  const [state, dispatch] = useReducer(reducer, initialState);
+  const hydratedRef = useRef(false);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    const stored = getStoredState();
+    if (stored) {
+      dispatch({ type: 'HYDRATE_STATE', payload: stored });
+    }
+    hydratedRef.current = true;
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !hydratedRef.current) return;
     const payload: PersistedState = {
       puzzleId: state.puzzleId,
       board: state.board,

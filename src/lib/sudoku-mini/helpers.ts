@@ -1,15 +1,21 @@
-import { BOARD_SIZE, REGION_HEIGHT, REGION_WIDTH, TOTAL_CELLS } from './constants';
-import type { CellCoordinate, CellValue, Digit, MiniSudokuBoard } from './types';
+import {
+  BOARD_SIZE,
+  DIGITS,
+  REGION_HEIGHT,
+  REGION_WIDTH,
+  TOTAL_CELLS,
+} from './constants';
+import type { CellCoordinate, CellValue, Digit, MiniSudokuGrid, RegionId } from './types';
 
-export const createEmptyBoard = (): MiniSudokuBoard =>
+export const createEmptyBoard = (): MiniSudokuGrid =>
   Array.from({ length: BOARD_SIZE }, () =>
     Array.from({ length: BOARD_SIZE }, () => null as CellValue),
   );
 
-export const cloneBoard = (board: MiniSudokuBoard): MiniSudokuBoard =>
+export const cloneBoard = (board: MiniSudokuGrid): MiniSudokuGrid =>
   board.map((row) => row.slice());
 
-export const getRegionIndex = (row: number, col: number): number => {
+export const getRegionIndex = (row: number, col: number): RegionId => {
   const regionRow = Math.floor(row / REGION_HEIGHT);
   const regionCol = Math.floor(col / REGION_WIDTH);
   const regionsPerRow = BOARD_SIZE / REGION_WIDTH;
@@ -17,7 +23,7 @@ export const getRegionIndex = (row: number, col: number): number => {
 };
 
 export const isPlacementValid = (
-  board: MiniSudokuBoard,
+  board: MiniSudokuGrid,
   row: number,
   col: number,
   value: Digit,
@@ -41,7 +47,31 @@ export const isPlacementValid = (
   return true;
 };
 
-export const countFilledCells = (board: MiniSudokuBoard): number =>
+export const getRowValues = (board: MiniSudokuGrid, row: number): CellValue[] =>
+  board[row] ?? [];
+
+export const getColumnValues = (board: MiniSudokuGrid, col: number): CellValue[] =>
+  board.map((row) => row[col]);
+
+export const getRegionValues = (
+  board: MiniSudokuGrid,
+  row: number,
+  col: number,
+): CellValue[] => {
+  const startRow = Math.floor(row / REGION_HEIGHT) * REGION_HEIGHT;
+  const startCol = Math.floor(col / REGION_WIDTH) * REGION_WIDTH;
+  const values: CellValue[] = [];
+
+  for (let r = 0; r < REGION_HEIGHT; r += 1) {
+    for (let c = 0; c < REGION_WIDTH; c += 1) {
+      values.push(board[startRow + r][startCol + c]);
+    }
+  }
+
+  return values;
+};
+
+export const countFilledCells = (board: MiniSudokuGrid): number =>
   board.reduce(
     (acc, row) => acc + row.reduce((rowAcc, cell) => rowAcc + (cell ? 1 : 0), 0),
     0,
@@ -63,7 +93,7 @@ export const getRandomInt = (min: number, max: number, random: () => number): nu
 };
 
 export const getNextEmptyCell = (
-  board: MiniSudokuBoard,
+  board: MiniSudokuGrid,
   startIndex = 0,
 ): CellCoordinate | null => {
   for (let index = startIndex; index < TOTAL_CELLS; index += 1) {
@@ -74,4 +104,76 @@ export const getNextEmptyCell = (
     }
   }
   return null;
+};
+
+export const getCandidateDigits = (
+  board: MiniSudokuGrid,
+  row: number,
+  col: number,
+): Digit[] => {
+  if (board[row][col] !== null) {
+    return [];
+  }
+
+  const used = new Set<number>();
+  getRowValues(board, row).forEach((value) => value && used.add(value));
+  getColumnValues(board, col).forEach((value) => value && used.add(value));
+  getRegionValues(board, row, col).forEach((value) => value && used.add(value));
+
+  return DIGITS.filter((digit) => !used.has(digit));
+};
+
+export const detectConflicts = (board: MiniSudokuGrid): Record<string, boolean> => {
+  const conflicts: Record<string, boolean> = {};
+
+  const markConflicts = (coordinates: CellCoordinate[]) => {
+    if (coordinates.length <= 1) return;
+    coordinates.forEach(({ row, col }) => {
+      conflicts[`${row}-${col}`] = true;
+    });
+  };
+
+  // Rows
+  for (let row = 0; row < BOARD_SIZE; row += 1) {
+    const buckets: Record<number, CellCoordinate[]> = {};
+    for (let col = 0; col < BOARD_SIZE; col += 1) {
+      const value = board[row][col];
+      if (value == null) continue;
+      buckets[value] = buckets[value] ?? [];
+      buckets[value].push({ row, col });
+    }
+    Object.values(buckets).forEach(markConflicts);
+  }
+
+  // Columns
+  for (let col = 0; col < BOARD_SIZE; col += 1) {
+    const buckets: Record<number, CellCoordinate[]> = {};
+    for (let row = 0; row < BOARD_SIZE; row += 1) {
+      const value = board[row][col];
+      if (value == null) continue;
+      buckets[value] = buckets[value] ?? [];
+      buckets[value].push({ row, col });
+    }
+    Object.values(buckets).forEach(markConflicts);
+  }
+
+  // Regions
+  for (let startRow = 0; startRow < BOARD_SIZE; startRow += REGION_HEIGHT) {
+    for (let startCol = 0; startCol < BOARD_SIZE; startCol += REGION_WIDTH) {
+      const buckets: Record<number, CellCoordinate[]> = {};
+      for (let r = 0; r < REGION_HEIGHT; r += 1) {
+        for (let c = 0; c < REGION_WIDTH; c += 1) {
+          const row = startRow + r;
+          const col = startCol + c;
+          const value = board[row][col];
+          if (value == null) continue;
+          buckets[value] = buckets[value] ?? [];
+          buckets[value].push({ row, col });
+        }
+      }
+      Object.values(buckets).forEach(markConflicts);
+    }
+  }
+
+  return conflicts;
 };

@@ -18,7 +18,7 @@ import {
 import type {
   Difficulty,
   GeneratedPuzzle,
-  MiniSudokuBoard,
+  MiniSudokuGrid,
   PuzzleGeneratorOptions,
 } from './types';
 
@@ -39,7 +39,7 @@ export const createSeededRandom = (seed: number): RandomSource => {
   };
 };
 
-const buildSolvedBoard = (random: RandomSource): MiniSudokuBoard => {
+const buildSolvedBoard = (random: RandomSource): MiniSudokuGrid => {
   const board = createEmptyBoard();
   const cellOrder = shuffle(
     Array.from({ length: TOTAL_CELLS }, (_, index) => index),
@@ -85,7 +85,7 @@ const buildSolvedBoard = (random: RandomSource): MiniSudokuBoard => {
 };
 
 const countSolutions = (
-  board: MiniSudokuBoard,
+  board: MiniSudokuGrid,
   random: RandomSource,
   limit = 2,
 ): number => {
@@ -118,14 +118,14 @@ const countSolutions = (
   return solutions;
 };
 
-const ensureUniqueSolution = (board: MiniSudokuBoard, random: RandomSource): boolean =>
+const ensureUniqueSolution = (board: MiniSudokuGrid, random: RandomSource): boolean =>
   countSolutions(board, random, 2) === 1;
 
 const removeCellsForDifficulty = (
-  solved: MiniSudokuBoard,
+  solved: MiniSudokuGrid,
   targetGivens: number,
   random: RandomSource,
-): MiniSudokuBoard => {
+): MiniSudokuGrid => {
   const puzzle = cloneBoard(solved);
   const cells = shuffle(
     Array.from({ length: TOTAL_CELLS }, (_, index) => index),

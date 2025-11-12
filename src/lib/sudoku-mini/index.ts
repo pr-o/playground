@@ -2,3 +2,4 @@ export * from './types';
 export * from './constants';
 export * from './helpers';
 export * from './generator';
+export * from './serializer';

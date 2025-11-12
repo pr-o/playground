@@ -1,6 +1,6 @@
 import { BOARD_SIZE, DIFFICULTY_CONFIGS } from './constants';
 import { createSeededRandom, generateMiniSudokuPuzzle } from './generator';
-import type { Difficulty, MiniSudokuBoard } from './types';
+import type { Difficulty, MiniSudokuGrid } from './types';
 
 const DIGIT_LIST = Array.from({ length: BOARD_SIZE }, (_, index) => index + 1);
 
@@ -12,7 +12,7 @@ const expectPermutation = (values: Array<number | null>) => {
   expect(sorted).toEqual(DIGIT_LIST);
 };
 
-const expectValidSolvedBoard = (board: MiniSudokuBoard) => {
+const expectValidSolvedBoard = (board: MiniSudokuGrid) => {
   // Validate rows
   board.forEach((row) => {
     expectPermutation(row);

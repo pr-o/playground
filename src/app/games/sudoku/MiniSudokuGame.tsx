@@ -55,7 +55,7 @@ export function MiniSudokuGame() {
     restartPuzzle,
     nextPuzzle,
   } = useMiniSudoku();
-  const [elapsedMs, setElapsedMs] = useState(() => readStoredElapsed(puzzleId));
+  const [elapsedMs, setElapsedMs] = useState(0);
   const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -197,9 +197,9 @@ export function MiniSudokuGame() {
               <h2 className="text-2xl font-semibold">{puzzleLabel}</h2>
             </div>
             <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-              <div className="flex flex-col">
+              <div className="flex flex-col text-left">
                 <span className="text-xs uppercase tracking-wide">Timer</span>
-                <span className="text-lg font-semibold text-foreground">
+                <span className="font-mono text-lg font-semibold tabular-nums text-foreground">
                   {timerLabel}
                 </span>
               </div>

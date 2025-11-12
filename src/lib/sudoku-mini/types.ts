@@ -1,10 +1,7 @@
 export const DIGIT_VALUES = [1, 2, 3, 4, 5, 6] as const;
 
 export type Digit = (typeof DIGIT_VALUES)[number];
-
 export type CellValue = Digit | null;
-
-export type MiniSudokuBoard = CellValue[][];
 
 export type CellCoordinate = {
   row: number;
@@ -13,7 +10,11 @@ export type CellCoordinate = {
 
 export type RegionId = number;
 
-export type Difficulty = 'beginner' | 'intermediate' | 'expert';
+export enum Difficulty {
+  Beginner = 'beginner',
+  Intermediate = 'intermediate',
+  Expert = 'expert',
+}
 
 export type DifficultyConfig = {
   id: Difficulty;
@@ -23,9 +24,52 @@ export type DifficultyConfig = {
   maxHints: number;
 };
 
+export type MiniSudokuGrid = CellValue[][];
+
+export type MiniSudokuCell = {
+  value: CellValue;
+  notes: Digit[];
+  given: boolean;
+  wasHint?: boolean;
+};
+
+export type MiniSudokuBoard = MiniSudokuCell[][];
+
+export type PuzzleStatus = 'playing' | 'completed';
+
+export type SerializedCell = {
+  v: CellValue;
+  n?: Digit[];
+  g: boolean;
+  h?: boolean;
+};
+
+export type SerializedPuzzle = {
+  version: number;
+  puzzleId: number;
+  difficulty: Difficulty;
+  cells: SerializedCell[][];
+  notesMode: boolean;
+  hintsUsed: number;
+  mistakeCount: number;
+  status: PuzzleStatus;
+  lastHint: CellCoordinate | null;
+};
+
+export type PuzzleStatePayload = {
+  puzzleId: number;
+  difficulty: Difficulty;
+  board: MiniSudokuBoard;
+  notesMode: boolean;
+  hintsUsed: number;
+  mistakeCount: number;
+  status: PuzzleStatus;
+  lastHint: CellCoordinate | null;
+};
+
 export type GeneratedPuzzle = {
-  puzzle: MiniSudokuBoard;
-  solution: MiniSudokuBoard;
+  puzzle: MiniSudokuGrid;
+  solution: MiniSudokuGrid;
   givens: number;
   difficulty: Difficulty;
   seed: number;

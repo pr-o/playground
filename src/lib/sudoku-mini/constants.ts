@@ -1,4 +1,5 @@
-import type { Difficulty, DifficultyConfig, Digit } from './types';
+import { Difficulty } from './types';
+import type { DifficultyConfig, Digit } from './types';
 
 export const BOARD_SIZE = 6;
 export const REGION_WIDTH = 3;
@@ -7,26 +8,30 @@ export const TOTAL_CELLS = BOARD_SIZE * BOARD_SIZE;
 
 export const DIGITS: Digit[] = [1, 2, 3, 4, 5, 6];
 
-export const DEFAULT_DIFFICULTY: Difficulty = 'beginner';
-export const ALL_DIFFICULTIES: Difficulty[] = ['beginner', 'intermediate', 'expert'];
+export const DEFAULT_DIFFICULTY: Difficulty = Difficulty.Beginner;
+export const ALL_DIFFICULTIES: Difficulty[] = [
+  Difficulty.Beginner,
+  Difficulty.Intermediate,
+  Difficulty.Expert,
+];
 
 export const DIFFICULTY_CONFIGS: Record<Difficulty, DifficultyConfig> = {
-  beginner: {
-    id: 'beginner',
+  [Difficulty.Beginner]: {
+    id: Difficulty.Beginner,
     label: 'Beginner',
     minGivens: 22,
     maxGivens: 24,
     maxHints: 5,
   },
-  intermediate: {
-    id: 'intermediate',
+  [Difficulty.Intermediate]: {
+    id: Difficulty.Intermediate,
     label: 'Intermediate',
     minGivens: 18,
     maxGivens: 21,
     maxHints: 4,
   },
-  expert: {
-    id: 'expert',
+  [Difficulty.Expert]: {
+    id: Difficulty.Expert,
     label: 'Expert',
     minGivens: 14,
     maxGivens: 17,
