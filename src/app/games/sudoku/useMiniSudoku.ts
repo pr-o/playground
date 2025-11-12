@@ -14,6 +14,7 @@ export type ConflictFlags = {
 };
 
 type Selection = { row: number; col: number };
+type GameStatus = 'playing' | 'completed';
 
 type MiniSudokuState = {
   board: MiniSudokuCell[][];
@@ -26,6 +27,8 @@ type MiniSudokuState = {
   conflicts: Record<string, ConflictFlags>;
   mistakeTokens: Record<string, number>;
   mistakeCount: number;
+  status: GameStatus;
+  puzzleId: number;
 };
 
 type Action =
@@ -36,7 +39,8 @@ type Action =
   | { type: 'ERASE' }
   | { type: 'UNDO' }
   | { type: 'REDO' }
-  | { type: 'REQUEST_HINT' };
+  | { type: 'REQUEST_HINT' }
+  | { type: 'RESET_PUZZLE'; payload?: { advance?: boolean } };
 
 const GRID_SIZE = 6;
 const REGION_HEIGHT = 2;
@@ -61,26 +65,34 @@ const PUZZLE_BOARD: (number | null)[][] = [
   [6, null, 2, null, 4, null],
 ];
 
-const initialBoard: MiniSudokuCell[][] = PUZZLE_BOARD.map((row) =>
-  row.map((value) => ({
-    value,
-    notes: [],
-    given: value !== null,
-  })),
-);
+const createInitialBoard = (): MiniSudokuCell[][] =>
+  PUZZLE_BOARD.map((row) =>
+    row.map((value) => ({
+      value,
+      notes: [],
+      given: value !== null,
+    })),
+  );
 
-const initialState: MiniSudokuState = {
-  board: initialBoard,
-  selected: null,
-  notesMode: false,
-  history: [],
-  future: [],
-  hintsUsed: 0,
-  lastHint: null,
-  conflicts: calculateConflicts(initialBoard),
-  mistakeTokens: {},
-  mistakeCount: 0,
+const createInitialState = (puzzleId = 1): MiniSudokuState => {
+  const board = createInitialBoard();
+  return {
+    board,
+    selected: null,
+    notesMode: false,
+    history: [],
+    future: [],
+    hintsUsed: 0,
+    lastHint: null,
+    conflicts: calculateConflicts(board),
+    mistakeTokens: {},
+    mistakeCount: 0,
+    status: 'playing',
+    puzzleId,
+  };
 };
+
+const initialState: MiniSudokuState = createInitialState();
 
 const getCellKey = (row: number, col: number) => `${row}-${col}`;
 
@@ -145,6 +157,11 @@ function calculateConflicts(board: MiniSudokuCell[][]): Record<string, ConflictF
   return conflicts;
 }
 
+const isBoardSolved = (board: MiniSudokuCell[][]): boolean =>
+  board.every((row, rowIndex) =>
+    row.every((cell, colIndex) => cell.value === SOLUTION_BOARD[rowIndex][colIndex]),
+  );
+
 const selectCell = (state: MiniSudokuState, next: Selection): MiniSudokuState => {
   const isSameCell = state.selected?.row === next.row && state.selected?.col === next.col;
   return { ...state, selected: isSameCell ? null : next };
@@ -186,6 +203,8 @@ const commitBoardChange = (
         }
       : state.mistakeTokens;
 
+  const nextStatus: GameStatus = isBoardSolved(nextBoard) ? 'completed' : 'playing';
+
   return {
     ...state,
     board: nextBoard,
@@ -196,6 +215,7 @@ const commitBoardChange = (
     mistakeCount: options?.incrementMistakes
       ? state.mistakeCount + 1
       : state.mistakeCount,
+    status: nextStatus,
   };
 };
 
@@ -234,6 +254,9 @@ const reducer = (state: MiniSudokuState, action: Action): MiniSudokuState => {
     case 'TOGGLE_NOTES':
       return { ...state, notesMode: !state.notesMode };
     case 'INPUT_VALUE': {
+      if (state.status === 'completed') {
+        return state;
+      }
       const { selected } = state;
       if (!selected) return state;
 
@@ -271,6 +294,9 @@ const reducer = (state: MiniSudokuState, action: Action): MiniSudokuState => {
       });
     }
     case 'ERASE': {
+      if (state.status === 'completed') {
+        return state;
+      }
       const { selected } = state;
       if (!selected) return state;
       const cell = state.board[selected.row][selected.col];
@@ -296,6 +322,7 @@ const reducer = (state: MiniSudokuState, action: Action): MiniSudokuState => {
         history,
         future,
         conflicts: calculateConflicts(previous),
+        status: isBoardSolved(previous) ? 'completed' : 'playing',
       };
     }
     case 'REDO': {
@@ -308,9 +335,13 @@ const reducer = (state: MiniSudokuState, action: Action): MiniSudokuState => {
         history,
         future: rest,
         conflicts: calculateConflicts(next),
+        status: isBoardSolved(next) ? 'completed' : 'playing',
       };
     }
     case 'REQUEST_HINT': {
+      if (state.status === 'completed') {
+        return state;
+      }
       const target = findHintTarget(state);
       if (!target) {
         return state;
@@ -344,6 +375,25 @@ const reducer = (state: MiniSudokuState, action: Action): MiniSudokuState => {
         hintsUsed: committed.hintsUsed + 1,
         lastHint: target,
         selected: target,
+      };
+    }
+    case 'RESET_PUZZLE': {
+      const advance = Boolean(action.payload?.advance);
+      const board = createInitialBoard();
+      return {
+        ...state,
+        board,
+        selected: null,
+        notesMode: false,
+        history: [],
+        future: [],
+        hintsUsed: 0,
+        lastHint: null,
+        conflicts: calculateConflicts(board),
+        mistakeTokens: {},
+        mistakeCount: 0,
+        status: 'playing',
+        puzzleId: advance ? state.puzzleId + 1 : state.puzzleId,
       };
     }
     default:
@@ -396,6 +446,11 @@ export function useMiniSudoku() {
   const undo = useCallback(() => dispatch({ type: 'UNDO' }), []);
   const redo = useCallback(() => dispatch({ type: 'REDO' }), []);
   const hint = useCallback(() => dispatch({ type: 'REQUEST_HINT' }), []);
+  const restartPuzzle = useCallback(() => dispatch({ type: 'RESET_PUZZLE' }), []);
+  const nextPuzzle = useCallback(
+    () => dispatch({ type: 'RESET_PUZZLE', payload: { advance: true } }),
+    [],
+  );
 
   return {
     board: state.board,
@@ -405,6 +460,9 @@ export function useMiniSudoku() {
     lastHint: state.lastHint,
     conflicts: state.conflicts,
     mistakeTokens: state.mistakeTokens,
+    mistakeCount: state.mistakeCount,
+    status: state.status,
+    puzzleId: state.puzzleId,
     canUndo: state.history.length > 0,
     canRedo: state.future.length > 0,
     selectCell: selectCellHandler,
@@ -415,5 +473,7 @@ export function useMiniSudoku() {
     undo,
     redo,
     requestHint: hint,
+    restartPuzzle,
+    nextPuzzle,
   };
 }

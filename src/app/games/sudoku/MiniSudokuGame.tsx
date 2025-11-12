@@ -1,11 +1,21 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Board } from './components/Board';
+import { CompletionOverlay } from './components/CompletionOverlay';
 import { NumberPad } from './components/NumberPad';
 import { useMiniSudoku } from './useMiniSudoku';
 
 const DIGIT_REGEX = /^[1-6]$/;
+
+const formatElapsed = (ms: number): string => {
+  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+  const minutes = Math.floor(totalSeconds / 60)
+    .toString()
+    .padStart(2, '0');
+  const seconds = (totalSeconds % 60).toString().padStart(2, '0');
+  return `${minutes}:${seconds}`;
+};
 
 export function MiniSudokuGame() {
   const {
@@ -14,6 +24,10 @@ export function MiniSudokuGame() {
     notesMode,
     conflicts,
     mistakeTokens,
+    hintsUsed,
+    mistakeCount,
+    status,
+    puzzleId,
     selectCell,
     moveSelection,
     toggleNotes,
@@ -24,7 +38,11 @@ export function MiniSudokuGame() {
     canUndo,
     canRedo,
     requestHint,
+    restartPuzzle,
+    nextPuzzle,
   } = useMiniSudoku();
+  const [elapsedMs, setElapsedMs] = useState(0);
+  const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -86,6 +104,54 @@ export function MiniSudokuGame() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [erase, inputDigit, moveSelection, redo, requestHint, toggleNotes, undo]);
 
+  useEffect(() => {
+    let prevTime: number | null = null;
+
+    if (status !== 'playing') {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+      prevTime = null;
+      return;
+    }
+
+    const tick = (timestamp: number) => {
+      if (prevTime == null) {
+        prevTime = timestamp;
+      }
+      const delta = timestamp - prevTime;
+      prevTime = timestamp;
+      setElapsedMs((current) => current + delta);
+      rafRef.current = requestAnimationFrame(tick);
+    };
+
+    rafRef.current = requestAnimationFrame(tick);
+
+    return () => {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+    };
+  }, [status]);
+
+  const puzzleLabel = useMemo(
+    () => `Puzzle #${String(puzzleId).padStart(3, '0')}`,
+    [puzzleId],
+  );
+  const timerLabel = formatElapsed(elapsedMs);
+
+  const handleRestart = () => {
+    setElapsedMs(0);
+    restartPuzzle();
+  };
+
+  const handleNextPuzzle = () => {
+    setElapsedMs(0);
+    nextPuzzle();
+  };
+
   return (
     <section className="flex flex-col gap-6 rounded-xl border border-border bg-card/80 p-6 shadow-sm">
       <div className="flex flex-col gap-4 md:flex-row">
@@ -95,13 +161,25 @@ export function MiniSudokuGame() {
               <p className="text-sm uppercase tracking-wide text-muted-foreground">
                 Mini Sudoku
               </p>
-              <h2 className="text-2xl font-semibold">Puzzle #000</h2>
+              <h2 className="text-2xl font-semibold">{puzzleLabel}</h2>
             </div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <span>Difficulty</span>
-              <span className="rounded-full border border-border/60 px-3 py-1 text-foreground">
-                Beginner
-              </span>
+            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+              <div className="flex flex-col">
+                <span className="text-xs uppercase tracking-wide">Timer</span>
+                <span className="text-lg font-semibold text-foreground">
+                  {timerLabel}
+                </span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs uppercase tracking-wide">Mistakes</span>
+                <span className="text-lg font-semibold text-destructive">
+                  {mistakeCount}
+                </span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs uppercase tracking-wide">Hints</span>
+                <span className="text-lg font-semibold text-primary">{hintsUsed}</span>
+              </div>
             </div>
           </div>
           <Board
@@ -132,6 +210,15 @@ export function MiniSudokuGame() {
           />
         </aside>
       </div>
+      <CompletionOverlay
+        open={status === 'completed'}
+        puzzleLabel={puzzleLabel}
+        elapsedMs={elapsedMs}
+        mistakes={mistakeCount}
+        hintsUsed={hintsUsed}
+        onRestart={handleRestart}
+        onNext={handleNextPuzzle}
+      />
     </section>
   );
 }
