@@ -7,6 +7,20 @@ import { NumberPad } from './components/NumberPad';
 import { useMiniSudoku } from './useMiniSudoku';
 
 const DIGIT_REGEX = /^[1-6]$/;
+const TIMER_STORAGE_KEY = 'mini-sudoku-timer-v1';
+
+const readStoredElapsed = (puzzleId: number): number => {
+  if (typeof window === 'undefined') return 0;
+  try {
+    const raw = window.localStorage.getItem(TIMER_STORAGE_KEY);
+    if (!raw) return 0;
+    const data = JSON.parse(raw);
+    if (data?.puzzleId !== puzzleId) return 0;
+    return typeof data.elapsedMs === 'number' ? data.elapsedMs : 0;
+  } catch {
+    return 0;
+  }
+};
 
 const formatElapsed = (ms: number): string => {
   const totalSeconds = Math.max(0, Math.floor(ms / 1000));
@@ -41,7 +55,7 @@ export function MiniSudokuGame() {
     restartPuzzle,
     nextPuzzle,
   } = useMiniSudoku();
-  const [elapsedMs, setElapsedMs] = useState(0);
+  const [elapsedMs, setElapsedMs] = useState(() => readStoredElapsed(puzzleId));
   const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -135,6 +149,25 @@ export function MiniSudokuGame() {
       }
     };
   }, [status]);
+
+  useEffect(() => {
+    setElapsedMs((current) => {
+      const stored = readStoredElapsed(puzzleId);
+      return stored === current ? current : stored;
+    });
+  }, [puzzleId]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(
+        TIMER_STORAGE_KEY,
+        JSON.stringify({ puzzleId, elapsedMs }),
+      );
+    } catch {
+      // ignore timer persistence failures
+    }
+  }, [elapsedMs, puzzleId]);
 
   const puzzleLabel = useMemo(
     () => `Puzzle #${String(puzzleId).padStart(3, '0')}`,

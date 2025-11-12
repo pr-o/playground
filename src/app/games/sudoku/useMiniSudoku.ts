@@ -1,4 +1,4 @@
-import { useCallback, useReducer } from 'react';
+import { useCallback, useEffect, useReducer } from 'react';
 
 export type MiniSudokuCell = {
   value: number | null;
@@ -31,6 +31,17 @@ type MiniSudokuState = {
   puzzleId: number;
 };
 
+type PersistedState = {
+  puzzleId: number;
+  board: MiniSudokuCell[][];
+  notesMode: boolean;
+  hintsUsed: number;
+  lastHint: Selection | null;
+  mistakeCount: number;
+  status: GameStatus;
+  difficulty: string;
+};
+
 type Action =
   | { type: 'SELECT_CELL'; payload: Selection }
   | { type: 'MOVE_SELECTION'; payload: { rowDelta: number; colDelta: number } }
@@ -46,6 +57,8 @@ const GRID_SIZE = 6;
 const REGION_HEIGHT = 2;
 const REGION_WIDTH = 3;
 const HISTORY_LIMIT = 50;
+const STORAGE_KEY = 'mini-sudoku-state-v1';
+const DEFAULT_DIFFICULTY = 'standard';
 
 const SOLUTION_BOARD: number[][] = [
   [1, 2, 3, 4, 5, 6],
@@ -93,6 +106,73 @@ const createInitialState = (puzzleId = 1): MiniSudokuState => {
 };
 
 const initialState: MiniSudokuState = createInitialState();
+
+const getStoredState = (): MiniSudokuState => {
+  if (typeof window === 'undefined') {
+    return initialState;
+  }
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      return initialState;
+    }
+    const parsed = JSON.parse(raw) as PersistedState;
+    return hydrateState(parsed);
+  } catch {
+    return initialState;
+  }
+};
+
+const normalizeBoard = (data: unknown): MiniSudokuCell[][] => {
+  const template = createInitialBoard();
+  if (!Array.isArray(data)) {
+    return template;
+  }
+
+  return template.map((row, rowIndex) =>
+    row.map((templateCell, colIndex) => {
+      const rawRow = Array.isArray(data[rowIndex]) ? data[rowIndex] : [];
+      const rawCell = rawRow[colIndex];
+      if (!rawCell || typeof rawCell !== 'object') {
+        return { ...templateCell, notes: [...templateCell.notes] };
+      }
+
+      const candidateValue =
+        typeof rawCell.value === 'number' && rawCell.value >= 1 && rawCell.value <= 6
+          ? rawCell.value
+          : null;
+
+      const sanitizedNotes = Array.isArray(rawCell.notes)
+        ? rawCell.notes
+            .filter((note: unknown): note is number => typeof note === 'number')
+            .map((note) => Math.min(Math.max(Math.round(note), 1), 6))
+        : [];
+
+      return {
+        value: templateCell.given ? templateCell.value : candidateValue,
+        notes: Array.from(new Set(sanitizedNotes)).sort((a, b) => a - b),
+        given: templateCell.given,
+        wasHint: Boolean(rawCell.wasHint),
+      };
+    }),
+  );
+};
+
+const hydrateState = (persisted: PersistedState): MiniSudokuState => {
+  const board = normalizeBoard(persisted.board);
+  return {
+    ...createInitialState(persisted.puzzleId ?? 1),
+    board,
+    notesMode: Boolean(persisted.notesMode),
+    hintsUsed: persisted.hintsUsed ?? 0,
+    lastHint: persisted.lastHint ?? null,
+    conflicts: calculateConflicts(board),
+    mistakeTokens: {},
+    mistakeCount: persisted.mistakeCount ?? 0,
+    status: persisted.status === 'completed' ? 'completed' : 'playing',
+    puzzleId: persisted.puzzleId ?? 1,
+  };
+};
 
 const getCellKey = (row: number, col: number) => `${row}-${col}`;
 
@@ -423,7 +503,34 @@ const findHintTarget = (state: MiniSudokuState): Selection | null => {
 };
 
 export function useMiniSudoku() {
-  const [state, dispatch] = useReducer(reducer, initialState);
+  const [state, dispatch] = useReducer(reducer, initialState, () => getStoredState());
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const payload: PersistedState = {
+      puzzleId: state.puzzleId,
+      board: state.board,
+      notesMode: state.notesMode,
+      hintsUsed: state.hintsUsed,
+      lastHint: state.lastHint,
+      mistakeCount: state.mistakeCount,
+      status: state.status,
+      difficulty: DEFAULT_DIFFICULTY,
+    };
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    } catch {
+      // ignore persistence errors
+    }
+  }, [
+    state.board,
+    state.notesMode,
+    state.hintsUsed,
+    state.lastHint,
+    state.mistakeCount,
+    state.status,
+    state.puzzleId,
+  ]);
 
   const selectCellHandler = useCallback(
     (row: number, col: number) =>
