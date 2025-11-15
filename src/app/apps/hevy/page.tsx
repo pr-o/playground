@@ -11,9 +11,9 @@ import {
 
 import { HevyShell } from '@/components/apps/hevy/HevyShell';
 import { HEVY_NAV_ITEMS, type HevyTabId } from '@/components/apps/hevy/nav-data';
+import { HevyProgress } from '@/components/apps/hevy/primitives';
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = {
@@ -169,10 +169,7 @@ function HevyHomeContent() {
                 <span>Goal focus · Pull emphasis</span>
               </div>
             </div>
-            <Progress
-              value={72}
-              className="mt-3 h-3 overflow-hidden rounded-full border border-white/5 bg-white/10"
-            />
+            <HevyProgress value={72} className="mt-3" />
           </div>
         </div>
         <div className="hevy-surface col-span-12 flex flex-col gap-4 rounded-3xl p-6 lg:col-span-4">
@@ -255,10 +252,7 @@ function HevyHomeContent() {
                 <p className="text-sm font-medium">{block.label}</p>
                 <span className="text-xs text-white/60">{block.completion}%</span>
               </div>
-              <Progress
-                value={block.completion}
-                className="mt-3 h-2 overflow-hidden rounded-full border border-white/5 bg-white/10"
-              />
+              <HevyProgress value={block.completion} className="mt-3 h-2" />
             </div>
           ))}
         </div>
