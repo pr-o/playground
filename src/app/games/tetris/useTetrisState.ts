@@ -221,6 +221,11 @@ export function useTetrisState(
 ): UseTetrisStateReturn {
   const bagRef = useRef(new SevenBagGenerator());
   const [state, setState] = useState<TetrisState>(() => createInitialState());
+  const stateRef = useRef(state);
+
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
 
   const fillQueue = (queue: TetrominoId[], minCount: number): TetrominoId[] => {
     const nextQueue = [...queue];
@@ -244,6 +249,21 @@ export function useTetrisState(
       };
     });
   }, [previewCount]);
+
+  const setStateDirect = useCallback(
+    (next: Partial<TetrisState> | ((previous: TetrisState) => TetrisState)) => {
+      setState((prev) => {
+        if (typeof next === 'function') {
+          return next(prev);
+        }
+        return {
+          ...prev,
+          ...next,
+        };
+      });
+    },
+    [setState],
+  );
 
   const spawnNext = useCallback(() => {
     setState((prev) => {
@@ -376,6 +396,34 @@ export function useTetrisState(
     [state.queue, previewCount],
   );
 
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.__TETRIS_TEST_ENABLED__) {
+      return;
+    }
+
+    const controller: TetrisTestController = {
+      getState: () => stateRef.current,
+      setState: setStateDirect,
+      actions: {
+        spawnNext,
+        reset,
+        move,
+        rotate,
+        tick,
+        hardDrop,
+        hold,
+      },
+    };
+
+    window.__TETRIS_TEST_CONTROLLER__ = controller;
+
+    return () => {
+      if (window.__TETRIS_TEST_CONTROLLER__ === controller) {
+        delete window.__TETRIS_TEST_CONTROLLER__;
+      }
+    };
+  }, [hardDrop, hold, move, rotate, reset, setStateDirect, spawnNext, tick]);
+
   return {
     state,
     queuePreview,
@@ -387,4 +435,27 @@ export function useTetrisState(
     hardDrop,
     hold,
   };
+}
+
+type TetrisTestController = {
+  getState: () => TetrisState;
+  setState: (
+    next: Partial<TetrisState> | ((previous: TetrisState) => TetrisState),
+  ) => void;
+  actions: {
+    spawnNext: () => void;
+    reset: () => void;
+    move: (delta: { row: number; col: number }) => void;
+    rotate: (direction: 'cw' | 'ccw') => void;
+    tick: () => void;
+    hardDrop: () => void;
+    hold: () => void;
+  };
+};
+
+declare global {
+  interface Window {
+    __TETRIS_TEST_ENABLED__?: boolean;
+    __TETRIS_TEST_CONTROLLER__?: TetrisTestController;
+  }
 }

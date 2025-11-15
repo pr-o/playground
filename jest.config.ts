@@ -12,6 +12,7 @@ const customJestConfig = {
   testMatch: [
     '<rootDir>/src/__tests__/apps/**/*.test.(ts|tsx)',
     '<rootDir>/src/__tests__/games/**/*.test.(ts|tsx)',
+    '<rootDir>/src/lib/**/*.test.(ts|tsx)',
   ],
   transformIgnorePatterns: ['/node_modules/(?!(msw|@mswjs|@open-draft|until-async)/)'],
 };
