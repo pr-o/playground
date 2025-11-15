@@ -1,5 +1,5 @@
-import { createStore } from 'zustand/vanilla';
-import { createJSONStorage, persist } from 'zustand/middleware';
+import { createStore, type StateCreator } from 'zustand/vanilla';
+import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 
 export type HevyReadinessMetric = {
@@ -242,135 +242,138 @@ const updateQuickStatsFromWorkouts = (store: HevyStoreData) => {
   }
 };
 
+type HevyStorePersist = HevyStoreData;
+
 const createStorage = () =>
-  createJSONStorage<HevyStore>(() => {
+  createJSONStorage<HevyStorePersist>(() => {
     if (typeof window !== 'undefined') {
       return window.localStorage;
     }
-    let memory: Record<string, string> = {};
-    const fallback: Storage = {
-      getItem: (name: string) => memory[name] ?? null,
-      setItem: (name: string, value: string) => {
+    const memory: Record<string, string> = {};
+    const fallback: StateStorage = {
+      getItem: (name) => memory[name] ?? null,
+      setItem: (name, value) => {
         memory[name] = value;
       },
-      removeItem: (name: string) => {
+      removeItem: (name) => {
         delete memory[name];
-      },
-      clear: () => {
-        memory = {};
-      },
-      key: (index: number) => Object.keys(memory)[index] ?? null,
-      get length() {
-        return Object.keys(memory).length;
       },
     };
     return fallback;
   });
 
+type HevyStateCreator = StateCreator<
+  HevyStore,
+  [['zustand/immer', never]],
+  [],
+  HevyStore
+>;
+
+const hevyState: HevyStateCreator = (set, get) => ({
+  ...defaultStoreData,
+  setActiveProfile: (id) => {
+    if (!get().profiles[id]) return;
+    set({ activeProfileId: id });
+  },
+  updateProfile: (payload) => {
+    set((state) => {
+      const current = state.profiles[state.activeProfileId];
+      state.profiles[state.activeProfileId] = {
+        ...current,
+        ...payload,
+        readiness: {
+          ...current.readiness,
+          ...(payload.readiness ?? {}),
+          metrics: payload.readiness?.metrics ?? current.readiness.metrics,
+          fatigue: payload.readiness?.fatigue ?? current.readiness.fatigue,
+          focus: payload.readiness?.focus ?? current.readiness.focus,
+        },
+      };
+      updateQuickStatsFromWorkouts(state);
+    });
+  },
+  updatePreference: (key, value) => {
+    set((state) => {
+      state.preferences[key] = value;
+    });
+  },
+  logWorkout: (entry) => {
+    set((state) => {
+      state.workouts = [
+        entry,
+        ...state.workouts.filter((workout) => workout.id !== entry.id),
+      ];
+      const profile = state.profiles[state.activeProfileId];
+      if (profile) {
+        profile.nextWorkoutId = state.workouts.find(
+          (workout) => workout.status === 'scheduled',
+        )?.id;
+        profile.streakDays = profile.streakDays + 1;
+      }
+      updateQuickStatsFromWorkouts(state);
+    });
+  },
+  recordMeasurement: (entry) => {
+    set((state) => {
+      state.measurements = [
+        entry,
+        ...state.measurements.filter((measurement) => measurement.id !== entry.id),
+      ];
+    });
+  },
+  seedData: (payload) => {
+    set((state) => {
+      Object.assign(state, payload);
+      updateQuickStatsFromWorkouts(state);
+    });
+  },
+  saveDraftWorkout: (draft) => {
+    set((state) => {
+      state.draftWorkout = draft;
+    });
+  },
+  clearDraftWorkout: () => {
+    set((state) => {
+      state.draftWorkout = null;
+    });
+  },
+  startRestTimer: (durationSeconds) => {
+    set((state) => {
+      state.restTimer = {
+        id: `rest-${Date.now()}`,
+        durationSeconds,
+        startedAt: Date.now(),
+        remainingSeconds: durationSeconds,
+        status: 'running',
+      };
+    });
+  },
+  cancelRestTimer: () => {
+    set((state) => {
+      state.restTimer = null;
+    });
+  },
+  setRestTimerRemaining: (remainingSeconds) => {
+    set((state) => {
+      if (!state.restTimer) return;
+      state.restTimer.remainingSeconds = remainingSeconds;
+    });
+  },
+  completeRestTimer: () => {
+    set((state) => {
+      if (!state.restTimer) return;
+      state.restTimer.status = 'finished';
+    });
+  },
+});
+
 export const hevyStore = createStore<HevyStore>()(
-  persist(
-    immer((set, get) => ({
-      ...defaultStoreData,
-      setActiveProfile: (id) => {
-        if (!get().profiles[id]) return;
-        set({ activeProfileId: id });
-      },
-      updateProfile: (payload) => {
-        set((state) => {
-          const current = state.profiles[state.activeProfileId];
-          state.profiles[state.activeProfileId] = {
-            ...current,
-            ...payload,
-            readiness: {
-              ...current.readiness,
-              ...(payload.readiness ?? {}),
-              metrics: payload.readiness?.metrics ?? current.readiness.metrics,
-              fatigue: payload.readiness?.fatigue ?? current.readiness.fatigue,
-              focus: payload.readiness?.focus ?? current.readiness.focus,
-            },
-          };
-          updateQuickStatsFromWorkouts(state);
-        });
-      },
-      updatePreference: (key, value) => {
-        set((state) => {
-          state.preferences[key] = value;
-        });
-      },
-      logWorkout: (entry) => {
-        set((state) => {
-          state.workouts = [
-            entry,
-            ...state.workouts.filter((workout) => workout.id !== entry.id),
-          ];
-          const profile = state.profiles[state.activeProfileId];
-          if (profile) {
-            profile.nextWorkoutId = state.workouts.find(
-              (workout) => workout.status === 'scheduled',
-            )?.id;
-            profile.streakDays = profile.streakDays + 1;
-          }
-          updateQuickStatsFromWorkouts(state);
-        });
-      },
-      recordMeasurement: (entry) => {
-        set((state) => {
-          state.measurements = [
-            entry,
-            ...state.measurements.filter((measurement) => measurement.id !== entry.id),
-          ];
-        });
-      },
-      seedData: (payload) => {
-        set((state) => {
-          Object.assign(state, payload);
-          updateQuickStatsFromWorkouts(state);
-        });
-      },
-      saveDraftWorkout: (draft) => {
-        set((state) => {
-          state.draftWorkout = draft;
-        });
-      },
-      clearDraftWorkout: () => {
-        set((state) => {
-          state.draftWorkout = null;
-        });
-      },
-      startRestTimer: (durationSeconds) => {
-        set((state) => {
-          state.restTimer = {
-            id: `rest-${Date.now()}`,
-            durationSeconds,
-            startedAt: Date.now(),
-            remainingSeconds: durationSeconds,
-            status: 'running',
-          };
-        });
-      },
-      cancelRestTimer: () => {
-        set((state) => {
-          state.restTimer = null;
-        });
-      },
-      setRestTimerRemaining: (remainingSeconds) => {
-        set((state) => {
-          if (!state.restTimer) return;
-          state.restTimer.remainingSeconds = remainingSeconds;
-        });
-      },
-      completeRestTimer: () => {
-        set((state) => {
-          if (!state.restTimer) return;
-          state.restTimer.status = 'finished';
-        });
-      },
-    })),
-    {
-      name: 'hevy-app-state',
-      version: 1,
-      storage: createStorage(),
-      partialize: (state) => ({
+  persist(immer(hevyState), {
+    name: 'hevy-app-state',
+    version: 1,
+    storage: createStorage(),
+    partialize: (state) =>
+      ({
         profiles: state.profiles,
         activeProfileId: state.activeProfileId,
         preferences: state.preferences,
@@ -381,7 +384,6 @@ export const hevyStore = createStore<HevyStore>()(
         trainingFocus: state.trainingFocus,
         draftWorkout: state.draftWorkout,
         restTimer: state.restTimer,
-      }),
-    },
-  ),
+      }) as HevyStorePersist,
+  }),
 );
