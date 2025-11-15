@@ -5,6 +5,7 @@ import { BellRing, Flame } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { useHevyProfile } from '@/store/hevy/hooks';
 
 import { HEVY_USER_ICON, type HevyNavItem } from './nav-data';
 
@@ -14,6 +15,10 @@ type HevyTopBarProps = {
 
 export function HevyTopBar({ item }: HevyTopBarProps) {
   const ProfileIcon = HEVY_USER_ICON;
+  const profile = useHevyProfile();
+  const planLabel = profile?.planLabel ?? 'Week 6 · PPL';
+  const streakDays = profile?.streakDays ?? 0;
+  const readinessBadge = profile?.readiness.badgeLabel ?? 'Primed';
 
   return (
     <div className="border-b border-white/10 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-xl">
@@ -21,9 +26,9 @@ export function HevyTopBar({ item }: HevyTopBarProps) {
         <div className="space-y-3">
           <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.35em] text-white/60">
             <span className="inline-flex items-center rounded-full border border-white/10 px-3 py-1 text-[10px] text-white/70">
-              Hevy
+              {profile?.name ?? 'Hevy'}
             </span>
-            <span className="text-white/60">Performance</span>
+            <span className="text-white/60">{readinessBadge} mode</span>
           </div>
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-white md:text-3xl">
@@ -36,11 +41,11 @@ export function HevyTopBar({ item }: HevyTopBarProps) {
               variant="outline"
               className="border-white/20 bg-white/5 text-xs text-white/80 backdrop-blur"
             >
-              Week 6 · PPL
+              {planLabel}
             </Badge>
             <div className="inline-flex items-center gap-1 rounded-full border border-white/10 px-3 py-1 text-[11px] uppercase tracking-[0.15em] text-white/60">
               <Flame className="size-3 text-orange-300" />
-              12 Day Streak
+              {streakDays} Day Streak
             </div>
           </div>
         </div>
