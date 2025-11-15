@@ -1,4 +1,4 @@
-import { create } from 'zustand';
+import { createStore } from 'zustand/vanilla';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 
@@ -267,7 +267,7 @@ const createStorage = () =>
     return fallback;
   });
 
-export const useHevyStore = create<HevyStore>()(
+export const hevyStore = createStore<HevyStore>()(
   persist(
     immer((set, get) => ({
       ...defaultStoreData,

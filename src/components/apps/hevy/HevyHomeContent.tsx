@@ -7,8 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { cn } from '@/lib/utils';
 import { HevyProgress } from './primitives';
-import { useHevyActions, useHevyDashboard } from '@/store/hevy/hooks';
-import { useHevyStore } from '@/store/hevy/store';
+import { useHevyActions, useHevyDashboard, useHevyStore } from '@/store/hevy/hooks';
 import { useRestTimer } from '@/hooks/useRestTimer';
 
 export function HevyHomeContent() {

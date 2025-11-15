@@ -1,6 +1,12 @@
 'use client';
 
-import { useHevyStore } from './store';
+import { useStore } from 'zustand';
+
+import type { HevyStore } from './store';
+import { hevyStore } from './store';
+
+export const useHevyStore = <T>(selector: (state: HevyStore) => T) =>
+  useStore(hevyStore, selector);
 
 export const useHevyProfile = () =>
   useHevyStore((state) => state.profiles[state.activeProfileId]);

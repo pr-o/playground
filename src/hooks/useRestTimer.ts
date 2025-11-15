@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 
-import { useHevyStore } from '@/store/hevy/store';
+import { useHevyStore } from '@/store/hevy/hooks';
 
 export function useRestTimer() {
   const restTimer = useHevyStore((state) => state.restTimer);
