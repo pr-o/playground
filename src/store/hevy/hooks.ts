@@ -32,4 +32,10 @@ export const useHevyActions = () =>
     logWorkout: state.logWorkout,
     recordMeasurement: state.recordMeasurement,
     seedData: state.seedData,
+    saveDraftWorkout: state.saveDraftWorkout,
+    clearDraftWorkout: state.clearDraftWorkout,
+    startRestTimer: state.startRestTimer,
+    cancelRestTimer: state.cancelRestTimer,
+    setRestTimerRemaining: state.setRestTimerRemaining,
+    completeRestTimer: state.completeRestTimer,
   }));

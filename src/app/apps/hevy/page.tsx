@@ -12,6 +12,8 @@ export const metadata: Metadata = {
     'Recreation of the Hevy workout logging experience with responsive layout, radial gradients, and Radix-driven UI patterns.',
 };
 
+export const revalidate = 120;
+
 const NAV_DESCRIPTIONS = HEVY_NAV_ITEMS.reduce(
   (map, item) => {
     map[item.id] = item.description;

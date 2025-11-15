@@ -7,11 +7,16 @@ import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { cn } from '@/lib/utils';
 import { HevyProgress } from './primitives';
-import { useHevyDashboard } from '@/store/hevy/hooks';
+import { useHevyActions, useHevyDashboard } from '@/store/hevy/hooks';
+import { useHevyStore } from '@/store/hevy/store';
+import { useRestTimer } from '@/hooks/useRestTimer';
 
 export function HevyHomeContent() {
   const { readiness, nextWorkout, quickStats, trainingFocus } = useHevyDashboard();
+  const restTimer = useHevyStore((state) => state.restTimer);
+  const { startRestTimer, cancelRestTimer } = useHevyActions();
   const [range, setRange] = React.useState<'today' | 'week' | 'month'>('today');
+  useRestTimer();
 
   if (!readiness) {
     return null;
@@ -158,6 +163,45 @@ export function HevyHomeContent() {
         ))}
       </section>
 
+      <section className="hevy-surface flex flex-col gap-4 rounded-3xl p-6 text-white">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <p className="text-xs uppercase tracking-[0.3em] text-white/60">Rest timer</p>
+            <p className="text-3xl font-semibold tracking-tight">
+              {restTimer ? formatDuration(restTimer.remainingSeconds) : 'Ready'}
+            </p>
+            <p className="text-sm text-white/60">
+              {restTimer
+                ? restTimer.status === 'finished'
+                  ? 'Timer complete — tap a preset to restart.'
+                  : 'Breathe between heavy sets.'
+                : 'Tap a preset to begin recovery.'}
+            </p>
+          </div>
+          {restTimer ? (
+            <Button
+              variant="ghost"
+              className="rounded-full border border-white/10 text-white hover:bg-white/10"
+              onClick={cancelRestTimer}
+            >
+              Cancel
+            </Button>
+          ) : null}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {[60, 90, 120].map((seconds) => (
+            <Button
+              key={seconds}
+              variant="outline"
+              className="rounded-full border-white/20 bg-white/5 px-4 py-2 text-sm text-white hover:bg-white/10"
+              onClick={() => startRestTimer(seconds)}
+            >
+              {seconds >= 60 ? `${Math.floor(seconds / 60)}m` : `${seconds}s`}
+            </Button>
+          ))}
+        </div>
+      </section>
+
       <section className="hevy-surface rounded-3xl p-6 text-white">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -191,4 +235,14 @@ export function HevyHomeContent() {
       </section>
     </div>
   );
+}
+
+function formatDuration(totalSeconds: number) {
+  const minutes = Math.floor(totalSeconds / 60)
+    .toString()
+    .padStart(2, '0');
+  const seconds = Math.floor(totalSeconds % 60)
+    .toString()
+    .padStart(2, '0');
+  return `${minutes}:${seconds}`;
 }

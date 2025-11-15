@@ -78,6 +78,21 @@ export type HevyTrainingFocusBlock = {
   completion: number;
 };
 
+export type HevyWorkoutDraft = {
+  id: string;
+  name: string;
+  notes?: string;
+  exerciseIds: string[];
+};
+
+export type HevyRestTimer = {
+  id: string;
+  durationSeconds: number;
+  startedAt: number;
+  remainingSeconds: number;
+  status: 'idle' | 'running' | 'finished';
+};
+
 interface HevyStoreData {
   profiles: Record<string, HevyProfile>;
   activeProfileId: string;
@@ -87,6 +102,8 @@ interface HevyStoreData {
   measurements: HevyMeasurement[];
   quickStats: HevyQuickStat[];
   trainingFocus: HevyTrainingFocusBlock[];
+  draftWorkout: HevyWorkoutDraft | null;
+  restTimer: HevyRestTimer | null;
 }
 
 interface HevyStoreActions {
@@ -99,6 +116,12 @@ interface HevyStoreActions {
   logWorkout: (entry: HevyWorkout) => void;
   recordMeasurement: (entry: HevyMeasurement) => void;
   seedData: (payload: Partial<HevyStoreData>) => void;
+  saveDraftWorkout: (draft: HevyWorkoutDraft) => void;
+  clearDraftWorkout: () => void;
+  startRestTimer: (durationSeconds: number) => void;
+  cancelRestTimer: () => void;
+  setRestTimerRemaining: (remainingSeconds: number) => void;
+  completeRestTimer: () => void;
 }
 
 export type HevyStore = HevyStoreData & HevyStoreActions;
@@ -195,6 +218,8 @@ const defaultStoreData: HevyStoreData = {
   measurements: [{ id: 'm-1', date: new Date().toISOString(), weight: 176.2 }],
   quickStats: defaultQuickStats,
   trainingFocus: defaultTrainingFocus,
+  draftWorkout: null,
+  restTimer: null,
 };
 
 const updateQuickStatsFromWorkouts = (store: HevyStoreData) => {
@@ -302,6 +327,44 @@ export const useHevyStore = create<HevyStore>()(
           updateQuickStatsFromWorkouts(state);
         });
       },
+      saveDraftWorkout: (draft) => {
+        set((state) => {
+          state.draftWorkout = draft;
+        });
+      },
+      clearDraftWorkout: () => {
+        set((state) => {
+          state.draftWorkout = null;
+        });
+      },
+      startRestTimer: (durationSeconds) => {
+        set((state) => {
+          state.restTimer = {
+            id: `rest-${Date.now()}`,
+            durationSeconds,
+            startedAt: Date.now(),
+            remainingSeconds: durationSeconds,
+            status: 'running',
+          };
+        });
+      },
+      cancelRestTimer: () => {
+        set((state) => {
+          state.restTimer = null;
+        });
+      },
+      setRestTimerRemaining: (remainingSeconds) => {
+        set((state) => {
+          if (!state.restTimer) return;
+          state.restTimer.remainingSeconds = remainingSeconds;
+        });
+      },
+      completeRestTimer: () => {
+        set((state) => {
+          if (!state.restTimer) return;
+          state.restTimer.status = 'finished';
+        });
+      },
     })),
     {
       name: 'hevy-app-state',
@@ -316,6 +379,8 @@ export const useHevyStore = create<HevyStore>()(
         measurements: state.measurements,
         quickStats: state.quickStats,
         trainingFocus: state.trainingFocus,
+        draftWorkout: state.draftWorkout,
+        restTimer: state.restTimer,
       }),
     },
   ),
