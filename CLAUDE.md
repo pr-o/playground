@@ -36,7 +36,7 @@ This is a **Next.js 15 App Router** monorepo-style playground with multiple self
 ### Route Structure
 
 - `src/app/` — root layout, home page (project gallery)
-- `src/app/apps/[app-name]/` — mini-apps: `excalidraw`, `hevy`, `netflix`, `notion`, `upbit`, `youtube`, `youtube-music`
+- `src/app/apps/[app-name]/` — mini-apps: `excalidraw`, `netflix`, `notion`, `upbit`, `youtube`, `youtube-music`
 - `src/app/games/[game-name]/` — browser games: `bejeweled`, `game-2048`, `slither`, `sudoku`, `tetris`
 - `src/app/api/trpc/` — tRPC HTTP handler
 

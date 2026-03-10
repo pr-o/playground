@@ -38,17 +38,6 @@ export const ProjectEntries: ProjectEntry[] = [
     techStack: ['React Query', 'Upbit Open API', 'WebSocket'],
   },
   {
-    title: 'Hevy Fitness',
-    href: '/apps/hevy',
-    tag: 'clone',
-    kind: ProjectKind.App,
-    description:
-      'Web-native take on the Hevy workout logging app with responsive shell, workout planner, and biometric insights.',
-    thumbnail: '/assets/apps/hevy-logo.svg',
-    thumbnailAlt: 'Preview of the Hevy workout experience.',
-    techStack: ['Radix UI', 'Next.js 15', 'Tailwind'],
-  },
-  {
     title: 'Excalidraw',
     href: '/apps/excalidraw',
     tag: 'clone',
