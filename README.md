@@ -1,4 +1,4 @@
-## [Playground](https://playground-psi.vercel.app/)
+## Playground - [playground-psi.vercel.app](https://playground-psi.vercel.app/)
 
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
